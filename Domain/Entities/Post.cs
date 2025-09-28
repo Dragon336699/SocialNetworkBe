@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
@@ -23,5 +18,8 @@ namespace Domain.Entities
         public DateTime CreatedAt { get; set; }
         [Required]
         public DateTime UpdatedAt { get; set; }
+        public ICollection<Comment>? Comments { get; set; }
+        public ICollection<PostImage>? PostImages { get; set; }
+        public ICollection<PostReactionUser>? PostReactionUsers { get; set; }
     }
 }

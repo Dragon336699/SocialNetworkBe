@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
@@ -17,5 +12,8 @@ namespace Domain.Entities
         public required string Name { get; set; }
         [Required]
         public required string IconSymbol { get; set; }
+        public ICollection<PostReactionUser>? PostReactionUsers { get; set; }
+        public ICollection<MessageReactionUser>? MessageReactionUsers { get; set; }
+        public ICollection<CommentReactionUser>? CommentReactionUsers { get; set; }
     }
 }
