@@ -1,4 +1,4 @@
-﻿using Domain.Enum.User;
+﻿using Domain.Enum.User.Types;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 

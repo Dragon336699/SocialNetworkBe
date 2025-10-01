@@ -1,4 +1,4 @@
-﻿using Domain.Enum.User;
+﻿using Domain.Enum.User.Types;
 
 namespace Domain.Entities
 {

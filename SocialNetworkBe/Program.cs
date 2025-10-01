@@ -1,5 +1,7 @@
 using DataAccess.DbContext;
+using Domain.AddServicesCollection;
 using Microsoft.EntityFrameworkCore;
+using SocialNetworkBe.AddServicesCollection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddMemoryCache();
+builder.Services.ConfigureServices();
+builder.Services.ConfigureLifeCycle();
 builder.Services.AddDbContext<SocialNetworkDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyDb"));

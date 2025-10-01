@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Enum.User
+namespace Domain.Enum.User.Types
 {
-    public enum UserStatus
+    public enum UserRelationType
     {
-        Online,
-        Offline,
-        Busy
+        Friend,
+        Blocked,
+        Restricted,
+        Following
     }
 }
