@@ -2,7 +2,7 @@
 using System.Net;
 using System.Net.Mail;
 
-namespace SocialNetworkBe.Services.EmailService
+namespace SocialNetworkBe.Services.EmailServices
 {
     public class EmailSender : IEmailSender
     {

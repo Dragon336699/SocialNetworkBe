@@ -12,7 +12,7 @@ namespace DataAccess.Repositories
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        private readonly SocialNetworkDbContext _context;
+        protected SocialNetworkDbContext _context;
         public GenericRepository(SocialNetworkDbContext context)
         {
             _context = context;

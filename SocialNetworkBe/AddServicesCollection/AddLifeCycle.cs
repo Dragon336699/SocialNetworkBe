@@ -1,7 +1,12 @@
 ﻿using DataAccess.AutoMapper;
+using DataAccess.Repositories;
+using DataAccess.UnitOfWork;
+using Domain.Interfaces.RepositoryInterfaces;
+using Domain.Interfaces.UnitOfWorkInterface;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using SocialNetworkBe.Services.EmailService;
-using SocialNetworkBe.Services.UserService;
+using SocialNetworkBe.Services.EmailServices;
+using SocialNetworkBe.Services.TokenServices;
+using SocialNetworkBe.Services.UserServices;
 
 namespace SocialNetworkBe.AddServicesCollection
 {
@@ -11,7 +16,12 @@ namespace SocialNetworkBe.AddServicesCollection
         {
             services.AddTransient<IEmailSender, EmailSender>();
 
+            services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            services.AddTransient<IUnitOfWork, UnitOfWork>();
+            services.AddTransient<IUserRepository, UserRepository>();
+
             services.AddScoped<UserService>();
+            services.AddScoped<TokenService>();
             services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
         }
     }

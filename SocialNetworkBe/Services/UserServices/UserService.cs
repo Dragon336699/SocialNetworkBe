@@ -1,29 +1,38 @@
 ﻿using AutoMapper;
-using Domain.Contracts.Requests;
+using Domain.Contracts.Requests.User;
+using Domain.Contracts.Responses.User;
 using Domain.Entities;
 using Domain.Enum.Role.Functions;
 using Domain.Enum.User;
 using Domain.Enum.User.Functions;
+using Domain.Interfaces.UnitOfWorkInterface;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using SocialNetworkBe.Services.TokenServices;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Security.Claims;
 
-namespace SocialNetworkBe.Services.UserService
+namespace SocialNetworkBe.Services.UserServices
 {
     public class UserService
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<UserService> _logger;
-        public UserService(UserManager<User> userManager, RoleManager<Role> roleManager, IMapper mapper, IEmailSender emailSender , ILogger<UserService> logger)
+        private readonly TokenService _tokenService;
+        public UserService(UserManager<User> userManager, RoleManager<Role> roleManager, IMapper mapper, IEmailSender emailSender , ILogger<UserService> logger, TokenService tokenService, IUnitOfWork unitOfWork)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _mapper = mapper;
             _emailSender = emailSender;
             _logger = logger;
+            _tokenService = tokenService;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<(bool, string)> UserRegisterAsync(UserRegistrationRequest request, string baseUrl)
@@ -68,7 +77,7 @@ namespace SocialNetworkBe.Services.UserService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Registration reason fail with email {Email}", request.Email);
-                return (false, UserRegistrationEnum.RegistrationFailure.GetMessage());
+                throw;
             }
         }
 
@@ -84,5 +93,56 @@ namespace SocialNetworkBe.Services.UserService
 
             return ConfirmationEmailEnum.Fail;
         }
+
+        public async Task<LoginRes> UserLogin(LoginRequest loginRequest)
+        {
+            try
+            {
+                LoginRes returnResult = new LoginRes
+                {
+                    loginResult = LoginEnum.LoginFailed,
+                    jwtValue = null,
+                };
+
+                var user = await _userManager.FindByEmailAsync(loginRequest.Email);
+
+                if (user == null) return returnResult;
+
+                if (!user.EmailConfirmed)
+                {
+                    returnResult.loginResult = LoginEnum.EmailUnConfirmed;
+                    return returnResult;
+                };
+
+                if (user != null && await _userManager.CheckPasswordAsync(user, loginRequest.Password))
+                {
+                    var userRoles = await _userManager.GetRolesAsync(user);
+
+                    var authClaims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Email, loginRequest.Email),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) // Định danh duy nhất cho token
+                };
+
+                    foreach (var role in userRoles)
+                    {
+                        authClaims.Add(new Claim(ClaimTypes.Role, role));
+                    }
+
+                    var jwtValue = _tokenService.GenerateJwt(authClaims);
+                    returnResult.jwtValue = new JwtSecurityTokenHandler().WriteToken(jwtValue);
+                    returnResult.loginResult = LoginEnum.LoginSucceded;
+                    return returnResult;
+                }
+            
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error login by user with email: ${Email}", loginRequest.Email);
+                throw;
+            }
+            return null;
+        }
+
     }
 }

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Domain.Contracts.Requests;
+using Domain.Contracts.Requests.User;
 using Domain.Entities;
 
 namespace DataAccess.AutoMapper
