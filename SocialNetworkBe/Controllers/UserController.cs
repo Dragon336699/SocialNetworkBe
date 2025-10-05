@@ -53,7 +53,7 @@ namespace SocialNetworkBe.Controllers
                 {
                     LoginEnum.LoginFailed => BadRequest(new { message = loginResult.GetMessage() }),
                     LoginEnum.EmailUnConfirmed => BadRequest(new { message = loginResult.GetMessage() }),
-                    LoginEnum.LoginSucceded => Ok(new { message = loginResult.GetMessage(), token = result.jwtValue }),
+                    LoginEnum.LoginSucceded => HandleLoginSuccess(result.jwtValue, loginResult),
                     _ => StatusCode(500, new { message = loginResult.GetMessage() })
                 };
             }
@@ -61,6 +61,21 @@ namespace SocialNetworkBe.Controllers
             {
                 return StatusCode(500, new {message = ex.Message});
             }
+        }
+
+        private IActionResult HandleLoginSuccess(string token, LoginEnum loginResult)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(7)
+            };
+
+            Response.Cookies.Append("jwt", token, cookieOptions);
+
+            return Ok(new { message = loginResult.GetMessage() });
         }
     }
 }

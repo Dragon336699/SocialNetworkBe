@@ -1,4 +1,4 @@
-using DataAccess.DbContext;
+﻿using DataAccess.DbContext;
 using Domain.AddServicesCollection;
 using Microsoft.EntityFrameworkCore;
 using SocialNetworkBe.AddServicesCollection;
@@ -13,7 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddMemoryCache();
-builder.Services.ConfigureServices();
+builder.Services.ConfigureServices(builder.Configuration);
 builder.Services.ConfigureLifeCycle();
 builder.Services.AddDbContext<SocialNetworkDbContext>(options =>
 {
@@ -29,9 +29,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors(options => options
+    .AllowAnyOrigin()
+    .AllowAnyHeader()
+    .AllowAnyHeader()
+);
+
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+app.UseAuthentication(); // Xác minh user hợp lệ không
+app.UseAuthorization(); // Phân quyền
 
 app.MapControllers();
 
