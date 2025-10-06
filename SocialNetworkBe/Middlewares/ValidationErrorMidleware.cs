@@ -14,7 +14,7 @@ namespace SocialNetworkBe.Middlewares
         {
             var originalBody = context.Response.Body;
             using var newBody = new MemoryStream();
-            context.Response.Body = newBody;
+            context.Response.Body = newBody;       
 
             await _next(context);
 

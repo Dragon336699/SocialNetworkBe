@@ -5,6 +5,7 @@ using Domain.Interfaces.RepositoryInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using SocialNetworkBe.Services.EmailServices;
+using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.TokenServices;
 using SocialNetworkBe.Services.UserServices;
 
@@ -22,6 +23,7 @@ namespace SocialNetworkBe.AddServicesCollection
 
             services.AddScoped<UserService>();
             services.AddScoped<TokenService>();
+            services.AddScoped<OTPService>();
             services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
         }
     }

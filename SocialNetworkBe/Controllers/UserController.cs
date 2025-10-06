@@ -1,8 +1,10 @@
-﻿using Domain.Contracts.Requests.User;
+﻿using Azure.Core;
+using Domain.Contracts.Requests.User;
 using Domain.Contracts.Responses.User;
 using Domain.Enum.User.Functions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.UserServices;
 using System.Security.Claims;
 
@@ -101,6 +103,67 @@ namespace SocialNetworkBe.Controllers
                     _ => StatusCode(500, new { message = changePasswordResult.GetMessage() })
                 };
             } catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [Route("user/forgetPassword/getOTP")]
+        public async Task<IActionResult> GetOTP(string email)
+        {
+            try
+            {
+                var (status, otp) = await _userService.GetOTP(email);
+                return status switch
+                {
+                    GetOTPEnum.UserNotFound => BadRequest(new { message = status.GetMessage() }),
+                    GetOTPEnum.SpamOTP => BadRequest(new { message = status.GetMessage() }),
+                    GetOTPEnum.SentOTP => Ok(new { message = status.GetMessage() }),
+                    _ => StatusCode(500, new { message = status.GetMessage() })
+                };
+            } catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [Route("user/forgetPassword/validateOTP")]
+        public async Task<IActionResult> ValidateOTP([FromBody] ValidateOTPRequest request)
+        {
+            try
+            {
+                var (validateOTPStatus, resetPasswordToken) = await _userService.ValidateOTP(request);
+                return validateOTPStatus switch
+                {
+                    ValidateOTPEnum.UserNotFound => BadRequest(new { message = validateOTPStatus.GetMessage() }),
+                    ValidateOTPEnum.IncorrectOTP => BadRequest(new { message = validateOTPStatus.GetMessage() }),
+                    ValidateOTPEnum.CorrectOTP => Ok(new { message = validateOTPStatus.GetMessage(), resetPasswordToken = resetPasswordToken }),
+                    _ => StatusCode(500, new { message = validateOTPStatus.GetMessage() })
+                };
+            } catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [Route("user/forgetPassword/resetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            try
+            {
+                var resetPasswordStatus = await _userService.ResetPassword(request);
+                return resetPasswordStatus switch
+                {
+                    ResetPasswordEnum.UserNotFound => BadRequest(new { message = resetPasswordStatus.GetMessage() }),
+                    ResetPasswordEnum.ResetPasswordFail => BadRequest(new { message = resetPasswordStatus.GetMessage() }),
+                    ResetPasswordEnum.ResetPasswordSuccess => Ok(new { message = resetPasswordStatus.GetMessage() }),
+                    _ => StatusCode(500, new { message = resetPasswordStatus.GetMessage() })
+                };
+            }
+            catch (Exception ex)
             {
                 return StatusCode(500, new { message = ex.Message });
             }
