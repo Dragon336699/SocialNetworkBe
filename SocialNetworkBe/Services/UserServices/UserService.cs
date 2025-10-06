@@ -7,6 +7,7 @@ using Domain.Enum.User;
 using Domain.Enum.User.Functions;
 using Domain.Interfaces.UnitOfWorkInterface;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using SocialNetworkBe.Services.TokenServices;
 using System.IdentityModel.Tokens.Jwt;
@@ -94,7 +95,7 @@ namespace SocialNetworkBe.Services.UserServices
             return ConfirmationEmailEnum.Fail;
         }
 
-        public async Task<LoginRes> UserLogin(LoginRequest loginRequest)
+        public async Task<LoginRes> UserLogin(Domain.Contracts.Requests.User.LoginRequest loginRequest)
         {
             try
             {
@@ -142,6 +143,24 @@ namespace SocialNetworkBe.Services.UserServices
                 throw;
             }
             return null;
+        }
+
+        public async Task<ChangePasswordEnum> ChangePassword (ChangePasswordRequest request, string userId)
+        {
+            try
+            {
+                if (request.OldPassword == request.NewPassword) return ChangePasswordEnum.DuplicatePassword;
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null) return ChangePasswordEnum.UserNotFound;
+
+                var changePassRes = await _userManager.ChangePasswordAsync(user, request.OldPassword, request.NewPassword);
+                if (!changePassRes.Succeeded) return ChangePasswordEnum.OldPasswordIncorrect;
+                return ChangePasswordEnum.ChangePasswordSuccess;
+            }
+            catch (Exception ex) {
+                _logger.LogError(ex, "Error while changing password");
+                throw;
+            }
         }
 
     }

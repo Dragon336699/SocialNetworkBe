@@ -2,6 +2,7 @@
 using Domain.AddServicesCollection;
 using Microsoft.EntityFrameworkCore;
 using SocialNetworkBe.AddServicesCollection;
+using SocialNetworkBe.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,13 +33,15 @@ if (app.Environment.IsDevelopment())
 app.UseCors(options => options
     .AllowAnyOrigin()
     .AllowAnyHeader()
-    .AllowAnyHeader()
+    .AllowAnyMethod()
 );
 
 app.UseHttpsRedirection();
 
 app.UseAuthentication(); // Xác minh user hợp lệ không
 app.UseAuthorization(); // Phân quyền
+
+app.UseMiddleware<ValidationErrorMiddleware>();
 
 app.MapControllers();
 

@@ -1,8 +1,10 @@
 ﻿using Domain.Contracts.Requests.User;
 using Domain.Contracts.Responses.User;
 using Domain.Enum.User.Functions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialNetworkBe.Services.UserServices;
+using System.Security.Claims;
 
 namespace SocialNetworkBe.Controllers
 {
@@ -76,6 +78,32 @@ namespace SocialNetworkBe.Controllers
             Response.Cookies.Append("jwt", token, cookieOptions);
 
             return Ok(new { message = loginResult.GetMessage() });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("user/changePassword")]
+
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null) return BadRequest(new { message = "User not found!" });
+                var changePasswordResult = await _userService.ChangePassword(request, userId);
+
+                return changePasswordResult switch
+                {
+                    ChangePasswordEnum.OldPasswordIncorrect => BadRequest(new { message = changePasswordResult.GetMessage() }),
+                    ChangePasswordEnum.UserNotFound => BadRequest(new { message = changePasswordResult.GetMessage() }),
+                    ChangePasswordEnum.DuplicatePassword => BadRequest(new { message = changePasswordResult.GetMessage() }),
+                    ChangePasswordEnum.ChangePasswordSuccess => Ok(new { message = changePasswordResult.GetMessage() }),
+                    _ => StatusCode(500, new { message = changePasswordResult.GetMessage() })
+                };
+            } catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
     }
 }
