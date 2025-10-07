@@ -175,5 +175,27 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [HttpPost]
+        [Route("user/googleLogin")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+        {
+            try
+            {
+                LoginRes result = await _userService.GoogleLogin(request.GoogleToken);
+                LoginEnum loginResult = result.loginResult;
+                return loginResult switch
+                {
+                    LoginEnum.LoginFailed => BadRequest(new { message = loginResult.GetMessage() }),
+                    LoginEnum.EmailUnConfirmed => BadRequest(new { message = loginResult.GetMessage() }),
+                    LoginEnum.LoginSucceded => HandleLoginSuccess(result.jwtValue, loginResult),
+                    _ => StatusCode(500, new { message = loginResult.GetMessage() })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }

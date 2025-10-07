@@ -1,4 +1,4 @@
-﻿using Domain.Enum.Conversation;
+﻿using Domain.Enum.Conversation.Types;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

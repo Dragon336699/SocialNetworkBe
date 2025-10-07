@@ -1,5 +1,5 @@
 ﻿using Domain.Enum.Conversation;
-using Domain.Enum.Group;
+using Domain.Enum.Group.Types;
 using System.ComponentModel.DataAnnotations;
 
 namespace Domain.Entities

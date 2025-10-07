@@ -4,11 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Enum.Group
+namespace Domain.Enum.Message.Types
 {
-    public enum GroupRole
+    public enum MessageStatus
     {
-        Administrator,
-        User
+        Delivering,
+        Sent,
+        Delivered,
+        Seen
     }
 }

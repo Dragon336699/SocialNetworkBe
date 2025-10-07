@@ -11,8 +11,8 @@ namespace Domain.Entities
         [Required]
         public required string LastName { get; set; }
         [Required]
-        public required UserStatus Status {  get; set; }
-         public string? AvatarUrl { get; set; }
+        public required UserStatus Status { get; set; }
+        public string? AvatarUrl { get; set; }
         public ICollection<ConversationUser>? ConversationUsers { get; set; }
         public ICollection<GroupUser>? GroupUsers { get; set; }
         public ICollection<NotificationUser>? NotificationUsers { get; set; }

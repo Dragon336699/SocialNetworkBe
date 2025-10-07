@@ -1,4 +1,4 @@
-﻿using Domain.Enum.Notification;
+﻿using Domain.Enum.Notification.Types;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

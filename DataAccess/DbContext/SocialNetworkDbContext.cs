@@ -1,5 +1,6 @@
 ﻿
 using Domain.Entities;
+using Domain.Enum.User.Types;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -73,6 +74,43 @@ namespace DataAccess.DbContext
 
             builder.Entity<FriendRequest>()
                .HasKey(e => new { e.SenderId, e.ReceiverId });
+
+            // Config enum to string
+            builder.Entity<User>(entity =>
+            {
+                entity.Property(u => u.Status)
+                    .HasConversion<string>();
+            });
+
+            builder.Entity<Notification>(entity =>
+            {
+                entity.Property(n => n.NoficationType)
+                    .HasConversion<string>();
+            });
+
+            builder.Entity<Message>(entity =>
+            {
+                entity.Property(m => m.Status)
+                    .HasConversion<string>();
+            });
+
+            builder.Entity<GroupUser>(entity =>
+            {
+                entity.Property(gu => gu.RoleName)
+                    .HasConversion<string>();
+            });
+
+            builder.Entity<Conversation>(entity =>
+            {
+                entity.Property(c => c.Type)
+                    .HasConversion<string>();
+            });
+
+            builder.Entity<ConversationUser>(entity =>
+            {
+                entity.Property(cu => cu.RoleName)
+                    .HasConversion<string>();
+            });
 
             //  Config self relationship
             builder.Entity<FriendRequest>()

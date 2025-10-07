@@ -4,13 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Enum.Message
+namespace Domain.Enum.Conversation.Types
 {
-    public enum MessageStatus
+    public enum ConversationRole
     {
-        Delivering,
-        Sent,
-        Delivered,
-        Seen
+        Administrator,
+        User
     }
 }

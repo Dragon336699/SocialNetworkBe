@@ -4,11 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Enum.Conversation
+namespace Domain.Contracts.Requests.User
 {
-    public enum ConversationRole
+    public class GoogleLoginRequest
     {
-        Administrator,
-        User
+        public required string GoogleToken { get; set; }
     }
 }

@@ -1,12 +1,15 @@
 ﻿using AutoMapper;
 using Azure.Core;
+using DataAccess.DbContext;
 using Domain.Contracts.Requests.User;
 using Domain.Contracts.Responses.User;
 using Domain.Entities;
 using Domain.Enum.Role.Functions;
 using Domain.Enum.User;
 using Domain.Enum.User.Functions;
+using Domain.Enum.User.Types;
 using Domain.Interfaces.UnitOfWorkInterface;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using SocialNetworkBe.Services.OTPServices;
@@ -27,7 +30,8 @@ namespace SocialNetworkBe.Services.UserServices
         private readonly ILogger<UserService> _logger;
         private readonly TokenService _tokenService;
         private readonly OTPService _otpService;
-        public UserService(UserManager<User> userManager, RoleManager<Role> roleManager, IMapper mapper, IEmailSender emailSender, ILogger<UserService> logger, TokenService tokenService, IUnitOfWork unitOfWork, OTPService otpService)
+        private readonly SocialNetworkDbContext _context;
+        public UserService(UserManager<User> userManager, RoleManager<Role> roleManager, IMapper mapper, IEmailSender emailSender, ILogger<UserService> logger, TokenService tokenService, IUnitOfWork unitOfWork, OTPService otpService, SocialNetworkDbContext context)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -37,6 +41,7 @@ namespace SocialNetworkBe.Services.UserServices
             _tokenService = tokenService;
             _unitOfWork = unitOfWork;
             _otpService = otpService;
+            _context = context;
         }
 
         public async Task<(bool, string)> UserRegisterAsync(UserRegistrationRequest request, string baseUrl)
@@ -44,6 +49,7 @@ namespace SocialNetworkBe.Services.UserServices
             try
             {
                 var user = _mapper.Map<User>(request);
+                user.Status = UserStatus.Offline;
 
                 if (!await _roleManager.RoleExistsAsync("User"))
                 {
@@ -196,7 +202,7 @@ namespace SocialNetworkBe.Services.UserServices
                     </p>
                     </div>";
 
-                    await _emailSender.SendEmailAsync(email, "Reset Your Password - FriCon" ,emailBody);
+                    await _emailSender.SendEmailAsync(email, "Reset Your Password - FriCon", emailBody);
                 }
                 return (status, otp);
             }
@@ -227,6 +233,81 @@ namespace SocialNetworkBe.Services.UserServices
             var resetPasswordResult = await _userManager.ResetPasswordAsync(user, request.ResetPasswordToken, request.NewPassword);
             if (!resetPasswordResult.Succeeded) return ResetPasswordEnum.ResetPasswordFail;
             return ResetPasswordEnum.ResetPasswordSuccess;
+        }
+
+        public async Task<LoginRes> GoogleLogin(string googleToken)
+        {
+            try
+            {
+                LoginRes loginResult = new LoginRes
+                {
+                    loginResult = LoginEnum.LoginFailed,
+                    jwtValue = null
+                };
+
+                if (!await _roleManager.RoleExistsAsync("User"))
+                {
+                    var role = new Role { Name = "User" };
+                    var createRole = await _roleManager.CreateAsync(role);
+                    if (!createRole.Succeeded) return loginResult;
+                }
+
+                GoogleJsonWebSignature.Payload payload = await GoogleJsonWebSignature.ValidateAsync(googleToken);
+                var user = await _userManager.FindByEmailAsync(payload.Email);
+
+                if (user == null)
+                {
+                    var userInfo = new User
+                    {
+                        Id = Guid.NewGuid(),
+                        AvatarUrl = payload.Picture,
+                        Status = UserStatus.Offline,
+                        UserName = payload.Email,
+                        FirstName = payload.GivenName,
+                        LastName = "",
+                        Email = payload.Email,
+                        EmailConfirmed = payload.EmailVerified ? true : false
+                    };
+
+                    var createUserResult = await _userManager.CreateAsync(userInfo);
+                    if (!createUserResult.Succeeded)
+                    {
+                        return loginResult;
+                    }
+                    await _userManager.AddToRoleAsync(userInfo, "User");
+                    user = userInfo;
+                } else if (user != null && !user.EmailConfirmed)
+                {
+                    loginResult.loginResult = LoginEnum.EmailUnConfirmed;
+                    return loginResult;
+                }
+                if (user != null)
+                {
+                    var userRoles = await _userManager.GetRolesAsync(user);
+                    var authClaims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Email, payload.Email),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                    };
+
+                    foreach(var role in userRoles)
+                    {
+                        authClaims.Add(new Claim(ClaimTypes.Role, role));
+                    }
+
+                    JwtSecurityToken jwt = _tokenService.GenerateJwt(authClaims);
+                    loginResult.loginResult = LoginEnum.LoginSucceded;
+                    loginResult.jwtValue = new JwtSecurityTokenHandler().WriteToken(jwt);
+                    return loginResult;
+                }
+                return loginResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while logging in by google");
+                throw;
+            }
         }
     }
 }

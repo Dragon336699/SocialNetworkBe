@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Enum.Conversation
+namespace Domain.Enum.Group.Types
 {
-    public enum ConversationType
+    public enum GroupRole
     {
-        Personal,
-        Group
+        Administrator,
+        User
     }
 }
