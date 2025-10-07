@@ -42,7 +42,14 @@ namespace SocialNetworkBe.Controllers
         public async Task<IActionResult> ConfirmationEmail (string token, string email)
         {
             ConfirmationEmailEnum confirmationResult = await _userService.ConfirmationEmail(token, email);
-            return Ok(confirmationResult);
+            return confirmationResult switch
+            {
+                ConfirmationEmailEnum.UserNotFound => Redirect("http://localhost:3000/confirmEmail/userNotFound"),
+                ConfirmationEmailEnum.Invalid => Redirect("http://localhost:3000/confirmEmail/invalid"),
+                ConfirmationEmailEnum.Fail => Redirect("http://localhost:3000/confirmEmail/fail"),
+                ConfirmationEmailEnum.Success => Redirect("http://localhost:3000/confirmEmail/success"),
+                _ => StatusCode(500, new { message = confirmationResult.ToString() })
+            };
         }
 
         [HttpPost]
