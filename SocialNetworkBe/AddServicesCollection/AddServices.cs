@@ -56,6 +56,8 @@ namespace Domain.AddServicesCollection
                         }
                     };
                 });
+
+            services.AddSignalR();
         }
     }
 }

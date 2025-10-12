@@ -80,6 +80,8 @@ namespace DataAccess.DbContext
             {
                 entity.Property(u => u.Status)
                     .HasConversion<string>();
+                entity.Property(u => u.Gender)
+                    .HasConversion<string>();
             });
 
             builder.Entity<Notification>(entity =>

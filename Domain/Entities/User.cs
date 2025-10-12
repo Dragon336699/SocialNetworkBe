@@ -13,6 +13,8 @@ namespace Domain.Entities
         [Required]
         public required UserStatus Status { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? Description { get; set; }
+        public required UserGender Gender { get; set; }
         public ICollection<ConversationUser>? ConversationUsers { get; set; }
         public ICollection<GroupUser>? GroupUsers { get; set; }
         public ICollection<NotificationUser>? NotificationUsers { get; set; }

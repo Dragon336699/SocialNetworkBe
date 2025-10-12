@@ -66,7 +66,7 @@ namespace SocialNetworkBe.Services.UserServices
 
                 string token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 string encodedToken = WebUtility.UrlEncode(token);
-                var confirmationLink = $"{baseUrl}/api/v1/confirmationEmail?token={encodedToken}&email={request.Email}";
+                var confirmationLink = $"{baseUrl}/api/v1/user/confirmationEmail?token={encodedToken}&email={request.Email}";
 
                 await _emailSender.SendEmailAsync(request.Email, "Confirmation Email Link",
                     $@"
@@ -106,14 +106,13 @@ namespace SocialNetworkBe.Services.UserServices
 
         public async Task<LoginRes> UserLogin(Domain.Contracts.Requests.User.LoginRequest loginRequest)
         {
+            LoginRes returnResult = new LoginRes
+            {
+                loginResult = LoginEnum.LoginFailed,
+                jwtValue = null,
+            };
             try
             {
-                LoginRes returnResult = new LoginRes
-                {
-                    loginResult = LoginEnum.LoginFailed,
-                    jwtValue = null,
-                };
-
                 var user = await _userManager.FindByEmailAsync(loginRequest.Email);
 
                 if (user == null) return returnResult;
@@ -152,7 +151,7 @@ namespace SocialNetworkBe.Services.UserServices
                 _logger.LogError(ex, "Error login by user with email: ${Email}", loginRequest.Email);
                 throw;
             }
-            return null;
+            return returnResult;
         }
 
         public async Task<ChangePasswordEnum> ChangePassword(ChangePasswordRequest request, string userId)
@@ -265,6 +264,7 @@ namespace SocialNetworkBe.Services.UserServices
                         UserName = payload.Email,
                         FirstName = payload.GivenName,
                         LastName = "",
+                        Gender = UserGender.Male,
                         Email = payload.Email,
                         EmailConfirmed = payload.EmailVerified ? true : false
                     };
@@ -276,7 +276,8 @@ namespace SocialNetworkBe.Services.UserServices
                     }
                     await _userManager.AddToRoleAsync(userInfo, "User");
                     user = userInfo;
-                } else if (user != null && !user.EmailConfirmed)
+                }
+                else if (user != null && !user.EmailConfirmed)
                 {
                     loginResult.loginResult = LoginEnum.EmailUnConfirmed;
                     return loginResult;
@@ -291,7 +292,7 @@ namespace SocialNetworkBe.Services.UserServices
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
                     };
 
-                    foreach(var role in userRoles)
+                    foreach (var role in userRoles)
                     {
                         authClaims.Add(new Claim(ClaimTypes.Role, role));
                     }

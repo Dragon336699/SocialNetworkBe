@@ -2,6 +2,7 @@
 using Domain.AddServicesCollection;
 using Microsoft.EntityFrameworkCore;
 using SocialNetworkBe.AddServicesCollection;
+using SocialNetworkBe.ChatServer;
 using SocialNetworkBe.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,7 +20,7 @@ builder.Services.ConfigureLifeCycle();
 builder.Services.AddDbContext<SocialNetworkDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyDb"));
-}); 
+});
 
 var app = builder.Build();
 
@@ -31,9 +32,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(options => options
-    .AllowAnyOrigin()
+    .WithOrigins("http://localhost:3000")
     .AllowAnyHeader()
     .AllowAnyMethod()
+    .AllowCredentials()
 );
 
 app.UseHttpsRedirection();
@@ -44,5 +46,7 @@ app.UseAuthorization(); // Phân quyền
 app.UseMiddleware<ValidationErrorMiddleware>();
 
 app.MapControllers();
+
+app.MapHub<ChatHub>("/chathub");
 
 app.Run();
