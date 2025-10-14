@@ -1,4 +1,5 @@
-﻿using Domain.Interfaces.RepositoryInterfaces;
+﻿using Domain.Entities;
+using Domain.Interfaces.RepositoryInterfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,6 @@ namespace Domain.Interfaces.UnitOfWorkInterface
     public interface IUnitOfWork : IDisposable
     {
         int Complete();
+        IConversationRepository Conversations { get; }
     }
 }
