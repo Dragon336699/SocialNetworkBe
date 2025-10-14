@@ -57,7 +57,7 @@ namespace DataAccess.Repositories
 
         public void Remove(T entity)
         {
-            _context.Set<T>().Add(entity);
+            _context.Set<T>().Remove(entity);
         }
 
         public void RemoveRange(IEnumerable<T> entities)
