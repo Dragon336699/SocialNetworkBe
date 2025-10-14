@@ -23,7 +23,7 @@ namespace Domain.Contracts.Requests.User
         public required string ConfirmPassword { get; set; }
         [Required]
         public UserGender Gender { get; set; } 
-        [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự.")]
+        [StringLength(500, ErrorMessage = "The description must not exceed 500 characters.")]
         public string? Description { get; set; } 
     }
 }
