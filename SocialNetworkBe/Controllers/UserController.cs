@@ -1,7 +1,9 @@
 ﻿using Azure.Core;
 using Domain.Contracts.Requests.User;
 using Domain.Contracts.Responses.User;
+using Domain.Entities;
 using Domain.Enum.User.Functions;
+using Domain.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialNetworkBe.Services.OTPServices;
@@ -14,8 +16,8 @@ namespace SocialNetworkBe.Controllers
     [ApiController]
     public class UserController : Controller
     {
-        private readonly UserService _userService;
-        public UserController(UserService userService)
+        private readonly IUserService _userService;
+        public UserController(IUserService userService)
         {
             _userService = userService;
         }
@@ -191,6 +193,41 @@ namespace SocialNetworkBe.Controllers
                     LoginEnum.LoginSucceded => HandleLoginSuccess(result.jwtValue, loginResult),
                     _ => StatusCode(500, new { message = loginResult.GetMessage() })
                 };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("user/getUserInfo")]
+        public async Task<IActionResult> GetUserInfo()
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null) return BadRequest(new { message = "User Not Found" });
+                var user = await _userService.GetUserInfoByUserId(userId);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("user/getUserInfoByUserName")]
+        public async Task<IActionResult> GetUserInfoByUserName([FromQuery] string userName)
+        {
+            try
+            {
+                var (status, user) = await _userService.GetUserInfoByUserName(userName);
+                if (!status) return BadRequest(new { message = "User Not Found" });
+                return Ok(user);
             }
             catch (Exception ex)
             {

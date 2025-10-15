@@ -9,11 +9,17 @@ namespace DataAccess.UnitOfWork
     public class UnitOfWork : IUnitOfWork
     {
         private readonly SocialNetworkDbContext _context;
+        public IMessageRepository MessageRepository { get; set; }
+        public IConversationUserRepository ConversationUserRepository { get; set; }
         public UnitOfWork(
-            SocialNetworkDbContext context
+            SocialNetworkDbContext context,
+            IMessageRepository messageRepository,
+            IConversationUserRepository conversationUserRepository
         )
         {
             _context = context;
+            MessageRepository = messageRepository;
+            ConversationUserRepository = conversationUserRepository;
         }
         public int Complete()
         {

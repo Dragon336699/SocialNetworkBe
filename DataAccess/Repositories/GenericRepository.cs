@@ -42,6 +42,13 @@ namespace DataAccess.Repositories
             return entities;
         }
 
+        public async Task<T?> FindFirstAsync(Expression<Func<T, bool>> expression)
+        {
+            var entity = await _context.Set<T>().Where(expression).FirstOrDefaultAsync();
+            if (entity == null) return null;
+            return entity;
+        }
+
         public void Add(T entity)
         {
             _context.Set<T>().Add(entity);
@@ -57,7 +64,7 @@ namespace DataAccess.Repositories
 
         public void Remove(T entity)
         {
-            _context.Set<T>().Add(entity);
+            _context.Set<T>().Remove(entity);
         }
 
         public void RemoveRange(IEnumerable<T> entities)

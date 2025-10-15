@@ -8,6 +8,7 @@ using Domain.Enum.Role.Functions;
 using Domain.Enum.User;
 using Domain.Enum.User.Functions;
 using Domain.Enum.User.Types;
+using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -20,18 +21,17 @@ using System.Security.Claims;
 
 namespace SocialNetworkBe.Services.UserServices
 {
-    public class UserService
+    public class UserService : IUserService
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<UserService> _logger;
         private readonly TokenService _tokenService;
         private readonly OTPService _otpService;
         private readonly SocialNetworkDbContext _context;
-        public UserService(UserManager<User> userManager, RoleManager<Role> roleManager, IMapper mapper, IEmailSender emailSender, ILogger<UserService> logger, TokenService tokenService, IUnitOfWork unitOfWork, OTPService otpService, SocialNetworkDbContext context)
+        public UserService(UserManager<User> userManager, RoleManager<Role> roleManager, IMapper mapper, IEmailSender emailSender, ILogger<UserService> logger, TokenService tokenService, OTPService otpService, SocialNetworkDbContext context)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -39,7 +39,6 @@ namespace SocialNetworkBe.Services.UserServices
             _emailSender = emailSender;
             _logger = logger;
             _tokenService = tokenService;
-            _unitOfWork = unitOfWork;
             _otpService = otpService;
             _context = context;
         }
@@ -49,6 +48,7 @@ namespace SocialNetworkBe.Services.UserServices
             try
             {
                 var user = _mapper.Map<User>(request);
+                user.UserName = request.Email.Trim().Split('@')[0];
                 user.Status = UserStatus.Offline;
 
                 if (!await _roleManager.RoleExistsAsync("User"))
@@ -261,7 +261,7 @@ namespace SocialNetworkBe.Services.UserServices
                         Id = Guid.NewGuid(),
                         AvatarUrl = payload.Picture,
                         Status = UserStatus.Offline,
-                        UserName = payload.Email,
+                        UserName = payload.Email.Trim().Split('@')[0],
                         FirstName = payload.GivenName,
                         LastName = "",
                         Gender = UserGender.Male,
@@ -307,6 +307,38 @@ namespace SocialNetworkBe.Services.UserServices
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while logging in by google");
+                throw;
+            }
+        }
+
+        public async Task<UserDto?> GetUserInfoByUserId(string userId)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null) return null;
+                var userResponse = _mapper.Map<UserDto>(user);
+                return userResponse;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting user info by id");
+                throw;
+            }
+        }
+
+        public async Task<(bool, UserDto?)> GetUserInfoByUserName(string userName)
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(userName);
+                if (user == null) return (false, null);
+                var userResponse = _mapper.Map<UserDto>(user);
+                return (true, userResponse);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting user info by username");
                 throw;
             }
         }

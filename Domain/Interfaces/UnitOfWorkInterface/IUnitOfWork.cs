@@ -9,6 +9,8 @@ namespace Domain.Interfaces.UnitOfWorkInterface
 {
     public interface IUnitOfWork : IDisposable
     {
+        IMessageRepository MessageRepository { get; }
+        IConversationUserRepository ConversationUserRepository { get; }
         int Complete();
     }
 }
