@@ -1,0 +1,11 @@
+﻿using Domain.Enum.Conversation.Functions;
+using System;
+using System.Threading.Tasks;
+
+namespace Domain.Interfaces.ServiceInterfaces
+{
+    public interface IConversationService
+    {
+        Task<(CreateConversationEnum, Guid?)> CreateConversationAsync(Guid senderId, Guid requestUserId, string receiverUserName);
+    }
+}
