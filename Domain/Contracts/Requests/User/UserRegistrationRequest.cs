@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enum.User.Types;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -15,6 +16,10 @@ namespace Domain.Contracts.Requests.User
         public required string LastName { get; set; }
         [Required, EmailAddress]
         public required string Email { get; set; }
+        [Required]
+        public UserGender Gender { get; set; }
+        [StringLength(500, ErrorMessage = "The description must not exceed 500 characters.")]
+        public string? Description { get; set; }
         [DataType(DataType.Password)]
         public required string Password { get; set; }
         [DataType(DataType.Password)]
