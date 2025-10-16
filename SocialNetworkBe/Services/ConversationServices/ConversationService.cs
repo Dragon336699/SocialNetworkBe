@@ -28,16 +28,10 @@ namespace SocialNetworkBe.Services.ConversationServices
             _logger = logger;
         }
 
-        public async Task<(CreateConversationEnum, Guid?)> CreateConversationAsync(Guid senderId, Guid requestUserId, string receiverUserName)
+        public async Task<(CreateConversationEnum, Guid?)> CreateConversationAsync(Guid senderId, string receiverUserName)
         {
             try
-            {
-                // Kiểm tra authentication
-                if (senderId != requestUserId)
-                {
-                    return (CreateConversationEnum.Unauthorized, null);
-                }
-
+            {              
                 // Kiểm tra receiver tồn tại
                 var (userFound, receiver) = await _userService.GetUserInfoByUserName(receiverUserName);
                 if (!userFound || receiver == null)
@@ -58,13 +52,12 @@ namespace SocialNetworkBe.Services.ConversationServices
                     Id = Guid.NewGuid(),
                     Type = ConversationType.Personal,
                     CreatedAt = DateTime.Now,
-                    ConversationUsers = new List<ConversationUser>()
                 };
 
                 _unitOfWork.ConversationRepository.Add(conversation);
 
                 // Thêm sender và receiver vào conversation
-                //await _conversationUserService.AddUsersToConversationAsync(conversation.Id, senderId, receiver.Id);
+                await _conversationUserService.AddUsersToConversationAsync(conversation.Id, senderId, receiver.Id);
 
                 return (CreateConversationEnum.CreateConversationSuccess, conversation.Id);
             }

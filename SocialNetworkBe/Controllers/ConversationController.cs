@@ -31,11 +31,10 @@ namespace SocialNetworkBe.Controllers
             try
             {
                 var senderId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var (status, conversationId) = await _conversationService.CreateConversationAsync(senderId, request.UserId, request.ReceiverUserName);
+                var (status, conversationId) = await _conversationService.CreateConversationAsync(senderId, request.ReceiverUserName);
 
                 return status switch
-                {
-                    CreateConversationEnum.Unauthorized => Unauthorized(new CreateConversationResponse{Message = status.GetMessage()}),
+                {                  
                     CreateConversationEnum.ReceiverNotFound => BadRequest(new CreateConversationResponse{Message = status.GetMessage()}),
                     CreateConversationEnum.ConversationExists => Ok(new CreateConversationResponse{ConversationId = conversationId,Message = status.GetMessage()}),
                     CreateConversationEnum.CreateConversationSuccess => Ok(new CreateConversationResponse{ConversationId = conversationId,Message = status.GetMessage()}),

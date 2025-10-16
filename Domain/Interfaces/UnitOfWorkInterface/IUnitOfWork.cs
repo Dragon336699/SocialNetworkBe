@@ -13,5 +13,6 @@ namespace Domain.Interfaces.UnitOfWorkInterface
         IConversationUserRepository ConversationUserRepository { get; }
         IConversationRepository ConversationRepository { get; }
         int Complete();
+        Task<int> CompleteAsync();
     }
 }
