@@ -4,6 +4,7 @@ using Domain.Contracts.Responses.Message;
 using Domain.Contracts.Responses.User;
 using Domain.Entities;
 using Domain.Enum.Message.Functions;
+using Domain.Enum.Message.Types;
 using Domain.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -30,7 +31,7 @@ namespace SocialNetworkBe.ChatServer
             {
                 var receiverInfo = await _userService.GetUserInfoByUserId(request.ReceiverId.ToString());
                 var senderInfo = await _userService.GetUserInfoByUserId(request.SenderId.ToString());
-                if (receiverInfo == null) return new SendMessageResponse { Status = false, Message = SendMessageEnum.ReceiverNotFound.GetMessage(), NewMessage = null};
+                if (receiverInfo == null) return new SendMessageResponse { Status = false, Message = SendMessageEnum.ReceiverNotFound.GetMessage(), NewMessage = null };
                 if (senderInfo == null) return new SendMessageResponse { Status = false, Message = SendMessageEnum.SenderNotFound.GetMessage(), NewMessage = null };
                 Guid? conversationId = await _conversationUserService.CheckExist(request.SenderId, request.ReceiverId);
                 if (conversationId == null)
@@ -38,16 +39,28 @@ namespace SocialNetworkBe.ChatServer
                     //conversationId = Guid.NewGuid();
                     //Logic tạo conversationUser và conversation
                 };
-                
-                await Clients.User(receiverInfo.Id.ToString().ToLower()).SendAsync("ReceivePrivateMessage", request.Content);
-
                 MessageDto? newMessage = _messageService.SaveMessage(request, conversationId.Value, request.ReceiverId);
+
+                await Clients.User(receiverInfo.Id.ToString().ToLower()).SendAsync("ReceivePrivateMessage", newMessage);
+
                 return new SendMessageResponse { Status = true, Message = SendMessageEnum.SendMessageSuceeded.GetMessage(), NewMessage = newMessage };
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while sending message at chathub");
                 return new SendMessageResponse { Status = false, Message = SendMessageEnum.SendMessageFailed.GetMessage(), NewMessage = null };
             }
+        }
+
+        public async Task<bool?> AcknowledgeMessage(Guid messageId)
+        {
+            bool? updatedMessageStatus = await _messageService.UpdateMessage(messageId, MessageStatus.Delivered);
+            if (updatedMessageStatus == null) return false;
+
+            MessageDto? updatedMessage = await _messageService.GetMessageById(messageId);
+            if (updatedMessage == null) return false;
+            await Clients.User(updatedMessage.SenderId.ToString().ToLower()).SendAsync("UpdatedMessage", updatedMessage);
+            return updatedMessageStatus;
         }
 
         public override async Task OnConnectedAsync()
