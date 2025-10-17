@@ -32,32 +32,29 @@ namespace SocialNetworkBe.Services.ConversationServices
         {
             try
             {              
-                // Kiểm tra receiver tồn tại
+                
                 var (userFound, receiver) = await _userService.GetUserInfoByUserName(receiverUserName);
                 if (!userFound || receiver == null)
                 {
                     return (CreateConversationEnum.ReceiverNotFound, null);
                 }
-
-                // Kiểm tra conversation tồn tại
+             
                 Guid? existingConversationId = await _conversationUserService.CheckExist(senderId, receiver.Id);
                 if (existingConversationId != null)
                 {
                     return (CreateConversationEnum.ConversationExists, existingConversationId);
                 }
-
-                // Tạo Conversation mới
+               
                 var conversation = new Conversation
                 {
                     Id = Guid.NewGuid(),
                     Type = ConversationType.Personal,
                     CreatedAt = DateTime.Now,
                 };
-
                 _unitOfWork.ConversationRepository.Add(conversation);
 
-                // Thêm sender và receiver vào conversation
-                await _conversationUserService.AddUsersToConversationAsync(conversation.Id, senderId, receiver.Id);
+                var userIds = new List<Guid> { senderId, receiver.Id };              
+                await _conversationUserService.AddUsersToConversationAsync(conversation.Id, userIds);
 
                 return (CreateConversationEnum.CreateConversationSuccess, conversation.Id);
             }

@@ -9,6 +9,6 @@ namespace Domain.Interfaces.ServiceInterfaces
     public interface IConversationUserService
     {
         Task<Guid?> CheckExist(Guid senderId, Guid receiverId);
-        Task AddUsersToConversationAsync(Guid conversationId, Guid senderId, Guid receiverId);
+        Task AddUsersToConversationAsync(Guid conversationId, List<Guid> userIds);
     }
 }

@@ -3,7 +3,7 @@ using Domain.Enum.Conversation.Types;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 using SocialNetworkBe.Services.UserServices;
-
+using Domain.Contracts.Responses.User;
 namespace SocialNetworkBe.Services.ConversationUserServices
 {
     public class ConversationUserService : IConversationUserService
@@ -28,35 +28,39 @@ namespace SocialNetworkBe.Services.ConversationUserServices
             return conversationId == null ? null : conversationId;
         }
 
-        public async Task AddUsersToConversationAsync(Guid conversationId, Guid senderId, Guid receiverId)
+        public async Task AddUsersToConversationAsync(Guid conversationId, List<Guid> userIds)
         {
             try
             {
-                var senderInfo = await _userService.GetUserInfoByUserId(senderId.ToString());
-                var receiverInfo = await _userService.GetUserInfoByUserId(receiverId.ToString());
+                var conversationUsers = new List<ConversationUser>();
 
-                var conversationUsers = new List<ConversationUser>
+                foreach (var userId in userIds)
                 {
-                    new ConversationUser {
-                        ConversationId = conversationId,
-                        UserId = senderId,
-                        JoinedAt = DateTime.Now,
-                        RoleName = ConversationRole.User,
-                        NickName = senderInfo?.UserName,
-                        DraftMessage = null
-                    },
-
-                    new ConversationUser {
-                        ConversationId = conversationId,
-                        UserId = receiverId,
-                        JoinedAt = DateTime.Now,
-                        RoleName = ConversationRole.User,
-                        NickName = receiverInfo?.UserName,
-                        DraftMessage = null
+                    UserDto? userInfo = await _userService.GetUserInfoByUserId(userId.ToString());
+                    if (userInfo == null)
+                    {
+                        _logger.LogWarning($"User with ID {userId} not found.");
+                        return; 
                     }
-                };              
-                _unitOfWork.ConversationUserRepository.AddRange(conversationUsers);
+                    var conversationUser = new ConversationUser
+                    {
+                        ConversationId = conversationId,
+                        UserId = userId,
+                        JoinedAt = DateTime.Now,
+                        RoleName = ConversationRole.User,
+                        NickName = userInfo.UserName,
+                        DraftMessage = null
+                    };
 
+                    conversationUsers.Add(conversationUser);
+                }
+
+                if (!conversationUsers.Any())
+                {
+                    throw new Exception("No valid users to add to the conversation.");
+                }
+
+                _unitOfWork.ConversationUserRepository.AddRange(conversationUsers);
                 int rowsAffected = await _unitOfWork.CompleteAsync();
                 if (rowsAffected == 0)
                 {
