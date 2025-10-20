@@ -12,6 +12,7 @@ using SocialNetworkBe.Services.MessageService;
 using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.TokenServices;
 using SocialNetworkBe.Services.UserServices;
+using SocialNetworkBe.Services.ConversationServices;
 using SocialNetworkBe.SignalR;
 
 namespace SocialNetworkBe.AddServicesCollection
@@ -27,8 +28,10 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IMessageRepository, MessageRepository>();
             services.AddTransient<IConversationUserRepository, ConversationUserRepository>();
+            services.AddTransient<IConversationRepository, ConversationRepository>();
 
             services.AddTransient<IConversationUserService, ConversationUserService>();
+            services.AddTransient<IConversationService, ConversationService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IMessageService, MessageService>();
             services.AddScoped<TokenService>();
