@@ -64,5 +64,52 @@ namespace SocialNetworkBe.Services.ConversationServices
                 return (CreateConversationEnum.CreateConversationFailed, null);
             }
         }
+
+        public async Task<(UpdateConversationEnum, Guid?)> UpdateConversationAsync(Guid conversationId, Guid userId, string? nickName, string? draftMessage)
+        {
+            try
+            {
+                var conversation = await _unitOfWork.ConversationRepository.GetByIdAsync(conversationId);
+                if (conversation == null)
+                {
+                    return (UpdateConversationEnum.ConversationNotFound, null);
+                }
+
+                var conversationUser = await _unitOfWork.ConversationUserRepository.FindFirstAsync(cu => cu.ConversationId == conversationId && cu.UserId == userId);
+                if (conversationUser == null)
+                {
+                    return (UpdateConversationEnum.ConversationUserNotFound, null);
+                }
+
+                var changed = false;
+
+                if (nickName != null && conversationUser.NickName != nickName)
+                {
+                    conversationUser.NickName = nickName;
+                    changed = true;
+                }
+
+                if (draftMessage != null && conversationUser.DraftMessage != draftMessage)
+                {
+                    conversationUser.DraftMessage = draftMessage;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    _unitOfWork.ConversationUserRepository.Update(conversationUser);
+                    var rows = await _unitOfWork.CompleteAsync();
+                    if (rows == 0)
+                        return (UpdateConversationEnum.UpdateConversationFailed, null);
+                }
+
+                return (UpdateConversationEnum.UpdateConversationSuccess, conversationId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating conversation");
+                return (UpdateConversationEnum.UpdateConversationFailed, null);
+            }
+        }
     }
 }

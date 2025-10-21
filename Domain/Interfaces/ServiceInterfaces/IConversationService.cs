@@ -7,5 +7,6 @@ namespace Domain.Interfaces.ServiceInterfaces
     public interface IConversationService
     {
         Task<(CreateConversationEnum, Guid?)> CreateConversationAsync(Guid senderId, string receiverUserName);
+        Task<(UpdateConversationEnum, Guid?)> UpdateConversationAsync(Guid conversationId, Guid userId, string? nickName, string? draftMessage);
     }
 }
