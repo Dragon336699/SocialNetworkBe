@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Requests.Conversation;
 using Domain.Contracts.Responses.Conversation;
+using Domain.Contracts.Responses.Post;
 using Domain.Enum.Conversation.Functions;
 using Domain.Enum.Message.Functions;
 using Domain.Interfaces.ServiceInterfaces;
@@ -29,8 +30,12 @@ namespace SocialNetworkBe.Controllers
         public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request)
         {
             try
-            {
-                var senderId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            {              
+                var senderIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!Guid.TryParse(senderIdClaim, out var senderId))
+                {
+                    return Unauthorized(new CreateConversationResponse { Message = "Invalid token." });
+                }
                 var (status, conversationId) = await _conversationService.CreateConversationAsync(senderId, request.ReceiverUserName);
 
                 return status switch

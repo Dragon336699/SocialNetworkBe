@@ -21,5 +21,9 @@ namespace Domain.Entities
         public ICollection<Comment>? Comments { get; set; }
         public ICollection<PostImage>? PostImages { get; set; }
         public ICollection<PostReactionUser>? PostReactionUsers { get; set; }
+
+        //Liên kết đến User
+        public Guid? UserId { get; set; }  
+        public User? User { get; set; }    
     }
 }
