@@ -25,7 +25,7 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpPost]
-        [Route("create")]
+        [Route("createConversation")]
         public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request)
         {
             try
@@ -45,7 +45,24 @@ namespace SocialNetworkBe.Controllers
             {
                 return StatusCode(500, new { message = ex.Message });
             }
-            
+        }
+
+
+        [Authorize]
+        [HttpGet]
+        [Route("getConversation")]
+        public async Task<IActionResult> GetConversationById(Guid conversationId)
+        {
+            try
+            {
+                var conversation = await _conversationService.GetConversationById(conversationId);
+                if (conversation == null) return BadRequest(new { message = "Conversation doesn't exist!" });
+                return Ok(new {message = "Get conversation successfully", data =  conversation});
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
     }
 }

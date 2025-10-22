@@ -27,9 +27,7 @@ namespace SocialNetworkBe.Services.MessageService
         {
             try
             {
-                var (status, receiver) = await _userService.GetUserInfoByUserName(request.ReceiverUserName);
-                if (!status || receiver == null) return (GetMessagesEnum.UserNotFound, null);
-                List<Message>? messages = await _unitOfWork.MessageRepository.GetMessages(request.UserId, receiver.Id, request.Skip, request.Take);
+                List<Message>? messages = await _unitOfWork.MessageRepository.GetMessages(request.ConversationId, request.Skip, request.Take);
                 List<MessageDto>? messagesDto = _mapper.Map<List<MessageDto>>(messages);
                 return (GetMessagesEnum.GetMessageSuccess, messagesDto);
             }
@@ -40,7 +38,7 @@ namespace SocialNetworkBe.Services.MessageService
             }
         }
 
-        public MessageDto? SaveMessage(SendMessageRequest request, Guid conversationId, Guid receiverId) 
+        public MessageDto? SaveMessage(SendMessageRequest request)
         {
             try
             {
@@ -50,9 +48,8 @@ namespace SocialNetworkBe.Services.MessageService
                     Status = MessageStatus.Sent,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    ConversationId = conversationId,
+                    ConversationId = request.ConversationId,
                     SenderId = request.SenderId,
-                    ReceiverId = receiverId
                 };
 
                 _unitOfWork.MessageRepository.Add(message);
@@ -63,7 +60,8 @@ namespace SocialNetworkBe.Services.MessageService
                     return messageDto;
                 };
                 return null;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occured while saving messages");
                 throw;
@@ -78,7 +76,8 @@ namespace SocialNetworkBe.Services.MessageService
                 if (updatedMessage == null) return false;
                 _unitOfWork.Complete();
                 return true;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occured while updating messages");
                 throw;
@@ -89,11 +88,14 @@ namespace SocialNetworkBe.Services.MessageService
         {
             try
             {
-                Message? message = await _unitOfWork.MessageRepository.GetByIdAsync(messageId);
+                IEnumerable<Message>? messages = await _unitOfWork.MessageRepository.FindAsyncWithIncludes(m => m.Id == messageId, m => m.Sender);
+
+                Message? message = messages?.FirstOrDefault();
                 if (message == null) return null;
                 var messageDto = _mapper.Map<MessageDto>(message);
                 return messageDto;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occured while getting messages");
                 throw;

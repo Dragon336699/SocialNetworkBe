@@ -21,8 +21,6 @@ namespace Domain.Entities
         public Conversation? Conversation { get; set; }
         public Guid SenderId { get; set; }
         public User? Sender { get; set; }
-        public Guid ReceiverId { get; set; }
-        public User? Receiver { get; set; }
         public ICollection<MessageReactionUser>? MessageReactionUsers { get; set; }
         public ICollection<MessageAttachment>? MessageAttachments { get; set; }
 

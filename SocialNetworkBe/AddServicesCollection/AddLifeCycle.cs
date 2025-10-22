@@ -6,6 +6,7 @@ using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.SignalR;
+using SocialNetworkBe.Services.ConversationServices;
 using SocialNetworkBe.Services.ConversationUserServices;
 using SocialNetworkBe.Services.EmailServices;
 using SocialNetworkBe.Services.MessageService;
@@ -26,11 +27,14 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<IUnitOfWork, UnitOfWork>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IMessageRepository, MessageRepository>();
+            services.AddTransient<IConversationRepository, ConversationRepository>();
             services.AddTransient<IConversationUserRepository, ConversationUserRepository>();
 
-            services.AddTransient<IConversationUserService, ConversationUserService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IMessageService, MessageService>();
+            services.AddScoped<IConversationService, ConversationService>();
+            services.AddScoped<IConversationUserService, ConversationUserService>();
+
             services.AddScoped<TokenService>();
             services.AddScoped<OTPService>();
 

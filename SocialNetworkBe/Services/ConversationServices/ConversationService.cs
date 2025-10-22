@@ -64,5 +64,19 @@ namespace SocialNetworkBe.Services.ConversationServices
                 return (CreateConversationEnum.CreateConversationFailed, null);
             }
         }
+
+        public async Task<Conversation?> GetConversationById(Guid conversationId)
+        {
+            try
+            {
+                Conversation? conversation = await _unitOfWork.ConversationRepository.GetByIdAsync(conversationId);
+                return conversation;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting conversation");
+                return null;
+            }
+        }
     }
 }

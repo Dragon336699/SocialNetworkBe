@@ -11,7 +11,7 @@ namespace Domain.Interfaces.RepositoryInterfaces
 {
     public interface IMessageRepository : IGenericRepository<Message>
     {
-        Task<List<Message>?> GetMessages(Guid senderId, Guid receiverId, int skip, int take);
+        Task<List<Message>?> GetMessages(Guid conversationId, int skip, int take);
         Task<Message?> UpdateAllMessagesStatus(Guid messageId, MessageStatus messageStatus);
     }
 }

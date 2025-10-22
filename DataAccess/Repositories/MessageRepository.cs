@@ -19,11 +19,12 @@ namespace DataAccess.Repositories
             
         }
 
-        public async Task<List<Message>?> GetMessages(Guid senderId, Guid receiverId, int skip, int take)
+        public async Task<List<Message>?> GetMessages(Guid conversationId, int skip, int take)
         {
             var messages = await _context
                 .Set<Message>()
-                .Where(x => (x.SenderId == senderId && x.ReceiverId == receiverId) || (x.SenderId == receiverId && x.ReceiverId == senderId))
+                .Where(x => x.ConversationId == conversationId)
+                .Include(x => x.Sender)
                 .OrderByDescending(m => m.CreatedAt)
                 .Skip(skip)
                 .Take(take)
@@ -44,7 +45,7 @@ namespace DataAccess.Repositories
 
             var allMessages = await _context
                 .Set<Message>()
-                .Where(m => m.ConversationId == message.ConversationId && m.ReceiverId == message.ReceiverId && m.Status != messageStatus)
+                .Where(m => m.ConversationId == message.ConversationId && m.SenderId == message.SenderId && m.Status != messageStatus)
                 .ToListAsync();
             foreach (var m in allMessages) m.Status = messageStatus;
             await _context.SaveChangesAsync();
