@@ -1,4 +1,6 @@
 ﻿using Domain.Contracts.Requests.Message;
+using Domain.Contracts.Responses.Message;
+using Domain.Entities;
 using Domain.Enum.Message.Functions;
 using Domain.Enum.User.Functions;
 using Domain.Interfaces.ServiceInterfaces;
@@ -35,6 +37,28 @@ namespace SocialNetworkBe.Controllers
                 };
             }
             catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("sendMessage")]
+        public async Task<IActionResult> SendMessage([FromForm] SendMessageRequest request)
+        {
+            try
+            {
+                var (status, newMessage) = await _messageService.SendMessage(request);
+                return status switch
+                {
+                    SendMessageEnum.SenderNotFound => BadRequest(new { message = status.GetMessage() }),
+                    SendMessageEnum.SendMessageFailed => BadRequest(new { message = status.GetMessage() }),
+                    SendMessageEnum.UploadImageFailed => BadRequest(new { message = status.GetMessage() }),
+                    SendMessageEnum.SendMessageSuceeded => Ok(new { data = newMessage, message = status.GetMessage() }),
+                    _ => StatusCode(500, new { message = status.GetMessage() })
+                };
+            } catch (Exception ex)
             {
                 return StatusCode(500, new { message = ex.Message });
             }

@@ -12,6 +12,7 @@ namespace Domain.Enum.Message.Functions
         SenderNotFound,
         SendMessageFailed,
         SendMessageSuceeded,
+        UploadImageFailed
     }
     public static class SendMessageEnumMessage
     {
@@ -22,6 +23,7 @@ namespace Domain.Enum.Message.Functions
                 SendMessageEnum.ReceiverNotFound => "Receiver not found. Please check username again!",
                 SendMessageEnum.SenderNotFound => "Sender not found. Please check username again!",
                 SendMessageEnum.SendMessageFailed => "Send message failed. Please check your connection!",
+                SendMessageEnum.UploadImageFailed => "Upload image failed. Please check your connection!",
                 SendMessageEnum.SendMessageSuceeded => "Send message successfully!",
                 _ => "An unknown error occurred"
             };

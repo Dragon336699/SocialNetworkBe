@@ -12,5 +12,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         MessageDto? SaveMessage(SendMessageRequest request);
         Task<bool> UpdateMessage(Guid messageId, MessageStatus status);
         Task<MessageDto?> GetMessageById(Guid messageId);
+        Task<(SendMessageEnum, MessageDto?)> SendMessage(SendMessageRequest request);
     }
 }

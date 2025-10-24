@@ -12,6 +12,7 @@ namespace Domain.Interfaces.UnitOfWorkInterface
         IMessageRepository MessageRepository { get; }
         IConversationUserRepository ConversationUserRepository { get; }
         IConversationRepository ConversationRepository { get; }
+        IMessageAttachmentRepository MessageAttachmentRepository { get; }
         int Complete();
         Task<int> CompleteAsync();
     }

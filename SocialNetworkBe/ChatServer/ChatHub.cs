@@ -29,40 +29,6 @@ namespace SocialNetworkBe.ChatServer
             _userService = userService;
             _logger = logger;
         }
-        public async Task<SendMessageResponse> SendMessage(SendMessageRequest request)
-        {
-            try
-            {
-                var senderInfo = await _userService.GetUserInfoByUserId(request.SenderId.ToString());
-                if (senderInfo == null) return new SendMessageResponse { Status = false, Message = SendMessageEnum.SenderNotFound.GetMessage(), NewMessage = null };
-                Conversation? conversation = await _conversationService.GetConversationById(request.ConversationId);
-                if (conversation == null)
-                {
-                    //conversationId = Guid.NewGuid();
-                    //Logic tạo conversationUser và conversation
-                };
-
-                IEnumerable<ConversationUser>? conversationUser = await _conversationUserService.GetConversationUser(new GetConversationUserRequest { SenderId = request.SenderId, ConversationId = request.ConversationId, ConversationType = conversation.Type });
-                if (conversationUser == null) return new SendMessageResponse { Status = true, Message = SendMessageEnum.SendMessageFailed.GetMessage(), NewMessage = null };
-                MessageDto? newMessage = _messageService.SaveMessage(request);
-
-                if (conversation?.Type == ConversationType.Personal)
-                {
-                    var conversationReceiver = conversationUser.FirstOrDefault(cu => cu.UserId != request.SenderId);
-                    await Clients.User(conversationReceiver.UserId.ToString().ToLower()).SendAsync("ReceivePrivateMessage", newMessage);
-                } else
-                {
-                    await Clients.Group(request.ConversationId.ToString().ToLower()).SendAsync("ReceivePrivateMessage", newMessage);
-                }
-
-                return new SendMessageResponse { Status = true, Message = SendMessageEnum.SendMessageSuceeded.GetMessage(), NewMessage = newMessage };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while sending message at chathub");
-                return new SendMessageResponse { Status = false, Message = SendMessageEnum.SendMessageFailed.GetMessage(), NewMessage = null };
-            }
-        }
 
         public async Task<bool?> UpdateMessageStatus(UpdateMessageStatusRequest request)
         {

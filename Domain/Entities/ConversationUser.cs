@@ -1,5 +1,6 @@
 ﻿using Domain.Enum.Conversation.Types;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Domain.Entities
 {
@@ -14,6 +15,7 @@ namespace Domain.Entities
         public ConversationRole RoleName { get; set; }
         public string? DraftMessage { get; set; }
         public User? User { get; set; }
+        [JsonIgnore]
         public Conversation? Conversation { get; set; }
     }
 }

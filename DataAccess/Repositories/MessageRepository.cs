@@ -25,6 +25,7 @@ namespace DataAccess.Repositories
                 .Set<Message>()
                 .Where(x => x.ConversationId == conversationId)
                 .Include(x => x.Sender)
+                .Include(x => x.MessageAttachments)
                 .OrderByDescending(m => m.CreatedAt)
                 .Skip(skip)
                 .Take(take)

@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Requests.Conversation;
 using Domain.Contracts.Responses.Conversation;
+using Domain.Entities;
 using Domain.Enum.Conversation.Functions;
 using Domain.Enum.Message.Functions;
 using Domain.Interfaces.ServiceInterfaces;
@@ -60,6 +61,23 @@ namespace SocialNetworkBe.Controllers
                 return Ok(new {message = "Get conversation successfully", data =  conversation});
             }
             catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("getAllConversation")]
+        public async Task<IActionResult> GetAllConversationByUser()
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                List<ConversationDto>? conversations = await _conversationService.GetAllConversationByUser(userId);
+                if (conversations == null) return BadRequest(new { message = "Conversations doesn't exist!" });
+                return Ok(new { message = "Get conversations successfully", data = conversations });
+            } catch (Exception ex)
             {
                 return StatusCode(500, new { message = ex.Message });
             }

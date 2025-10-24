@@ -96,6 +96,12 @@ namespace DataAccess.DbContext
                     .HasConversion<string>();
             });
 
+            builder.Entity<MessageAttachment>(entity =>
+            {
+                entity.Property(ma => ma.FileType)
+                    .HasConversion<string>();
+            });
+
             builder.Entity<GroupUser>(entity =>
             {
                 entity.Property(gu => gu.RoleName)

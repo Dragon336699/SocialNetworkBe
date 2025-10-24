@@ -14,6 +14,7 @@ namespace DataAccess.Migrations
                 name: "ConversationName",
                 table: "Conversation",
                 type: "nvarchar(max)",
+                defaultValue: "",
                 nullable: true);
         }
 
