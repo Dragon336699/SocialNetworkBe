@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Domain.Enum.Message.Types;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Domain.Entities
@@ -11,7 +12,7 @@ namespace Domain.Entities
         [Required]
         public required string Content { get; set; }
         [Required]
-        public required string Status { get; set; }
+        public required MessageStatus Status { get; set; }
         [Required]
         public DateTime CreatedAt { get; set; }
         [Required]
@@ -20,8 +21,6 @@ namespace Domain.Entities
         public Conversation? Conversation { get; set; }
         public Guid SenderId { get; set; }
         public User? Sender { get; set; }
-        public Guid ReceiverId { get; set; }
-        public User? Receiver { get; set; }
         public ICollection<MessageReactionUser>? MessageReactionUsers { get; set; }
         public ICollection<MessageAttachment>? MessageAttachments { get; set; }
 

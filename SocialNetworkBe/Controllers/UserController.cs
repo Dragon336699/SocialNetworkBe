@@ -234,5 +234,22 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpGet]
+        [Route("user/getUserInfoById")]
+        public async Task<IActionResult> GetUserInfoById([FromQuery] string userId)
+        {
+            try
+            {
+                var user = await _userService.GetUserInfoByUserId(userId);
+                if (user == null) return BadRequest(new { message = "User Not Found" });
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }

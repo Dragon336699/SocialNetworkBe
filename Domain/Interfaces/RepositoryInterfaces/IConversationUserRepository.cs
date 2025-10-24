@@ -9,6 +9,6 @@ namespace Domain.Interfaces.RepositoryInterfaces
 {
     public interface IConversationUserRepository : IGenericRepository<ConversationUser>
     {
-        Task<Guid?> GetConversationIdBetweenUserAsync(Guid senderId, Guid receiverId);
+        Task<Guid?> GetConversationIdBetweenUsersAsync(Guid senderId, Guid receiverId);       
     }
 }

@@ -4,6 +4,7 @@ using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 using SocialNetworkBe.Services.UserServices;
 using Domain.Contracts.Responses.User;
+using Domain.Contracts.Requests.ConversationUser;
 namespace SocialNetworkBe.Services.ConversationUserServices
 {
     public class ConversationUserService : IConversationUserService
@@ -11,9 +12,9 @@ namespace SocialNetworkBe.Services.ConversationUserServices
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<ConversationUserService> _logger;
         private readonly IUserService _userService;
-        public ConversationUserService (
-            IUnitOfWork unitOfWork, 
-            ILogger<ConversationUserService> logger, 
+        public ConversationUserService(
+            IUnitOfWork unitOfWork,
+            ILogger<ConversationUserService> logger,
             IUserService userService
             )
         {
@@ -24,7 +25,7 @@ namespace SocialNetworkBe.Services.ConversationUserServices
 
         public async Task<Guid?> CheckExist(Guid senderId, Guid receiverId)
         {
-            var conversationId = await _unitOfWork.ConversationUserRepository.GetConversationIdBetweenUserAsync(senderId, receiverId);
+            var conversationId = await _unitOfWork.ConversationUserRepository.GetConversationIdBetweenUsersAsync(senderId, receiverId);
             return conversationId == null ? null : conversationId;
         }
 
@@ -40,7 +41,7 @@ namespace SocialNetworkBe.Services.ConversationUserServices
                     if (userInfo == null)
                     {
                         _logger.LogWarning($"User with ID {userId} not found.");
-                        return; 
+                        return;
                     }
                     var conversationUser = new ConversationUser
                     {
@@ -70,6 +71,20 @@ namespace SocialNetworkBe.Services.ConversationUserServices
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while adding users to conversation");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<ConversationUser>?> GetConversationUser(GetConversationUserRequest request)
+        {
+            try
+            {
+                IEnumerable<ConversationUser>? conversationUser = await _unitOfWork.ConversationUserRepository.FindAsyncWithIncludes(cu => cu .ConversationId == request.ConversationId, cu => cu.User, cu => cu.Conversation);
+                if (conversationUser == null) return null;
+                return conversationUser;
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting conversation user");
                 throw;
             }
         }

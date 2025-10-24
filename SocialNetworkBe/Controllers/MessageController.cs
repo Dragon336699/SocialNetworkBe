@@ -25,8 +25,6 @@ namespace SocialNetworkBe.Controllers
         {
             try
             {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (userId.ToLower() != request.UserId.ToString().ToLower()) return StatusCode(401, new { message = "Unauthorzied, please try again!" });
                 var (status, messages) = await _messageService.GetMessages(request);
                 return status switch
                 {

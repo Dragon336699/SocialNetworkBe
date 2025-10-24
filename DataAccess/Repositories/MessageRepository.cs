@@ -1,5 +1,7 @@
 ﻿using DataAccess.DbContext;
+using Domain.Contracts.Responses.Message;
 using Domain.Entities;
+using Domain.Enum.Message.Types;
 using Domain.Interfaces.RepositoryInterfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -17,11 +19,37 @@ namespace DataAccess.Repositories
             
         }
 
-        public async Task<List<Message>?> GetMessages(Guid senderId, Guid receiverId)
+        public async Task<List<Message>?> GetMessages(Guid conversationId, int skip, int take)
         {
-            var messages = await _context.Set<Message>().Where(x => (x.SenderId == senderId && x.ReceiverId == receiverId) || (x.SenderId == receiverId && x.ReceiverId == senderId)).OrderBy(m => m.CreatedAt).ToListAsync();
+            var messages = await _context
+                .Set<Message>()
+                .Where(x => x.ConversationId == conversationId)
+                .Include(x => x.Sender)
+                .OrderByDescending(m => m.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .OrderBy(m => m.CreatedAt)
+                .ToListAsync();
             if (messages == null) return null;
             return messages;
+        }
+
+        public async Task<Message?> UpdateAllMessagesStatus(Guid messageId, MessageStatus messageStatus)
+        {
+            Message? message = await _context
+                .Set<Message>()
+                .Where(x => x.Id == messageId)
+                .FirstAsync();
+
+            if (message == null) return null;
+
+            var allMessages = await _context
+                .Set<Message>()
+                .Where(m => m.ConversationId == message.ConversationId && m.SenderId == message.SenderId && m.Status != messageStatus)
+                .ToListAsync();
+            foreach (var m in allMessages) m.Status = messageStatus;
+            await _context.SaveChangesAsync();
+            return message;
         }
     }
 }

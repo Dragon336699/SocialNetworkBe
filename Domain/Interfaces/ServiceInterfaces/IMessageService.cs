@@ -2,12 +2,15 @@
 using Domain.Contracts.Responses.Message;
 using Domain.Entities;
 using Domain.Enum.Message.Functions;
+using Domain.Enum.Message.Types;
 
 namespace Domain.Interfaces.ServiceInterfaces
 {
     public interface IMessageService
     {
         Task<(GetMessagesEnum, List<MessageDto>?)> GetMessages(GetMessagesRequest request);
-        MessageDto? SaveMessage(SendMessageRequest request, Guid conversationId, Guid receiverId);
+        MessageDto? SaveMessage(SendMessageRequest request);
+        Task<bool> UpdateMessage(Guid messageId, MessageStatus status);
+        Task<MessageDto?> GetMessageById(Guid messageId);
     }
 }
