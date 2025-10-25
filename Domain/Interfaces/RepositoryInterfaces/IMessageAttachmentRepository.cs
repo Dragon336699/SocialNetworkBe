@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Interfaces.RepositoryInterfaces
 {
-    public interface IConversationUserRepository : IGenericRepository<ConversationUser>
+    public interface IMessageAttachmentRepository : IGenericRepository<MessageAttachment>
     {
-        Task<Guid?> GetConversationIdBetweenUsersAsync(Guid senderId, Guid receiverId);
     }
 }

@@ -96,6 +96,12 @@ namespace DataAccess.DbContext
                     .HasConversion<string>();
             });
 
+            builder.Entity<MessageAttachment>(entity =>
+            {
+                entity.Property(ma => ma.FileType)
+                    .HasConversion<string>();
+            });
+
             builder.Entity<GroupUser>(entity =>
             {
                 entity.Property(gu => gu.RoleName)
@@ -155,12 +161,6 @@ namespace DataAccess.DbContext
               .HasOne(m => m.Sender)
               .WithMany(u => u.MessageSent)
               .HasForeignKey(m => m.SenderId)
-              .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<Message>()
-              .HasOne(m => m.Receiver)
-              .WithMany(u => u.MessageReceive)
-              .HasForeignKey(m => m.ReceiverId)
               .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(builder);

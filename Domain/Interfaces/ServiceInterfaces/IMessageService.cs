@@ -9,8 +9,9 @@ namespace Domain.Interfaces.ServiceInterfaces
     public interface IMessageService
     {
         Task<(GetMessagesEnum, List<MessageDto>?)> GetMessages(GetMessagesRequest request);
-        MessageDto? SaveMessage(SendMessageRequest request, Guid conversationId, Guid receiverId);
+        MessageDto? SaveMessage(SendMessageRequest request);
         Task<bool> UpdateMessage(Guid messageId, MessageStatus status);
         Task<MessageDto?> GetMessageById(Guid messageId);
+        Task<(SendMessageEnum, MessageDto?)> SendMessage(SendMessageRequest request);
     }
 }

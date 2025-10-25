@@ -23,7 +23,7 @@ namespace Domain.Entities
         public ICollection<PostReactionUser>? PostReactionUsers { get; set; }
 
         //Liên kết đến User
-        public Guid? UserId { get; set; }  
+        public Guid UserId { get; set; }  
         public User? User { get; set; }    
     }
 }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Domain.Enum.MessageAttachment.Types;
+using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,8 +11,9 @@ namespace Domain.Contracts.Requests.Message
     public class SendMessageRequest
     {
         public Guid SenderId { get; set; }
-        public Guid ReceiverId { get; set; }
-        public required string Content { get; set; }
-
+        public Guid ConversationId { get; set; }
+        public string? Content { get; set; }
+        public List<IFormFile>? Files { get; set; }
+        public FileTypes? FileType { get; set; }
     }
 }

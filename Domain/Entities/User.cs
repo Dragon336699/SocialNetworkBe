@@ -27,8 +27,6 @@ namespace Domain.Entities
         public ICollection<UserRelation>? Relations { get; set; }
         public ICollection<UserRelation>? RelatedTo { get; set; }
         public ICollection<Message>? MessageSent { get; set; }
-        public ICollection<Message>? MessageReceive { get; set; }
-
-
+        //public ICollection<Message>? MessageReceive { get; set; }
     }
 }

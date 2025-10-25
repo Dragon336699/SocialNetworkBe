@@ -11,8 +11,8 @@ namespace Domain.Contracts.Requests.Post
     {
         [Required]
         [StringLength(5000, MinimumLength = 1)]
-        public required string Content { get; set; }  
+        public required string Content { get; set; }
 
-        public List<string>? ImageUrls { get; set; }  
+        public List<IFormFile>? Images { get; set; }
     }
 }

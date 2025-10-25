@@ -42,6 +42,17 @@ namespace DataAccess.Repositories
             return entities;
         }
 
+        public async Task<IEnumerable<T>?> FindAsyncWithIncludes(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = _context.Set<T>();
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.Where(expression).ToListAsync();
+        }
+
         public async Task<T?> FindFirstAsync(Expression<Func<T, bool>> expression)
         {
             var entity = await _context.Set<T>().Where(expression).FirstOrDefaultAsync();

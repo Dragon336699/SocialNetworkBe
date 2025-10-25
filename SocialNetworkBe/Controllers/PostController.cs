@@ -26,18 +26,16 @@ namespace SocialNetworkBe.Controllers
         {
             try
             {
-                //Lấy userId từ JWT token
-                var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!Guid.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized(new CreatePostResponse { Message = "Invalid token." });
-                }
-
-                var (status, postId) = await _postService.CreatePostAsync(request, userId);               
+               
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var (status, postId) = await _postService.CreatePostAsync(request, userId);
                 return status switch
                 {
                     CreatePostEnum.UserNotFound => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),
                     CreatePostEnum.InvalidContent => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),
+                    CreatePostEnum.InvalidImageFormat => BadRequest(new CreatePostResponse { Message = status.GetMessage() }), // ✅ Thêm mới
+                    CreatePostEnum.FileTooLarge => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),        // ✅ Thêm mới
+                    CreatePostEnum.ImageUploadFailed => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),  // ✅ Thêm mới
                     CreatePostEnum.CreatePostSuccess => Ok(new CreatePostResponse { Message = status.GetMessage(), PostId = postId }),
                     _ => StatusCode(500, new CreatePostResponse { Message = status.GetMessage() })
                 };

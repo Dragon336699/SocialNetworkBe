@@ -13,6 +13,7 @@ using SocialNetworkBe.Services.MessageService;
 using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.PostServices;
 using SocialNetworkBe.Services.TokenServices;
+using SocialNetworkBe.Services.UploadService;
 using SocialNetworkBe.Services.UserServices;
 using SocialNetworkBe.SignalR;
 
@@ -28,7 +29,9 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<IUnitOfWork, UnitOfWork>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IMessageRepository, MessageRepository>();
+            services.AddTransient<IConversationRepository, ConversationRepository>();
             services.AddTransient<IConversationUserRepository, ConversationUserRepository>();
+
             services.AddTransient<IConversationRepository, ConversationRepository>();
             services.AddTransient<IPostRepository, PostRepository>();
             services.AddTransient<IPostImageRepository, PostImageRepository>();
@@ -38,6 +41,16 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IMessageService, MessageService>();
             services.AddScoped<IPostService, PostService>();
+
+            services.AddTransient<IMessageAttachmentRepository, MessageAttachmentRepository>();
+
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IMessageService, MessageService>();
+            services.AddScoped<IConversationService, ConversationService>();
+            services.AddScoped<IConversationUserService, ConversationUserService>();
+            services.AddScoped<IUploadService, UploadService>();
+
+
             services.AddScoped<TokenService>();
             services.AddScoped<OTPService>();
 

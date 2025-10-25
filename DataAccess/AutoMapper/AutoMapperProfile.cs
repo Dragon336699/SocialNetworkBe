@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Requests.User;
+using Domain.Contracts.Responses.Conversation;
 using Domain.Contracts.Responses.Message;
 using Domain.Contracts.Responses.User;
 using Domain.Entities;
@@ -13,6 +14,7 @@ namespace DataAccess.AutoMapper
             CreateMap<UserRegistrationRequest, User>();
             CreateMap<User, UserDto>();
             CreateMap<Message, MessageDto>();
+            CreateMap<Conversation, ConversationDto>();
 
             CreateMap<UserRegistrationRequest, User>()
                 .ForMember(u => u.UserName, opt => opt.MapFrom(x => x.Email));

@@ -1,6 +1,7 @@
 ﻿using Domain.Contracts.Requests.Conversation;
 using Domain.Contracts.Responses.Conversation;
 using Domain.Contracts.Responses.Post;
+using Domain.Entities;
 using Domain.Enum.Conversation.Functions;
 using Domain.Enum.Message.Functions;
 using Domain.Interfaces.ServiceInterfaces;
@@ -26,16 +27,12 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpPost]
-        [Route("create")]
+        [Route("createConversation")]
         public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request)
         {
             try
             {              
-                var senderIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!Guid.TryParse(senderIdClaim, out var senderId))
-                {
-                    return Unauthorized(new CreateConversationResponse { Message = "Invalid token." });
-                }
+                var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 var (status, conversationId) = await _conversationService.CreateConversationAsync(senderId, request.ReceiverUserName);
 
                 return status switch
@@ -50,7 +47,41 @@ namespace SocialNetworkBe.Controllers
             {
                 return StatusCode(500, new { message = ex.Message });
             }
-            
+        }
+
+
+        [Authorize]
+        [HttpGet]
+        [Route("getConversation")]
+        public async Task<IActionResult> GetConversationById(Guid conversationId)
+        {
+            try
+            {
+                var conversation = await _conversationService.GetConversationById(conversationId);
+                if (conversation == null) return BadRequest(new { message = "Conversation doesn't exist!" });
+                return Ok(new {message = "Get conversation successfully", data =  conversation});
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("getAllConversation")]
+        public async Task<IActionResult> GetAllConversationByUser()
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                List<ConversationDto>? conversations = await _conversationService.GetAllConversationByUser(userId);
+                if (conversations == null) return BadRequest(new { message = "Conversations doesn't exist!" });
+                return Ok(new { message = "Get conversations successfully", data = conversations });
+            } catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
     }
 }
