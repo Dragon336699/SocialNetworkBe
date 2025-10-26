@@ -14,7 +14,6 @@ namespace Domain.Interfaces.UnitOfWorkInterface
         IConversationRepository ConversationRepository { get; }
 
         IPostRepository PostRepository { get; }
-        IPostImageRepository PostImageRepository { get; }
         IUserRepository UserRepository { get; }
 
         IMessageAttachmentRepository MessageAttachmentRepository { get; }

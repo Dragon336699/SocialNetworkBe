@@ -16,5 +16,7 @@ namespace Domain.Contracts.Requests.Post
         public required string Content { get; set; }
         public List<IFormFile>? Images { get; set; }
         public PostPrivacy PostPrivacy { get; set; } = PostPrivacy.Public;
+
+        public Guid? GroupId { get; set; } 
     }
 }

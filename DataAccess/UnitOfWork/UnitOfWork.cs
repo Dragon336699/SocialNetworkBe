@@ -14,8 +14,7 @@ namespace DataAccess.UnitOfWork
         public IConversationRepository ConversationRepository { get; set; }
 
         public IPostRepository PostRepository { get; set; }
-        public IUserRepository UserRepository { get; set; }
-        public IPostImageRepository PostImageRepository { get; set; }
+        public IUserRepository UserRepository { get; set; }      
 
         public IMessageAttachmentRepository MessageAttachmentRepository { get; set; }
         public UnitOfWork(
@@ -23,8 +22,7 @@ namespace DataAccess.UnitOfWork
             IMessageRepository messageRepository,
             IConversationUserRepository conversationUserRepository,
             IConversationRepository conversationRepository,
-            IPostRepository postRepository,
-            IPostImageRepository postImageRepository,
+            IPostRepository postRepository,           
             IUserRepository userRepository,
 
 
@@ -37,8 +35,7 @@ namespace DataAccess.UnitOfWork
             ConversationUserRepository = conversationUserRepository;
             ConversationRepository = conversationRepository;
 
-            PostRepository = postRepository;
-            PostImageRepository = postImageRepository;
+            PostRepository = postRepository;           
             UserRepository = userRepository;
 
             MessageAttachmentRepository = messageAttachmentRepository;

@@ -22,7 +22,7 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpPost("create")]
-        public async Task<IActionResult> CreatePost([FromForm] CreatePostRequest request) // ✅ Đổi từ [FromBody] thành [FromForm]
+        public async Task<IActionResult> CreatePost([FromForm] CreatePostRequest request) 
         {
             try
             {

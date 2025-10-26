@@ -37,84 +37,67 @@ namespace SocialNetworkBe.Services.PostServices
                 }
 
                 // Upload images lên cloud trước khi tạo post
-                //List<string>? imageUrls = null;
-                //if (request.Images != null && request.Images.Any())
-                //{
-                //    // Validate file types (chỉ cho phép images)
-                //    var validImageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
-                //    var invalidFiles = request.Images.Where(file =>
-                //        !validImageExtensions.Any(ext =>
-                //            file.FileName.ToLower().EndsWith(ext))).ToList();
+                List<string>? imageUrls = null;
+                if (request.Images != null && request.Images.Any())
+                {
+                    // Validate file types (chỉ cho phép images)
+                    var validImageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+                    var invalidFiles = request.Images.Where(file =>
+                        !validImageExtensions.Any(ext =>
+                            file.FileName.ToLower().EndsWith(ext))).ToList();
 
-                //    if (invalidFiles.Any())
-                //    {
-                //        _logger.LogWarning("Invalid image files detected: {FileNames}",
-                //            string.Join(", ", invalidFiles.Select(f => f.FileName)));
-                //        return (CreatePostEnum.InvalidImageFormat, null);
-                //    }
+                    if (invalidFiles.Any())
+                    {                       
+                        return (CreatePostEnum.InvalidImageFormat, null);
+                    }
 
-                //    // Validate file sizes (max 10MB per file)
-                //    const long maxFileSize = 10 * 1024 * 1024;
-                //    var oversizedFiles = request.Images.Where(file => file.Length > maxFileSize).ToList();
+                    // Validate file sizes (max 10MB per file)
+                    const long maxFileSize = 10 * 1024 * 1024;
+                    var oversizedFiles = request.Images.Where(file => file.Length > maxFileSize).ToList();
 
-                //    if (oversizedFiles.Any())
-                //    {
-                //        _logger.LogWarning("Files too large detected: {FileNames}",
-                //            string.Join(", ", oversizedFiles.Select(f => f.FileName)));
-                //        return (CreatePostEnum.FileTooLarge, null);
-                //    }
+                    if (oversizedFiles.Any())
+                    {                       
+                        return (CreatePostEnum.FileTooLarge, null);
+                    }
 
-                //    // Upload files to Cloudinary
-                //    imageUrls = await _uploadService.UploadFile(request.Images, "posts/images");
-                //    if (imageUrls == null || !imageUrls.Any())
-                //    {
-                //        _logger.LogError("Failed to upload images to cloud storage");
-                //        return (CreatePostEnum.ImageUploadFailed, null);
-                //    }
-                //}
+                    // Upload files to Cloudinary
+                    imageUrls = await _uploadService.UploadFile(request.Images, "posts/images");
+                    if (imageUrls == null || !imageUrls.Any())
+                    {                      
+                        return (CreatePostEnum.ImageUploadFailed, null);
+                    }
+                }
 
-                // Tạo post với chế độ riêng tư được chỉ định
+                // Tạo post với chế độ riêng tư 
                 var post = new Post
                 {
                     Content = request.Content.Trim(),
                     TotalLiked = 0,
                     TotalComment = 0,
-                    //PostPrivacy = request.PostPrivacy,
+                    PostPrivacy = request.PostPrivacy,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    UserId = userId
-                };
-                _unitOfWork.PostRepository.Add(post);
+                    UserId = userId,
+                    GroupId = request.GroupId
+                };               
 
                 // Thêm hình ảnh với URLs từ cloud
-                //if (imageUrls != null && imageUrls.Any())
-                //{
-                //    var postImages = imageUrls
-                //        .Where(url => !string.IsNullOrWhiteSpace(url))
-                //        .Select(imageUrl => new PostImage
-                //        {
-                //            PostId = post.Id,
-                //            ImageUrl = imageUrl
-                //        }).ToList();
-                //    _unitOfWork.PostImageRepository.AddRange(postImages);
-                //}
-
-                //var result = await _unitOfWork.CompleteAsync();
-                //if (result > 0)
-                //{
-                //    _logger.LogInformation("Post created successfully with privacy {PostPrivacy}, {ImageCount} images for user {UserId}",
-                //        request.PostPrivacy, imageUrls?.Count ?? 0, userId);
-                //    return (CreatePostEnum.CreatePostSuccess, post.Id);
-                //}
-
+                if (imageUrls != null && imageUrls.Any())
+                {
+                    post.PostImages = imageUrls
+                        .Where(url => !string.IsNullOrWhiteSpace(url))
+                        .Select(imageUrl => new PostImage
+                        {
+                            ImageUrl = imageUrl                           
+                        }).ToList();
+                }
+                _unitOfWork.PostRepository.Add(post);
                 var result = await _unitOfWork.CompleteAsync();
                 if (result > 0)
                 {
-                    _logger.LogInformation("Post created successfully with privacy {PostPrivacy}, {ImageCount} images for user {UserId}",
-                        request.PostPrivacy, userId);
                     return (CreatePostEnum.CreatePostSuccess, post.Id);
                 }
-
+                
                 return (CreatePostEnum.CreatePostFailed, null);
             }
             catch (Exception ex)

@@ -25,9 +25,9 @@ namespace Domain.Enum.Post.Functions
             {
                 CreatePostEnum.UserNotFound => "User not found.",
                 CreatePostEnum.InvalidContent => "Invalid post content.",
-                CreatePostEnum.InvalidImageFormat => "Invalid image format. Only JPG, PNG, GIF, BMP, WEBP are allowed.", // ✅ Thêm mới
-                CreatePostEnum.FileTooLarge => "File size too large. Maximum size is 10MB per file.",                    // ✅ Thêm mới
-                CreatePostEnum.ImageUploadFailed => "Failed to upload images to cloud storage.",                        // ✅ Thêm mới
+                CreatePostEnum.InvalidImageFormat => "Invalid image format. Only JPG, PNG, GIF, BMP, WEBP are allowed.", 
+                CreatePostEnum.FileTooLarge => "File size too large. Maximum size is 10MB per file.",                    
+                CreatePostEnum.ImageUploadFailed => "Failed to upload images to cloud storage.",                        
                 CreatePostEnum.CreatePostSuccess => "Post created successfully.",
                 CreatePostEnum.CreatePostFailed => "Failed to create post.",
                 _ => "Unknown error."
