@@ -31,22 +31,28 @@ namespace SocialNetworkBe.Controllers
         public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request)
         {
             try
-            {              
-                var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var (status, conversationId) = await _conversationService.CreateConversationAsync(senderId, request.ReceiverUserName);
+            {
+                var senderId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));               
+                if (!request.UserIds.Contains(senderId))
+                {
+                    request.UserIds.Add(senderId);
+                }
 
-                return status switch
-                {                  
-                    CreateConversationEnum.ReceiverNotFound => BadRequest(new CreateConversationResponse{Message = status.GetMessage()}),
-                    CreateConversationEnum.ConversationExists => Ok(new CreateConversationResponse{ConversationId = conversationId,Message = status.GetMessage()}),
-                    CreateConversationEnum.CreateConversationSuccess => Ok(new CreateConversationResponse{ConversationId = conversationId,Message = status.GetMessage()}),
-                    _ => StatusCode(500, new CreateConversationResponse{Message = status.GetMessage()})
+                var (status, conversationId) = await _conversationService.CreateConversationAsync(request.ConversationType, request.UserIds);
+
+                return status switch              
+                {
+                CreateConversationEnum.ReceiverNotFound => BadRequest(new CreateConversationResponse { Message = status.GetMessage() }),
+                    CreateConversationEnum.ConversationExists => Ok(new CreateConversationResponse { ConversationId = conversationId, Message = status.GetMessage() }),
+                    CreateConversationEnum.CreateConversationSuccess => Ok(new CreateConversationResponse { ConversationId = conversationId, Message = status.GetMessage() }),
+                    _ => StatusCode(500, new CreateConversationResponse { Message = status.GetMessage() })
                 };
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = ex.Message });
             }
+
         }
 
 

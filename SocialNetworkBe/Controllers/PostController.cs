@@ -22,21 +22,25 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpPost("create")]
-        public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request)
+        public async Task<IActionResult> CreatePost([FromForm] CreatePostRequest request) // ✅ Đổi từ [FromBody] thành [FromForm]
         {
             try
             {
-               
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));              
                 var (status, postId) = await _postService.CreatePostAsync(request, userId);
+
                 return status switch
                 {
                     CreatePostEnum.UserNotFound => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),
                     CreatePostEnum.InvalidContent => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),
-                    CreatePostEnum.InvalidImageFormat => BadRequest(new CreatePostResponse { Message = status.GetMessage() }), // ✅ Thêm mới
-                    CreatePostEnum.FileTooLarge => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),        // ✅ Thêm mới
-                    CreatePostEnum.ImageUploadFailed => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),  // ✅ Thêm mới
-                    CreatePostEnum.CreatePostSuccess => Ok(new CreatePostResponse { Message = status.GetMessage(), PostId = postId }),
+                    CreatePostEnum.InvalidImageFormat => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),
+                    CreatePostEnum.FileTooLarge => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),
+                    CreatePostEnum.ImageUploadFailed => BadRequest(new CreatePostResponse { Message = status.GetMessage() }),
+                    CreatePostEnum.CreatePostSuccess => Ok(new CreatePostResponse
+                    {
+                        Message = status.GetMessage(),
+                        PostId = postId
+                    }),
                     _ => StatusCode(500, new CreatePostResponse { Message = status.GetMessage() })
                 };
             }

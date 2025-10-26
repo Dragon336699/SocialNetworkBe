@@ -120,6 +120,12 @@ namespace DataAccess.DbContext
                     .HasConversion<string>();
             });
 
+            builder.Entity<Post>(entity =>
+            {
+                entity.Property(p => p.PostPrivacy)
+                    .HasConversion<string>();
+            });
+
             //  Config self relationship
             builder.Entity<FriendRequest>()
                 .HasOne(fe => fe.Sender)
@@ -161,6 +167,12 @@ namespace DataAccess.DbContext
               .HasOne(m => m.Sender)
               .WithMany(u => u.MessageSent)
               .HasForeignKey(m => m.SenderId)
+              .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Post>()
+              .HasOne(p => p.User)
+              .WithMany(u => u.Posts)
+              .HasForeignKey(p => p.UserId)
               .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(builder);

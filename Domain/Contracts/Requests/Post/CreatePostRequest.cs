@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Domain.Enum.Post.Types;
+using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -12,7 +14,7 @@ namespace Domain.Contracts.Requests.Post
         [Required]
         [StringLength(5000, MinimumLength = 1)]
         public required string Content { get; set; }
-
         public List<IFormFile>? Images { get; set; }
+        public PostPrivacy PostPrivacy { get; set; } = PostPrivacy.Public;
     }
 }

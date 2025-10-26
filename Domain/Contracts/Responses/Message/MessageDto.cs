@@ -17,6 +17,8 @@ namespace Domain.Contracts.Responses.Message
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public Guid SenderId { get; set; }
+        public Guid? RepliedMessageId { get; set; }
+        public MessageDto? RepliedMessage { get; set; }
         public List<MessageAttachment>? MessageAttachments { get; set; }
         public required UserDto Sender { get; set; }
 
