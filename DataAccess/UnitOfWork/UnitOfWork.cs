@@ -12,20 +12,34 @@ namespace DataAccess.UnitOfWork
         public IMessageRepository MessageRepository { get; set; }
         public IConversationUserRepository ConversationUserRepository { get; set; }
         public IConversationRepository ConversationRepository { get; set; }
+
+        public IPostRepository PostRepository { get; set; }
+        public IUserRepository UserRepository { get; set; }      
+
         public IMessageAttachmentRepository MessageAttachmentRepository { get; set; }
         public UnitOfWork(
             SocialNetworkDbContext context,
             IMessageRepository messageRepository,
             IConversationUserRepository conversationUserRepository,
             IConversationRepository conversationRepository,
+            IPostRepository postRepository,           
+            IUserRepository userRepository,
+
+
             IMessageAttachmentRepository messageAttachmentRepository
+
         )
         {
             _context = context;
             MessageRepository = messageRepository;
             ConversationUserRepository = conversationUserRepository;
             ConversationRepository = conversationRepository;
+
+            PostRepository = postRepository;           
+            UserRepository = userRepository;
+
             MessageAttachmentRepository = messageAttachmentRepository;
+
         }
         public int Complete()
         {

@@ -1,0 +1,22 @@
+﻿using Domain.Enum.Post.Types;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Domain.Contracts.Requests.Post
+{
+    public class CreatePostRequest
+    {
+        [Required]
+        [StringLength(5000, MinimumLength = 1)]
+        public required string Content { get; set; }
+        public List<IFormFile>? Images { get; set; }
+        public PostPrivacy PostPrivacy { get; set; } = PostPrivacy.Public;
+
+        public Guid? GroupId { get; set; } 
+    }
+}

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enum.Conversation.Types;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Domain.Contracts.Requests.Conversation
@@ -6,6 +7,10 @@ namespace Domain.Contracts.Requests.Conversation
     public class CreateConversationRequest
     {
         [Required]
-        public required string ReceiverUserName { get; set; }
+        public required ConversationType ConversationType { get; set; }
+
+        [Required]
+        [MinLength(2, ErrorMessage = "At least 2 users are required for a conversation")]
+        public required List<Guid> UserIds { get; set; }
     }
 }

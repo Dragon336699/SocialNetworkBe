@@ -33,32 +33,36 @@ namespace SocialNetworkBe.Services.ConversationServices
             _logger = logger;
         }
 
-        public async Task<(CreateConversationEnum, Guid?)> CreateConversationAsync(Guid senderId, string receiverUserName)
+        public async Task<(CreateConversationEnum, Guid?)> CreateConversationAsync(ConversationType conversationType, List<Guid> userIds)
         {
             try
             {
-
-                var (userFound, receiver) = await _userService.GetUserInfoByUserName(receiverUserName);
-                if (!userFound || receiver == null)
+                foreach (var userId in userIds)
                 {
-                    return (CreateConversationEnum.ReceiverNotFound, null);
+                    var userInfo = await _userService.GetUserInfoByUserId(userId.ToString());
+                    if (userInfo == null)
+                    {
+                        return (CreateConversationEnum.ReceiverNotFound, null);
+                    }
                 }
 
-                Guid? existingConversationId = await _conversationUserService.CheckExist(senderId, receiver.Id);
-                if (existingConversationId != null)
+                if (conversationType == ConversationType.Personal && userIds.Count == 2)
                 {
-                    return (CreateConversationEnum.ConversationExists, existingConversationId);
+                    Guid? existingConversationId = await _conversationUserService.CheckExist(userIds[0], userIds[1]);
+                    if (existingConversationId != null)
+                    {
+                        return (CreateConversationEnum.ConversationExists, existingConversationId);
+                    }
                 }
 
                 var conversation = new Conversation
                 {
                     Id = Guid.NewGuid(),
-                    Type = ConversationType.Personal,
+                    Type = conversationType,
                     CreatedAt = DateTime.Now,
                 };
                 _unitOfWork.ConversationRepository.Add(conversation);
 
-                var userIds = new List<Guid> { senderId, receiver.Id };
                 await _conversationUserService.AddUsersToConversationAsync(conversation.Id, userIds);
 
                 return (CreateConversationEnum.CreateConversationSuccess, conversation.Id);
