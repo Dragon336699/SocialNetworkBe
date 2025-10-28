@@ -59,7 +59,7 @@ namespace SocialNetworkBe.Services.MessageService
             }
         }
 
-        public MessageDto? SaveMessage(SendMessageRequest request)
+        public async Task<MessageDto?> SaveMessage(SendMessageRequest request)
         {
             try
             {
@@ -78,7 +78,10 @@ namespace SocialNetworkBe.Services.MessageService
                 int rowEffected = _unitOfWork.Complete();
                 if (rowEffected > 0)
                 {
-                    var messageDto = _mapper.Map<MessageDto>(message);
+                    IEnumerable<Message>? newMessageList = await _unitOfWork.MessageRepository.FindAsyncWithIncludes(m => m.Id == message.Id, m => m.RepliedMessage);
+                    if (newMessageList == null) return null;
+                    Message? newMessage = newMessageList.FirstOrDefault();
+                    var messageDto = _mapper.Map<MessageDto>(newMessage);
                     return messageDto;
                 };
                 return null;
@@ -159,7 +162,7 @@ namespace SocialNetworkBe.Services.MessageService
                     //Logic tạo conversationUser và conversation
                 };
 
-                MessageDto? newMessage = SaveMessage(request);
+                MessageDto? newMessage = await SaveMessage(request);
                 if (newMessage == null) return (SendMessageEnum.SendMessageFailed, null);
 
                 if (fileUrls != null)
