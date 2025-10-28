@@ -1,6 +1,7 @@
 ﻿using Domain.Enum.Message.Types;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Domain.Entities
 {
@@ -18,6 +19,7 @@ namespace Domain.Entities
         [Required]
         public DateTime UpdatedAt { get; set; }
         public Guid ConversationId { get; set; }
+        [JsonIgnore]
         public Conversation? Conversation { get; set; }
         public Guid SenderId { get; set; }
         public User? Sender { get; set; }

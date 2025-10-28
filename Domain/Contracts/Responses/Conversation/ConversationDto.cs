@@ -1,10 +1,7 @@
-﻿using Domain.Entities;
+﻿using Domain.Contracts.Responses.ConversationUser;
+using Domain.Contracts.Responses.Message;
+using Domain.Entities;
 using Domain.Enum.Conversation.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Domain.Contracts.Responses.Conversation
 {
@@ -13,6 +10,7 @@ namespace Domain.Contracts.Responses.Conversation
         public Guid Id { get; set; }
         public ConversationType Type { get; set; }
         public string? ConversationName { get; set; }
-        public List<ConversationUser>? ConversationUsers { get; set; }
+        public List<ConversationUserDto>? ConversationUsers { get; set; }
+        public MessageDto? NewestMessage { get; set; } = null;
     }
 }

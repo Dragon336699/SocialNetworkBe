@@ -94,21 +94,20 @@ namespace SocialNetworkBe.Services.ConversationServices
             {
                 var conversationUser = await _unitOfWork.ConversationUserRepository.FindAsync(cu => cu.UserId == userId);
                 if (conversationUser == null) return null;
-                List<Conversation> conversations = new List<Conversation>();
-                foreach (var item in conversationUser)
-                {
-                    Conversation? conversation = null;
-                    Guid conversationId = item.ConversationId;
-                    conversation = await _unitOfWork.ConversationRepository.GetByIdAsync(conversationId);
-                    if (conversation.Type == ConversationType.Personal)
-                    {
-                        IEnumerable<Conversation>? conversationsIenum = await _unitOfWork.ConversationRepository.FindAsyncWithIncludes(c => c.Id == conversationId, c => c.ConversationUsers);
-                        conversation = conversationsIenum?.FirstOrDefault();
-                    }
-                    if (conversation != null) conversations.Add(conversation);
-                }
+                List<ConversationDto>? conversations = await _unitOfWork.ConversationRepository.GetAllConversationByUser(userId);
+                //foreach (var item in conversationUser)
+                //{
+                //    Conversation? conversation = null;
+                //    Guid conversationId = item.ConversationId;
+                //    conversation = await _unitOfWork.ConversationRepository.GetByIdAsync(conversationId);
+                //    if (conversation.Type == ConversationType.Personal)
+                //    {
+                //        conversation = conversationsIenum?.FirstOrDefault();
+                //    }
+                //    if (conversation != null) conversations.Add(conversation);
+                //}
 
-                return _mapper.Map<List<ConversationDto>>(conversations);
+                return conversations;
             }
             catch (Exception ex)
             {

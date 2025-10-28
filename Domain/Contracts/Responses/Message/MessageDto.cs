@@ -20,7 +20,7 @@ namespace Domain.Contracts.Responses.Message
         public Guid? RepliedMessageId { get; set; }
         public MessageDto? RepliedMessage { get; set; }
         public List<MessageAttachment>? MessageAttachments { get; set; }
-        public required UserDto Sender { get; set; }
+        public UserDto? Sender { get; set; }
 
     }
 }

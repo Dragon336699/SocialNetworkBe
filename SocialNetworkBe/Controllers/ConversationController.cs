@@ -75,7 +75,7 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpGet]
-        [Route("getAllConversation")]
+        [Route("getAllConversationsByUser")]
         public async Task<IActionResult> GetAllConversationByUser()
         {
             try
