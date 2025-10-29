@@ -1,6 +1,7 @@
 ﻿using DataAccess.AutoMapper;
 using DataAccess.Repositories;
 using DataAccess.UnitOfWork;
+using Domain.Interfaces.ChatInterfaces;
 using Domain.Interfaces.RepositoryInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
@@ -54,6 +55,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddScoped<OTPService>();
 
             services.AddSingleton<IUserIdProvider, CustomerUserIdProvider>();
+            services.AddSingleton<IUserConnectionManager, UserConnectionManager>();
             services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
         }
     }

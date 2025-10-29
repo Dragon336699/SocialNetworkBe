@@ -13,5 +13,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<Guid?> CheckExist(Guid senderId, Guid receiverId);
         Task AddUsersToConversationAsync(Guid conversationId, List<Guid> userIds);
         Task<IEnumerable<ConversationUser>?> GetConversationUser(GetConversationUserRequest request);
+        Task<IEnumerable<ConversationUser>?> GetConversationUsersByUserId(Guid userId);
     }
 }

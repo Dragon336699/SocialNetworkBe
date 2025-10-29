@@ -5,6 +5,7 @@ using Domain.Interfaces.UnitOfWorkInterface;
 using SocialNetworkBe.Services.UserServices;
 using Domain.Contracts.Responses.User;
 using Domain.Contracts.Requests.ConversationUser;
+using Azure.Core;
 namespace SocialNetworkBe.Services.ConversationUserServices
 {
     public class ConversationUserService : IConversationUserService
@@ -85,6 +86,20 @@ namespace SocialNetworkBe.Services.ConversationUserServices
             } catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while getting conversation user");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<ConversationUser>?> GetConversationUsersByUserId(Guid userId)
+        {
+            try
+            {
+                IEnumerable<ConversationUser>? conversationUser = await _unitOfWork.ConversationUserRepository.FindAsync(cu => cu.UserId == userId);
+                if (conversationUser == null) return null;
+                return conversationUser;
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting conversation user by userId");
                 throw;
             }
         }
