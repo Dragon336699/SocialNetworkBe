@@ -113,7 +113,7 @@ namespace SocialNetworkBe.Services.MessageService
         {
             try
             {
-                IEnumerable<Message>? messages = await _unitOfWork.MessageRepository.FindAsyncWithIncludes(m => m.Id == messageId, m => m.Sender, m => m.MessageAttachments);
+                IEnumerable<Message>? messages = await _unitOfWork.MessageRepository.FindAsyncWithIncludes(m => m.Id == messageId, m => m.Sender, m => m.MessageAttachments, m => m.MessageReactionUsers);
 
                 Message? message = messages?.FirstOrDefault();
                 if (message == null) return null;
@@ -196,6 +196,58 @@ namespace SocialNetworkBe.Services.MessageService
             {
                 _logger.LogError(ex, "Error while sending message");
                 return (SendMessageEnum.SendMessageFailed, null);
+            }
+        }
+
+        public async Task<MessageDto?> AddUpdateDeleteReactionMessage(ReactionMessageRequest request, Guid userId)
+        {
+            try
+            {
+                MessageReactionUser? messageReactionUser = await _unitOfWork.MessageReactionUserRepository.FindFirstAsync(r => r.MessageId == request.MessageId && r.UserId == userId);
+                Message? message = await _unitOfWork.MessageRepository.FindFirstAsync(m => m.Id == request.MessageId);
+                if (message == null) return null;
+                Conversation? conversation = await _unitOfWork.ConversationRepository.GetByIdAsync(message.ConversationId);
+                if (conversation == null) return null;
+                if (messageReactionUser == null)
+                {
+                    messageReactionUser = new MessageReactionUser
+                    {
+                        UserId = userId,
+                        Reaction = request.Reaction,
+                        MessageId = request.MessageId,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                    };
+
+                    _unitOfWork.MessageReactionUserRepository.Add(messageReactionUser);
+                } else if (messageReactionUser != null &&  messageReactionUser.Reaction == request.Reaction)
+                {
+                    _unitOfWork.MessageReactionUserRepository.Remove(messageReactionUser);
+                } else if (messageReactionUser != null && messageReactionUser.Reaction != request.Reaction)
+                {
+                    messageReactionUser.Reaction = request.Reaction;
+                    messageReactionUser.UpdatedAt = DateTime.UtcNow;
+                }
+
+                _unitOfWork.Complete();
+                MessageDto? updatedMessage = await GetMessageById(message.Id);
+
+                if (conversation.Type == ConversationType.Personal)
+                {
+                    ConversationUser? conversationUser = await _unitOfWork.ConversationUserRepository.FindFirstAsync(cu => cu.ConversationId == conversation.Id && cu.UserId != userId);
+                    if (conversationUser == null) return null;
+                    await _chatHub.Clients.User(conversationUser.UserId.ToString().ToLower()).SendAsync("UpdateMessage", updatedMessage);
+                } else
+                {
+                    await _chatHub.Clients.Groups(conversation.Id.ToString().ToLower()).SendAsync("UpdateMessage", updatedMessage);
+                }
+
+                return updatedMessage;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while sending message");
+                throw;
             }
         }
     }

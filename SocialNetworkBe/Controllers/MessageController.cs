@@ -63,5 +63,24 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpPost]
+        [Route("reaction")]
+        public async Task<IActionResult> AddUpdateDeleteReactionMessage([FromBody] ReactionMessageRequest request)
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null) return Unauthorized();
+                var newMessage = await _messageService.AddUpdateDeleteReactionMessage(request, Guid.Parse(userId));
+                if (newMessage == null) return BadRequest(new { message = "Reaction failed" });
+                return Ok(new { data = newMessage, message = "Reaction successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }

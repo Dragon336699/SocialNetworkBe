@@ -19,6 +19,7 @@ namespace Domain.Contracts.Responses.Message
         public Guid SenderId { get; set; }
         public Guid? RepliedMessageId { get; set; }
         public MessageDto? RepliedMessage { get; set; }
+        public ICollection<MessageReactionUser>? MessageReactionUsers { get; set; }
         public List<MessageAttachment>? MessageAttachments { get; set; }
         public UserDto? Sender { get; set; }
 

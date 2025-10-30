@@ -26,6 +26,7 @@ namespace DataAccess.Repositories
                 .Where(x => x.ConversationId == conversationId)
                 .Include(x => x.Sender)
                 .Include(x => x.MessageAttachments)
+                .Include(x => x.MessageReactionUsers)
                 .Include(x => x.RepliedMessage)
                 .OrderByDescending(m => m.CreatedAt)
                 .Skip(skip)

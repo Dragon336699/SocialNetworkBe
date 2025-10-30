@@ -32,6 +32,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<IMessageRepository, MessageRepository>();
             services.AddTransient<IConversationRepository, ConversationRepository>();
             services.AddTransient<IConversationUserRepository, ConversationUserRepository>();
+            services.AddTransient<IMessageReactionUserRepository, MessageReactionUserRepository>();
 
             services.AddTransient<IConversationRepository, ConversationRepository>();
             services.AddTransient<IPostRepository, PostRepository>();           
