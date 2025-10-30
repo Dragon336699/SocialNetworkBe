@@ -6,7 +6,7 @@
         public User? User { get; set; }
         public Guid PostId { get; set; }
         public Post? Post { get; set; }
-        public Guid ReactionId { get; set; }
-        public Reaction? Reaction { get; set; }
+        public required DateTime CreatedAt { get; set; }
+        public required DateTime UpdatedAt { get; set; }
     }
 }

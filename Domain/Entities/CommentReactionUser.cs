@@ -11,8 +11,8 @@ namespace Domain.Entities
         public Guid UserId { get; set; }
         public User? User { get; set; }
         public Guid CommentId { get; set; }
-        public Comment? Post { get; set; }
-        public Guid ReactionId { get; set; }
-        public Reaction? Reaction { get; set; }
+        public Comment? Comment { get; set; }
+        public required DateTime CreatedAt { get; set; }
+        public required DateTime UpdatedAt { get; set; }
     }
 }

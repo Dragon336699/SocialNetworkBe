@@ -29,7 +29,6 @@ namespace DataAccess.DbContext
         public DbSet<Post> Post { get; set; }
         public DbSet<PostImage> PostImage { get; set; }
         public DbSet<PostReactionUser> PostReactionUser { get; set; }
-        public DbSet<Reaction> Reaction { get; set; }
         public DbSet<Role> Role { get; set; }
         public DbSet<SearchingHistory> SearchingHistory { get; set; }
         public DbSet<User> User { get; set; }

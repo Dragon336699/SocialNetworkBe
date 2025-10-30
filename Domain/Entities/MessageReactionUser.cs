@@ -6,7 +6,8 @@
         public User? User { get; set; }
         public Guid MessageId { get; set; }
         public Message? Message { get; set; }
-        public Guid ReactionId { get; set; }
-        public Reaction? Reaction { get; set; }
+        public required string Reaction { get; set; }
+        public required DateTime CreatedAt { get; set; }
+        public required DateTime UpdatedAt { get; set; }
     }
 }
