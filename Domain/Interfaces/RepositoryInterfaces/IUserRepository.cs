@@ -9,5 +9,6 @@ namespace Domain.Interfaces.RepositoryInterfaces
 {
     public interface IUserRepository : IGenericRepository<User>
     {
+        Task<IEnumerable<User>?> SearchUsers(string keywordNomarlized);
     }
 }

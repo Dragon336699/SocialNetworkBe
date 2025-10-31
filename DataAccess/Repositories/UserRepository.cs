@@ -1,11 +1,7 @@
 ﻿using DataAccess.DbContext;
 using Domain.Entities;
 using Domain.Interfaces.RepositoryInterfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repositories
 {
@@ -13,7 +9,19 @@ namespace DataAccess.Repositories
     {
         public UserRepository(SocialNetworkDbContext context) : base(context)
         {
-            
+
+        }
+
+        public async Task<IEnumerable<User>?> SearchUsers(string keywordNomarlized)
+        {
+            IEnumerable<User>? users = await _context.Users
+                .Where(u => u.Email.ToLower().Contains(keywordNomarlized)
+                        || u.UserName.ToLower().Contains(keywordNomarlized)
+                        || u.FirstName.ToLower().Contains(keywordNomarlized)
+                        || u.LastName.ToLower().Contains(keywordNomarlized))
+                .AsNoTracking()
+                .Take(10).ToListAsync();
+            return users;
         }
     }
 }

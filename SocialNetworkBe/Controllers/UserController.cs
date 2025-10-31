@@ -251,5 +251,22 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpGet]
+        [Route("user/search")]
+        public async Task<IActionResult> SearchUsers([FromQuery] string keyword)
+        {
+            try
+            {
+                var users = await _userService.SearchUser(keyword);
+                if (users == null) return BadRequest(new { message = "Users Not Found" });
+                return Ok(new { data = users, message = "Search users successful" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }

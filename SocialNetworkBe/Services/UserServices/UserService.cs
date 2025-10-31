@@ -31,7 +31,18 @@ namespace SocialNetworkBe.Services.UserServices
         private readonly TokenService _tokenService;
         private readonly OTPService _otpService;
         private readonly SocialNetworkDbContext _context;
-        public UserService(UserManager<User> userManager, RoleManager<Role> roleManager, IMapper mapper, IEmailSender emailSender, ILogger<UserService> logger, TokenService tokenService, OTPService otpService, SocialNetworkDbContext context)
+        private readonly IUnitOfWork _unitOfWork;
+        public UserService(
+            UserManager<User> userManager,
+            RoleManager<Role> roleManager,
+            IMapper mapper,
+            IEmailSender emailSender,
+            ILogger<UserService> logger,
+            TokenService tokenService,
+            OTPService otpService,
+            SocialNetworkDbContext context,
+            IUnitOfWork unitOfWork
+            )
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -41,6 +52,7 @@ namespace SocialNetworkBe.Services.UserServices
             _tokenService = tokenService;
             _otpService = otpService;
             _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<(bool, string)> UserRegisterAsync(UserRegistrationRequest request, string baseUrl)
@@ -339,6 +351,21 @@ namespace SocialNetworkBe.Services.UserServices
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while getting user info by username");
+                throw;
+            }
+        }
+        public async Task<IEnumerable<UserDto>?> SearchUser(string keyword)
+        {
+            try
+            {
+                string keywordNomalized = keyword.Trim().ToLower();
+                IEnumerable<User>? users = await _unitOfWork.UserRepository.SearchUsers(keyword);
+                IEnumerable<UserDto>? usersDto = _mapper.Map<IEnumerable<UserDto>>(users);
+                return usersDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while searching user");
                 throw;
             }
         }

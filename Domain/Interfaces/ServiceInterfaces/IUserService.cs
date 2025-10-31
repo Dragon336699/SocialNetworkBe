@@ -21,5 +21,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<LoginRes> GoogleLogin(string googleToken);
         Task<UserDto?> GetUserInfoByUserId(string userId);
         Task<(bool, UserDto?)> GetUserInfoByUserName(string userName);
+        Task<IEnumerable<UserDto>?> SearchUser(string keyword);
     }
 }

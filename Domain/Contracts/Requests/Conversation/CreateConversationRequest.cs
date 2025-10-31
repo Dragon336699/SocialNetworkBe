@@ -10,7 +10,7 @@ namespace Domain.Contracts.Requests.Conversation
         public required ConversationType ConversationType { get; set; }
 
         [Required]
-        [MinLength(2, ErrorMessage = "At least 2 users are required for a conversation")]
+        [MinLength(1, ErrorMessage = "At least 2 users are required for a conversation")]
         public required List<Guid> UserIds { get; set; }
     }
 }
