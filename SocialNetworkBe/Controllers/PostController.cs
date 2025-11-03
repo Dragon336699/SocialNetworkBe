@@ -49,5 +49,52 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllPosts([FromQuery] int skip = 0, [FromQuery] int take = 10)
+        {
+            try
+            {
+                var (status, posts) = await _postService.GetAllPostsAsync(skip, take);
+
+                return status switch
+                {
+                    GetAllPostsEnum.Success => Ok(new GetAllPostsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Posts = posts,
+                        TotalCount = posts?.Count ?? 0
+                    }),
+                    GetAllPostsEnum.NoPostsFound => Ok(new GetAllPostsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Posts = new List<PostDto>(),
+                        TotalCount = 0
+                    }),
+                    GetAllPostsEnum.Failed => BadRequest(new GetAllPostsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Posts = null,
+                        TotalCount = 0
+                    }),
+                    _ => StatusCode(500, new GetAllPostsResponse
+                    {
+                        Message = "Unknown error occurred",
+                        Posts = null,
+                        TotalCount = 0
+                    })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new GetAllPostsResponse
+                {
+                    Message = ex.Message,
+                    Posts = null,
+                    TotalCount = 0
+                });
+            }
+        }
     }
 }
