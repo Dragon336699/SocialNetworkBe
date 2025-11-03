@@ -1,6 +1,7 @@
 ﻿using Domain.Contracts.Requests.User;
 using Domain.Contracts.Responses.User;
 using Domain.Enum.User.Functions;
+using Domain.Enum.User.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,5 +23,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<UserDto?> GetUserInfoByUserId(string userId);
         Task<(bool, UserDto?)> GetUserInfoByUserName(string userName);
         Task<IEnumerable<UserDto>?> SearchUser(string keyword);
+        Task<UserDto?> UpdateUserStatus(Guid userId, UserStatus status);
     }
 }

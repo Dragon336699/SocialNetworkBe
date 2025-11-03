@@ -7,6 +7,7 @@ using Domain.Entities;
 using Domain.Enum.Conversation.Types;
 using Domain.Enum.Message.Functions;
 using Domain.Enum.Message.Types;
+using Domain.Enum.User.Types;
 using Domain.Interfaces.ChatInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -51,6 +52,9 @@ namespace SocialNetworkBe.ChatServer
                 var userIdentifier = Context.UserIdentifier;
                 if (!Guid.TryParse(Context.UserIdentifier, out Guid userId))
                     return;
+                UserDto? user = await _userService.UpdateUserStatus(userId, UserStatus.Online);
+                await Clients.All.SendAsync("UpdateUser", user);
+
                 var connectionIdContext = Context.ConnectionId;
                 await _userConnectionManager.AddConnectionAsync(userIdentifier, connectionIdContext);
                 IEnumerable<string> connectionIds = await _userConnectionManager.GetConnectionAsync(userId);
@@ -78,6 +82,9 @@ namespace SocialNetworkBe.ChatServer
                 var userIdentifier = Context.UserIdentifier;
                 if (!Guid.TryParse(Context.UserIdentifier, out Guid userId))
                     return;
+                UserDto? user = await _userService.UpdateUserStatus(userId, UserStatus.Offline);
+                await Clients.All.SendAsync("UpdateUser", user);
+
                 var connectionIdContext = Context.ConnectionId;
                 await _userConnectionManager.RemoveConnectionAsync(userIdentifier, connectionIdContext);
                 await base.OnDisconnectedAsync(exception);

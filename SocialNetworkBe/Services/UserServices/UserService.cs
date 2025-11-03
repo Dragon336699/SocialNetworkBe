@@ -369,5 +369,22 @@ namespace SocialNetworkBe.Services.UserServices
                 throw;
             }
         }
+
+        public async Task<UserDto?> UpdateUserStatus(Guid userId, UserStatus status)
+        {
+            try
+            {
+                User? user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+                if (user == null) return null;
+                user.Status = status;
+                _unitOfWork.Complete();
+                UserDto? userDto = _mapper.Map<UserDto>(user);
+                return userDto;
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while updating users status");
+                throw;
+            }
+        }
     }
 }

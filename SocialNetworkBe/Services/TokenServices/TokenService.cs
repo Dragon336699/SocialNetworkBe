@@ -21,7 +21,7 @@ namespace SocialNetworkBe.Services.TokenServices
             return new JwtSecurityToken(
                 issuer: _config["JWT:Issuer"],
                 audience: _config["JWT:Audience"],
-                expires: DateTime.UtcNow.AddDays(5),
+                expires: DateTime.UtcNow.AddDays(30),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(symmetricKey, SecurityAlgorithms.HmacSha256)
             );
