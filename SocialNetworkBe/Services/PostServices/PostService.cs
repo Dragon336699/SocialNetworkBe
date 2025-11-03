@@ -1,4 +1,6 @@
 ﻿using Domain.Contracts.Requests.Post;
+using Domain.Contracts.Responses.Post;
+using Domain.Contracts.Responses.User;
 using Domain.Entities;
 using Domain.Enum.Post.Functions;
 using Domain.Interfaces.ServiceInterfaces;
@@ -104,6 +106,66 @@ namespace SocialNetworkBe.Services.PostServices
             {
                 _logger.LogError(ex, "Error when creating post for user {UserId}", userId);
                 return (CreatePostEnum.CreatePostFailed, null);
+            }
+        }
+
+        public async Task<(GetAllPostsEnum, List<PostDto>?)> GetAllPostsAsync(int skip = 0, int take = 10)
+        {
+            try
+            {
+                // Lấy tất cả posts với includes cho User và PostImages
+                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
+                    p => true, // Lấy tất cả posts
+                    p => p.User,
+                    p => p.PostImages
+                );
+
+                if (posts == null || !posts.Any())
+                {
+                    return (GetAllPostsEnum.NoPostsFound, null);
+                }
+
+                // Sắp xếp theo thời gian tạo mới nhất và áp dụng pagination
+                var sortedPosts = posts
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Skip(skip)
+                    .Take(take)
+                    .ToList();
+
+                var postDtos = sortedPosts.Select(post => new PostDto
+                {
+                    Id = post.Id,
+                    Content = post.Content,
+                    TotalLiked = post.TotalLiked,
+                    TotalComment = post.TotalComment,
+                    CreatedAt = post.CreatedAt,
+                    UpdatedAt = post.UpdatedAt,
+                    PostPrivacy = post.PostPrivacy,
+                    UserId = post.UserId,
+                    GroupId = post.GroupId,
+                    User = post.User == null ? null : new UserDto
+                    {
+                        Id = post.User.Id,
+                        Email = post.User.Email,
+                        UserName = post.User.UserName ?? "",
+                        Status = post.User.Status.ToString(),
+                        FirstName = post.User.FirstName,
+                        LastName = post.User.LastName,
+                        AvatarUrl = post.User.AvatarUrl
+                    },
+                    PostImages = post.PostImages?.Select(img => new PostImageDto
+                    {
+                        Id = img.Id,
+                        ImageUrl = img.ImageUrl
+                    }).ToList()
+                }).ToList();
+
+                return (GetAllPostsEnum.Success, postDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when getting all posts");
+                return (GetAllPostsEnum.Failed, null);
             }
         }
     }
