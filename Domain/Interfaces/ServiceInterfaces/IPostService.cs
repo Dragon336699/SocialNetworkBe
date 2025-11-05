@@ -11,5 +11,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<(GetPostByIdEnum, PostDto?)> GetPostByIdAsync(Guid postId, Guid userId);
         Task<(UpdatePostEnum, PostDto?)> UpdatePostAsync(Guid postId, UpdatePostRequest request, Guid userId);
         Task<(DeletePostEnum, bool)> DeletePostAsync(Guid postId, Guid userId);
+        Task<PostDto?> AddUpdateDeleteReactionPost(ReactionPostRequest request, Guid userId);
     }
 }

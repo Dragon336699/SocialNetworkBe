@@ -18,6 +18,8 @@ namespace DataAccess.UnitOfWork
         public IUserRepository UserRepository { get; set; }      
 
         public IMessageAttachmentRepository MessageAttachmentRepository { get; set; }
+        public IPostReactionUserRepository PostReactionUserRepository { get; set; }
+
         public UnitOfWork(
             SocialNetworkDbContext context,
             IMessageRepository messageRepository,
@@ -26,7 +28,8 @@ namespace DataAccess.UnitOfWork
             IPostRepository postRepository,           
             IUserRepository userRepository,
             IMessageAttachmentRepository messageAttachmentRepository,
-            IMessageReactionUserRepository messageReactionUserRepository
+            IMessageReactionUserRepository messageReactionUserRepository,
+            IPostReactionUserRepository postReactionUserRepository
 
         )
         {
@@ -38,6 +41,7 @@ namespace DataAccess.UnitOfWork
             PostRepository = postRepository;           
             UserRepository = userRepository;
             MessageAttachmentRepository = messageAttachmentRepository;
+            PostReactionUserRepository = postReactionUserRepository;
 
         }
         public int Complete()

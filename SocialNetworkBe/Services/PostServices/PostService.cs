@@ -118,7 +118,8 @@ namespace SocialNetworkBe.Services.PostServices
                 var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
                     p => true, // Lấy tất cả posts
                     p => p.User,
-                    p => p.PostImages
+                    p => p.PostImages,
+                    p => p.PostReactionUsers
                 );
 
                 if (posts == null || !posts.Any())
@@ -158,7 +159,8 @@ namespace SocialNetworkBe.Services.PostServices
                     {
                         Id = img.Id,
                         ImageUrl = img.ImageUrl
-                    }).ToList()
+                    }).ToList(),
+                    PostReactionUsers = post.PostReactionUsers
                 }).ToList();
 
                 return (GetAllPostsEnum.Success, postDtos);
@@ -178,7 +180,8 @@ namespace SocialNetworkBe.Services.PostServices
                 var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
                     p => p.Id == postId,
                     p => p.User,
-                    p => p.PostImages
+                    p => p.PostImages,
+                    p => p.PostReactionUsers
                 );
 
                 var post = posts?.FirstOrDefault();
@@ -189,8 +192,7 @@ namespace SocialNetworkBe.Services.PostServices
 
                 // Kiểm tra quyền xem post          
                 if (post.UserId != userId)
-                {
-                    // Kiểm tra privacy settings
+                {                  
                     switch (post.PostPrivacy)
                     {
                         case PostPrivacy.Private:
@@ -201,8 +203,7 @@ namespace SocialNetworkBe.Services.PostServices
                             break;
                     }
                 }
-
-                // Tạo PostDto
+             
                 var postDto = new PostDto
                 {
                     Id = post.Id,
@@ -228,7 +229,8 @@ namespace SocialNetworkBe.Services.PostServices
                     {
                         Id = img.Id,
                         ImageUrl = img.ImageUrl
-                    }).ToList()
+                    }).ToList(),
+                    PostReactionUsers = post.PostReactionUsers
                 };
 
                 return (GetPostByIdEnum.Success, postDto);
@@ -376,7 +378,8 @@ namespace SocialNetworkBe.Services.PostServices
                         {
                             Id = img.Id,
                             ImageUrl = img.ImageUrl
-                        }).ToList()
+                        }).ToList(),
+                        PostReactionUsers = post.PostReactionUsers
                     };
 
                     return (UpdatePostEnum.UpdatePostSuccess, postDto);
@@ -426,6 +429,91 @@ namespace SocialNetworkBe.Services.PostServices
             {
                 _logger.LogError(ex, "Error when deleting post {PostId} for user {UserId}", postId, userId);
                 return (DeletePostEnum.DeletePostFailed, false);
+            }
+        }
+
+        public async Task<PostDto?> AddUpdateDeleteReactionPost(ReactionPostRequest request, Guid userId)
+        {
+            try
+            {
+                // Tìm reaction hiện có của user cho post
+                PostReactionUser? postReactionUser = await _unitOfWork.PostReactionUserRepository
+                    .FindFirstAsync(r => r.PostId == request.PostId && r.UserId == userId);
+              
+                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
+                    p => p.Id == request.PostId,
+                    p => p.User,
+                    p => p.PostImages,
+                    p => p.PostReactionUsers
+                );
+
+                var post = posts?.FirstOrDefault();
+                if (post == null) return null;
+
+                if (postReactionUser == null)
+                {
+                    postReactionUser = new PostReactionUser
+                    {
+                        UserId = userId,
+                        Reaction = request.Reaction,
+                        PostId = request.PostId,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                    };
+
+                    _unitOfWork.PostReactionUserRepository.Add(postReactionUser);
+                    post.TotalLiked += 1;
+                }
+                else if (postReactionUser.Reaction == request.Reaction)
+                {                 
+                    _unitOfWork.PostReactionUserRepository.Remove(postReactionUser);                 
+                    post.TotalLiked = Math.Max(0, post.TotalLiked - 1);
+                }
+                else
+                {                  
+                    postReactionUser.Reaction = request.Reaction;
+                    postReactionUser.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.PostReactionUserRepository.Update(postReactionUser);
+                }
+
+                _unitOfWork.PostRepository.Update(post);
+                await _unitOfWork.CompleteAsync();
+             
+                var postDto = new PostDto
+                {
+                    Id = post.Id,
+                    Content = post.Content,
+                    TotalLiked = post.TotalLiked,
+                    TotalComment = post.TotalComment,
+                    CreatedAt = post.CreatedAt,
+                    UpdatedAt = post.UpdatedAt,
+                    PostPrivacy = post.PostPrivacy,
+                    UserId = post.UserId,
+                    GroupId = post.GroupId,
+                    User = post.User == null ? null : new UserDto
+                    {
+                        Id = post.User.Id,
+                        Email = post.User.Email,
+                        UserName = post.User.UserName ?? "",
+                        Status = post.User.Status.ToString(),
+                        FirstName = post.User.FirstName,
+                        LastName = post.User.LastName,
+                        AvatarUrl = post.User.AvatarUrl
+                    },
+                    PostImages = post.PostImages?.Select(img => new PostImageDto
+                    {
+                        Id = img.Id,
+                        ImageUrl = img.ImageUrl
+                    }).ToList(),
+                    PostReactionUsers = post.PostReactionUsers
+                };
+
+                return postDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while reacting to post {PostId}", request.PostId);
+                return null;
             }
         }
     }
