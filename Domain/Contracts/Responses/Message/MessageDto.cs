@@ -16,6 +16,7 @@ namespace Domain.Contracts.Responses.Message
         public required string Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public required Guid ConversationId {  get; set; }
         public Guid SenderId { get; set; }
         public Guid? RepliedMessageId { get; set; }
         public MessageDto? RepliedMessage { get; set; }

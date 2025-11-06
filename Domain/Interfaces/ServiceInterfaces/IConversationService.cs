@@ -12,5 +12,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<(CreateConversationEnum, Guid?)> CreateConversationAsync(ConversationType conversationType, List<Guid> userIds);
         Task<Conversation?> GetConversationById(Guid conversationId);
         Task<List<ConversationDto>?> GetAllConversationByUser(Guid userId);
+        Task<ConversationDto?> GetConversationForList(Guid conversationId, Guid userId);
     }
 }

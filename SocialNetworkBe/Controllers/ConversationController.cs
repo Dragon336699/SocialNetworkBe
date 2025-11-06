@@ -89,5 +89,23 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpPost]
+        [Route("getConversationForList")]
+        public async Task<IActionResult> GetConversationForList([FromBody] Guid conversationId)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                ConversationDto? conversation = await _conversationService.GetConversationForList(conversationId, userId);
+                if (conversation == null) return BadRequest(new { message = "Conversations doesn't exist!" });
+                return Ok(new { message = "Get conversations successfully", data = conversation });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }

@@ -95,23 +95,26 @@ namespace SocialNetworkBe.Services.ConversationServices
                 var conversationUser = await _unitOfWork.ConversationUserRepository.FindAsync(cu => cu.UserId == userId);
                 if (conversationUser == null) return null;
                 List<ConversationDto>? conversations = await _unitOfWork.ConversationRepository.GetAllConversationByUser(userId);
-                //foreach (var item in conversationUser)
-                //{
-                //    Conversation? conversation = null;
-                //    Guid conversationId = item.ConversationId;
-                //    conversation = await _unitOfWork.ConversationRepository.GetByIdAsync(conversationId);
-                //    if (conversation.Type == ConversationType.Personal)
-                //    {
-                //        conversation = conversationsIenum?.FirstOrDefault();
-                //    }
-                //    if (conversation != null) conversations.Add(conversation);
-                //}
-
                 return conversations;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while getting all conversations");
+                throw;
+            }
+        }
+
+        public async Task<ConversationDto?> GetConversationForList(Guid conversationId, Guid userId)
+        {
+            try
+            {
+                var conversationUser = await _unitOfWork.ConversationUserRepository.FindAsync(cu => cu.UserId == userId);
+                if (conversationUser == null) return null;
+                ConversationDto? conversation = await _unitOfWork.ConversationRepository.GetConversationForList(conversationId, userId);
+                return conversation;
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting conversation for list");
                 throw;
             }
         }

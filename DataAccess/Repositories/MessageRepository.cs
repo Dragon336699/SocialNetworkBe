@@ -28,11 +28,13 @@ namespace DataAccess.Repositories
                 .Include(x => x.MessageAttachments)
                 .Include(x => x.MessageReactionUsers)
                 .Include(x => x.RepliedMessage)
+                .AsNoTracking()
                 .OrderByDescending(m => m.CreatedAt)
                 .Skip(skip)
                 .Take(take)
-                .OrderBy(m => m.CreatedAt)
                 .ToListAsync();
+
+            messages.Reverse();
             if (messages == null) return null;
             return messages;
         }
