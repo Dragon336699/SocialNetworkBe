@@ -96,5 +96,106 @@ namespace SocialNetworkBe.Controllers
                 });
             }
         }
+
+        [Authorize]
+        [HttpGet("{postId}")]
+        public async Task<IActionResult> GetPostById(Guid postId)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, postDto) = await _postService.GetPostByIdAsync(postId, userId);
+
+                return status switch
+                {
+                    GetPostByIdEnum.Success => Ok(new GetPostByIdResponse
+                    {
+                        Message = status.GetMessage(),
+                        Post = postDto
+                    }),
+                    GetPostByIdEnum.PostNotFound => NotFound( new GetPostByIdResponse{ Message = status.GetMessage() } ),              
+                    GetPostByIdEnum.Failed => StatusCode( 500, new GetPostByIdResponse{ Message = status.GetMessage() } ),
+                    _ => StatusCode(500, new GetPostByIdResponse{ Message = "Unknown error occurred"} )
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode( 500, new GetPostByIdResponse{ Message = ex.Message } );
+            }
+        }
+
+        [Authorize]
+        [HttpPut("{postId}")]
+        public async Task<IActionResult> UpdatePost([FromForm] UpdatePostRequest request, Guid postId)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, postDto) = await _postService.UpdatePostAsync(postId, request, userId);
+
+                return status switch
+                {
+                    UpdatePostEnum.PostNotFound => NotFound(new UpdatePostResponse { Message = status.GetMessage() }),
+                    UpdatePostEnum.InvalidContent => BadRequest(new UpdatePostResponse { Message = status.GetMessage() }),
+                    UpdatePostEnum.InvalidImageFormat => BadRequest(new UpdatePostResponse { Message = status.GetMessage() }),
+                    UpdatePostEnum.FileTooLarge => BadRequest(new UpdatePostResponse { Message = status.GetMessage() }),
+                    UpdatePostEnum.ImageUploadFailed => BadRequest(new UpdatePostResponse { Message = status.GetMessage() }),
+                    UpdatePostEnum.UpdatePostSuccess => Ok(new UpdatePostResponse
+                    {
+                        Message = status.GetMessage(),
+                        Post = postDto
+                    }),
+                    UpdatePostEnum.UpdatePostFailed => StatusCode(500, new UpdatePostResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new UpdatePostResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new UpdatePostResponse { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpDelete("{postId}")]
+        public async Task<IActionResult> DeletePost(Guid postId)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, result) = await _postService.DeletePostAsync(postId, userId);
+
+                return status switch
+                {
+                    DeletePostEnum.PostNotFound => NotFound(new DeletePostResponse { Message = status.GetMessage() }),
+                    DeletePostEnum.DeletePostSuccess => Ok(new DeletePostResponse { Message = status.GetMessage() }),
+                    DeletePostEnum.DeletePostFailed => StatusCode(500, new DeletePostResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new DeletePostResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new DeletePostResponse { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("reaction")]
+        public async Task<IActionResult> AddUpdateDeleteReactionPost([FromBody] ReactionPostRequest request)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var updatedPost = await _postService.AddUpdateDeleteReactionPost(request, userId);
+
+                if (updatedPost == null)
+                    return BadRequest(new ReactionPostResponse { Message = "Reaction failed" });
+
+                return Ok(new ReactionPostResponse{ Message = "Reaction successfully", Post = updatedPost });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ReactionPostResponse { Message = ex.Message });
+            }
+        }
     }
 }
