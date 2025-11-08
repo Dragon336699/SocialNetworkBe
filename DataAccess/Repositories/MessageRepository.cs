@@ -32,6 +32,7 @@ namespace DataAccess.Repositories
                 .OrderByDescending(m => m.CreatedAt)
                 .Skip(skip)
                 .Take(take)
+                .AsSplitQuery()
                 .ToListAsync();
 
             messages.Reverse();
