@@ -268,5 +268,65 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpPut]
+        [Route("user/changeAvatar")]
+        public async Task<IActionResult> UpdateAvatar([FromForm] UpdateAvatarRequest request)
+        {
+
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null) return BadRequest(new { message = "User Not Found" });
+                var (status, avatarUrl) = await _userService.UpdateAvatarAsync(request, userId);
+                var message = status.GetMessage();
+
+                return status switch
+                {
+                    UpdateAvatarEnum.Success =>
+                        Ok(new { message }),
+
+                    UpdateAvatarEnum.UserNotFound =>
+                        NotFound(new { message }),
+
+                    UpdateAvatarEnum.InvalidImageFormat =>
+                        BadRequest(new { message }),
+
+                    UpdateAvatarEnum.FileTooLarge =>
+                        BadRequest(new { message }),
+
+                    UpdateAvatarEnum.UploadFailed =>
+                        StatusCode(500, new { message }),
+
+                    _ =>
+                        StatusCode(500, new { message = "Unexpected error occurred." })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPut]
+        [Route("user/updateInfo")]
+        public async Task<IActionResult> UpdateUserInfo([FromBody] UpdateUserInfoRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return BadRequest(new { message = "User not found" });
+
+            var status = await _userService.UpdateUserInfoAsync(request, userId);
+
+            return status switch
+            {
+                UpdateUserInfoEnum.Success => Ok(new { message = status.GetMessage() }),
+                UpdateUserInfoEnum.UserNotFound => NotFound(new { message = status.GetMessage() }),
+                UpdateUserInfoEnum.InvalidEmail => BadRequest(new { message = status.GetMessage() }),
+                UpdateUserInfoEnum.UploadFailed => StatusCode(500, new { message = status.GetMessage() }),
+                _ => StatusCode(500, new { message = status.GetMessage() })
+            };
+        }
     }
 }

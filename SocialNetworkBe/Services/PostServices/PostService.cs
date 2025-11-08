@@ -516,5 +516,65 @@ namespace SocialNetworkBe.Services.PostServices
                 return null;
             }
         }
+
+        public async Task<(GetPostsByUserEnum, List<PostDto>?)> GetPostsByUserIdAsync(Guid userId, int skip = 0, int take = 10)
+        {
+            try
+            {
+                // Lấy tất cả posts của user với includes cho User và PostImages
+                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
+                    p => p.UserId == userId, // Lọc theo UserId
+                    p => p.User,
+                    p => p.PostImages
+                );
+
+                if (posts == null || !posts.Any())
+                {
+                    return (GetPostsByUserEnum.NoPostsFound, null);
+                }
+
+                // Sắp xếp theo thời gian tạo mới nhất và áp dụng pagination
+                var sortedPosts = posts
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Skip(skip)
+                    .Take(take)
+                    .ToList();
+
+                var postDtos = sortedPosts.Select(post => new PostDto
+                {
+                    Id = post.Id,
+                    Content = post.Content,
+                    TotalLiked = post.TotalLiked,
+                    TotalComment = post.TotalComment,
+                    CreatedAt = post.CreatedAt,
+                    UpdatedAt = post.UpdatedAt,
+                    PostPrivacy = post.PostPrivacy,
+                    UserId = post.UserId,
+                    GroupId = post.GroupId,
+                    User = post.User == null ? null : new UserDto
+                    {
+                        Id = post.User.Id,
+                        Email = post.User.Email,
+                        UserName = post.User.UserName ?? "",
+                        Status = post.User.Status.ToString(),
+                        FirstName = post.User.FirstName,
+                        LastName = post.User.LastName,
+                        AvatarUrl = post.User.AvatarUrl
+                    },
+                    PostImages = post.PostImages?.Select(img => new PostImageDto
+                    {
+                        Id = img.Id,
+                        ImageUrl = img.ImageUrl
+                    }).ToList()
+                }).ToList();
+
+                return (GetPostsByUserEnum.Success, postDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when getting posts for user {UserId}", userId);
+                return (GetPostsByUserEnum.Failed, null);
+            }
+        }
     }
 }
