@@ -82,5 +82,23 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpGet]
+        [Route("getUnreadMessages")]
+        public async Task<IActionResult> GetUnreadMessagesNumber()
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null) return Unauthorized();
+                int count = await _messageService.GetUnreadMessagesNumber(Guid.Parse(userId));
+                return Ok(new { data = count, message = "Get unread messages successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }

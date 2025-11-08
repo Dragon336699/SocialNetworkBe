@@ -1,4 +1,6 @@
-﻿namespace Domain.Contracts.Responses.User
+﻿using Domain.Enum.User.Types;
+
+namespace Domain.Contracts.Responses.User
 {
     public class UserDto
     {

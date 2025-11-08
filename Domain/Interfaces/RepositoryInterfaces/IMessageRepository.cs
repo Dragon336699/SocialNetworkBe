@@ -13,5 +13,6 @@ namespace Domain.Interfaces.RepositoryInterfaces
     {
         Task<List<Message>?> GetMessages(Guid conversationId, int skip, int take);
         Task<Message?> UpdateAllMessagesStatus(Guid messageId, MessageStatus messageStatus);
+        Task<int> GetUnreadMessagesNumber(Guid userId);
     }
 }

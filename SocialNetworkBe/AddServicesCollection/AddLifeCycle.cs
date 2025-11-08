@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.SignalR;
 using SocialNetworkBe.Services.ConversationServices;
 using SocialNetworkBe.Services.ConversationUserServices;
 using SocialNetworkBe.Services.EmailServices;
+using SocialNetworkBe.Services.FriendRequestServices;
 using SocialNetworkBe.Services.MessageService;
 using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.PostServices;
@@ -33,15 +34,17 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<IConversationRepository, ConversationRepository>();
             services.AddTransient<IConversationUserRepository, ConversationUserRepository>();
             services.AddTransient<IMessageReactionUserRepository, MessageReactionUserRepository>();
+            services.AddTransient<IPostReactionUserRepository, PostReactionUserRepository>();
+            services.AddTransient<IFriendRequestRepository, FriendRequestRepository>();
+            services.AddTransient<IUserRelationRepository, UserRelationRepository>();
 
             services.AddTransient<IConversationRepository, ConversationRepository>();
             services.AddTransient<IPostRepository, PostRepository>();           
 
             services.AddTransient<IConversationUserService, ConversationUserService>();
-            services.AddTransient<IConversationService, ConversationService>();
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IMessageService, MessageService>();
+            services.AddTransient<IConversationService, ConversationService>();        
             services.AddScoped<IPostService, PostService>();
+            services.AddScoped<IFriendRequestService, FriendRequestService>();
 
             services.AddTransient<IMessageAttachmentRepository, MessageAttachmentRepository>();
 

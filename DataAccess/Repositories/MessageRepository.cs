@@ -32,6 +32,7 @@ namespace DataAccess.Repositories
                 .OrderByDescending(m => m.CreatedAt)
                 .Skip(skip)
                 .Take(take)
+                .AsSplitQuery()
                 .ToListAsync();
 
             messages.Reverse();
@@ -55,6 +56,13 @@ namespace DataAccess.Repositories
             foreach (var m in allMessages) m.Status = messageStatus;
             await _context.SaveChangesAsync();
             return message;
+        }
+
+        public async Task<int> GetUnreadMessagesNumber(Guid userId)
+        {
+            int count = 0;
+            count = await _context.Message.Where(m => m.Status != MessageStatus.Seen && m.SenderId != userId && m.Conversation.ConversationUsers.Any(cu => cu.UserId == userId)).Select(m => m.Conversation).Distinct().CountAsync();
+            return count;
         }
     }
 }
