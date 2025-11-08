@@ -96,5 +96,55 @@ namespace SocialNetworkBe.Controllers
                 });
             }
         }
+
+        [Authorize]
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetPostsByUserId(Guid userId, [FromQuery] int skip = 0, [FromQuery] int take = 10)
+        {
+            try
+            {
+                var (status, posts) = await _postService.GetPostsByUserIdAsync(userId, skip, take);
+
+                return status switch
+                {
+                    GetPostsByUserEnum.Success => Ok(new GetAllPostsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Posts = posts,
+                        TotalCount = posts?.Count ?? 0
+                    }),
+
+                    GetPostsByUserEnum.NoPostsFound => Ok(new GetAllPostsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Posts = new List<PostDto>(),
+                        TotalCount = 0
+                    }),
+
+                    GetPostsByUserEnum.Failed => BadRequest(new GetAllPostsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Posts = null,
+                        TotalCount = 0
+                    }),
+
+                    _ => StatusCode(500, new GetAllPostsResponse
+                    {
+                        Message = "Unknown error occurred.",
+                        Posts = null,
+                        TotalCount = 0
+                    })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new GetAllPostsResponse
+                {
+                    Message = ex.Message,
+                    Posts = null,
+                    TotalCount = 0
+                });
+            }
+        }
     }
 }

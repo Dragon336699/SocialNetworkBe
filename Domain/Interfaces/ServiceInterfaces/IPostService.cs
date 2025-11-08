@@ -8,5 +8,6 @@ namespace Domain.Interfaces.ServiceInterfaces
     {
         Task<(CreatePostEnum, Guid?)> CreatePostAsync(CreatePostRequest request, Guid userId);
         Task<(GetAllPostsEnum, List<PostDto>?)> GetAllPostsAsync(int skip = 0, int take = 10);
+        Task<(GetPostsByUserEnum, List<PostDto>?)> GetPostsByUserIdAsync(Guid userId, int skip = 0, int take = 10);
     }
 }
