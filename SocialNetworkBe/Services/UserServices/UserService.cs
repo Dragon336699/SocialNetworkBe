@@ -454,5 +454,36 @@ namespace SocialNetworkBe.Services.UserServices
                 return (UpdateAvatarEnum.UpdateFailed, null);
             }
         }
+
+        public async Task<UpdateUserInfoEnum> UpdateUserInfoAsync(UpdateUserInfoRequest request, string userId)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null) return (UpdateUserInfoEnum.UserNotFound);
+
+                user.FirstName = request.FirstName ?? user.FirstName;
+                user.LastName = request.LastName ?? user.LastName;
+                user.Email = request.Email ?? user.Email;
+                if (!string.IsNullOrEmpty(request.Gender))
+                {
+                    if (Enum.TryParse<UserGender>(request.Gender, true, out var gender))
+                    {
+                        user.Gender = gender;
+                    }
+                }
+                user.Description = request.Description ?? user.Description;
+                _unitOfWork.UserRepository.Update(user);
+                var result = await _unitOfWork.CompleteAsync();
+                if (result > 0) return (UpdateUserInfoEnum.Success);
+
+                return (UpdateUserInfoEnum.UpdateFailed);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user info for {UserId}", userId);
+                return (UpdateUserInfoEnum.UpdateFailed);
+            }
+        }
     }
 }

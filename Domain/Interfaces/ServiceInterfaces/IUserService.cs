@@ -25,6 +25,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<IEnumerable<UserDto>?> SearchUser(string keyword);
         Task<UserDto?> UpdateUserStatus(Guid userId, UserStatus status);
         Task<(UpdateAvatarEnum, string?)> UpdateAvatarAsync(UpdateAvatarRequest request, string userId);
-
+        Task<UpdateUserInfoEnum> UpdateUserInfoAsync(UpdateUserInfoRequest request, string userId);
     }
 }
