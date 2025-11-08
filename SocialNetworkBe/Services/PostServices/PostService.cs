@@ -525,7 +525,8 @@ namespace SocialNetworkBe.Services.PostServices
                 var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
                     p => p.UserId == userId, // Lọc theo UserId
                     p => p.User,
-                    p => p.PostImages
+                    p => p.PostImages,
+                    p => p.PostReactionUsers
                 );
 
                 if (posts == null || !posts.Any())
@@ -565,7 +566,8 @@ namespace SocialNetworkBe.Services.PostServices
                     {
                         Id = img.Id,
                         ImageUrl = img.ImageUrl
-                    }).ToList()
+                    }).ToList(),
+                    PostReactionUsers = post.PostReactionUsers
                 }).ToList();
 
                 return (GetPostsByUserEnum.Success, postDtos);
