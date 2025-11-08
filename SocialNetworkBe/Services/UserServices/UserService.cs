@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.TokenServices;
+using SocialNetworkBe.Services.UploadService;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -32,6 +33,7 @@ namespace SocialNetworkBe.Services.UserServices
         private readonly OTPService _otpService;
         private readonly SocialNetworkDbContext _context;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IUploadService _uploadService;
         public UserService(
             UserManager<User> userManager,
             RoleManager<Role> roleManager,
@@ -41,7 +43,8 @@ namespace SocialNetworkBe.Services.UserServices
             TokenService tokenService,
             OTPService otpService,
             SocialNetworkDbContext context,
-            IUnitOfWork unitOfWork
+            IUnitOfWork unitOfWork,
+            IUploadService uploadService
             )
         {
             _userManager = userManager;
@@ -53,6 +56,7 @@ namespace SocialNetworkBe.Services.UserServices
             _otpService = otpService;
             _context = context;
             _unitOfWork = unitOfWork;
+            _uploadService = uploadService;
         }
 
         public async Task<(bool, string)> UserRegisterAsync(UserRegistrationRequest request, string baseUrl)
@@ -384,6 +388,70 @@ namespace SocialNetworkBe.Services.UserServices
             {
                 _logger.LogError(ex, "Error while updating users status");
                 throw;
+            }
+        }
+
+        public async Task<(UpdateAvatarEnum, string?)> UpdateAvatarAsync(UpdateAvatarRequest request, string userId)
+        {
+            try
+            {
+                // Kiểm tra user tồn tại
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return (UpdateAvatarEnum.UserNotFound, null);
+                }
+
+                // File null
+                if (request.Avatar == null)
+                {
+                    return (UpdateAvatarEnum.InvalidImageFormat, null);
+                }
+
+                // Validate extension
+                var validExt = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+                var ext = Path.GetExtension(request.Avatar.FileName).ToLower();
+
+                if (!validExt.Contains(ext))
+                {
+                    return (UpdateAvatarEnum.InvalidImageFormat, null);
+                }
+
+                // Validate size (max 5MB)
+                const long maxSize = 5 * 1024 * 1024;
+                if (request.Avatar.Length > maxSize)
+                {
+                    return (UpdateAvatarEnum.FileTooLarge, null);
+                }
+
+                // ✅ Upload avatar (dùng UploadService đang có)
+                var uploadedUrls = await _uploadService.UploadFile(
+                    new List<IFormFile> { request.Avatar },
+                    "users/avatar"
+                );
+
+                if (uploadedUrls == null || !uploadedUrls.Any())
+                {
+                    return (UpdateAvatarEnum.UploadFailed, null);
+                }
+
+                var avatarUrl = uploadedUrls.First();
+
+                // ✅ Update user
+                user.AvatarUrl = avatarUrl;
+
+                _unitOfWork.UserRepository.Update(user);
+                var saved = await _unitOfWork.CompleteAsync();
+
+                if (saved > 0)
+                    return (UpdateAvatarEnum.Success, avatarUrl);
+
+                return (UpdateAvatarEnum.UpdateFailed, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating avatar for user {UserId}", userId);
+                return (UpdateAvatarEnum.UpdateFailed, null);
             }
         }
     }
