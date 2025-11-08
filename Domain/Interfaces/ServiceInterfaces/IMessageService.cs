@@ -14,5 +14,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<MessageDto?> GetMessageById(Guid messageId);
         Task<(SendMessageEnum, MessageDto?)> SendMessage(SendMessageRequest request);
         Task<MessageDto?> AddUpdateDeleteReactionMessage(ReactionMessageRequest request, Guid userId);
+        Task<int> GetUnreadMessagesNumber(Guid userId);
     }
 }

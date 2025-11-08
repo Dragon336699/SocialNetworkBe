@@ -250,5 +250,18 @@ namespace SocialNetworkBe.Services.MessageService
                 throw;
             }
         }
+
+        public async Task<int> GetUnreadMessagesNumber(Guid userId)
+        {
+            try
+            {
+                int count = await _unitOfWork.MessageRepository.GetUnreadMessagesNumber(userId);
+                return count;
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting unread messages");
+                throw;
+            }
+        }
     }
 }
