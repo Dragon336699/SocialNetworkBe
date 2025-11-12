@@ -21,6 +21,8 @@ namespace Domain.Interfaces.UnitOfWorkInterface
         IPostReactionUserRepository PostReactionUserRepository { get; }
         IFriendRequestRepository FriendRequestRepository { get; }
         IUserRelationRepository UserRelationRepository { get; }
+        ICommentRepository CommentRepository { get; }
+        ICommentReactionUserRepository CommentReactionUserRepository { get; }
         int Complete();
         Task<int> CompleteAsync();
     }
