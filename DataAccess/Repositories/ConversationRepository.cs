@@ -54,6 +54,7 @@ namespace DataAccess.Repositories
                         Content = m.Content,
                         Status = m.Status.ToString(),
                         CreatedAt = m.CreatedAt,
+                        SenderId = m.Sender.Id,
                         ConversationId = m.ConversationId,
                         Sender = new UserDto
                         {
@@ -106,23 +107,7 @@ namespace DataAccess.Repositories
                 var newest = newestMessages.FirstOrDefault(m => m.ConversationId == c.Id);
                 if (newest != null)
                 {
-                    c.NewestMessage = new MessageDto
-                    {
-                        Id = newest.Id,
-                        Content = newest.Content,
-                        ConversationId = c.Id,
-                        Status = newest.Status.ToString(),
-                        CreatedAt = newest.CreatedAt,
-                        Sender = new UserDto
-                        {
-                            Id = newest.Sender.Id,
-                            AvatarUrl = newest.Sender.AvatarUrl,
-                            UserName = newest.Sender.UserName,
-                            Email = newest.Sender.Email,
-                            FirstName = newest.Sender.FirstName,
-                            Status = newest.Sender.Status.ToString()
-                        }
-                    };
+                    c.NewestMessage = newest;
                 }
             }
             return conversations;

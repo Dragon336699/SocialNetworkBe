@@ -83,7 +83,7 @@ namespace SocialNetworkBe.Controllers
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddDays(7)
+                Expires = DateTime.UtcNow.AddDays(30)
             };
 
             Response.Cookies.Append("jwt", token, cookieOptions);
