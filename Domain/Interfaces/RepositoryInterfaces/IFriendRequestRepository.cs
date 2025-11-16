@@ -11,6 +11,8 @@ namespace Domain.Interfaces.RepositoryInterfaces
     public interface IFriendRequestRepository : IGenericRepository<FriendRequest>
     {
         Task<FriendRequest?> GetFriendRequestAsync(Guid senderId, Guid receiverId);
+        Task<bool> DeleteFriendRequestAsync(FriendRequest request);
+        Task<IEnumerable<FriendRequest>> GetSentFriendRequestsAsync(Guid senderId);
         Task<bool> AreFriendsAsync(Guid userId1, Guid userId2);
     }
 }

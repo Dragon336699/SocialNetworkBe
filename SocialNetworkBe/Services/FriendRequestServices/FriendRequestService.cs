@@ -113,6 +113,67 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 return (SendFriendRequestEnum.SendFriendRequestFailed, null);
             }
         }
+        public async Task<bool> CancelFriendRequestAsync(Guid senderId, SendFriendRequestRequest req)
+        {
+            var request = await _unitOfWork.FriendRequestRepository.GetFriendRequestAsync(senderId, req.ReceiverId);
+
+            if (request == null)
+                return false;
+
+            return await _unitOfWork.FriendRequestRepository.DeleteFriendRequestAsync(request);
+        }
+
+        public async Task<(GetFriendRequestsEnum, List<FriendRequestDto>?)> GetSentFriendRequestsAsync(Guid senderId, int skip = 0, int take = 10)
+        {
+            try
+            {
+                var sender = await _unitOfWork.UserRepository.GetByIdAsync(senderId);
+                if (sender == null)
+                {
+                    _logger.LogWarning("Sender not found when getting sent friend requests. SenderId: {SenderId}", senderId);
+                    return (GetFriendRequestsEnum.SenderNotFound, null);
+                }
+
+                var sentRequests = await _unitOfWork.FriendRequestRepository.GetSentFriendRequestsAsync(senderId);
+                if (sentRequests == null || !sentRequests.Any())
+                {
+                    return (GetFriendRequestsEnum.NoRequestsFound, null);
+                }
+
+                IEnumerable<FriendRequest> sortedRequests = sentRequests;
+
+                if (skip > 0 || take != 10) // nghĩa là có truyền phân trang
+                {
+                    sortedRequests = sentRequests
+                        .Skip(skip)
+                        .Take(take);
+                }
+
+                var requestDtos = sortedRequests.Select(fr => new FriendRequestDto
+                {
+                    SenderId = fr.SenderId,
+                    ReceiverId = fr.ReceiverId,
+                    Status = Enum.Parse<FriendRequestStatus>(fr.FriendRequestStatus),
+                    Receiver = new UserDto
+                    {
+                        Id = fr.Receiver.Id,
+                        Email = fr.Receiver.Email,
+                        UserName = fr.Receiver.UserName ?? "",
+                        Status = fr.Receiver.Status.ToString(),
+                        FirstName = fr.Receiver.FirstName,
+                        LastName = fr.Receiver.LastName,
+                        AvatarUrl = fr.Receiver.AvatarUrl
+                    }
+                }).ToList();
+
+                return (GetFriendRequestsEnum.Success, requestDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when getting sent friend requests for {SenderId}", senderId);
+                return (GetFriendRequestsEnum.Failed, null);
+            }
+        }
 
         public async Task<(RespondFriendRequestEnum, FriendRequestDto?)> RespondFriendRequestAsync(RespondFriendRequestRequest request, Guid receiverId)
         {

@@ -32,6 +32,20 @@ namespace DataAccess.Repositories
                 return null;
             }
         }
+        public async Task<bool> DeleteFriendRequestAsync(FriendRequest request)
+        {
+            _context.FriendRequest.Remove(request);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<FriendRequest>> GetSentFriendRequestsAsync(Guid senderId)
+        {
+            return await _context.FriendRequest
+                .Include(fr => fr.Receiver)
+                .Where(fr => fr.SenderId == senderId && fr.FriendRequestStatus == FriendRequestStatus.Pending.ToString())
+                .ToListAsync();
+        }
+
 
         public async Task<bool> AreFriendsAsync(Guid userId1, Guid userId2)
         {

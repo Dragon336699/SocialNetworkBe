@@ -1,0 +1,29 @@
+﻿using System;
+
+namespace Domain.Enum.FriendRequest.Functions
+{
+    public enum GetFriendRequestsEnum
+    {
+        Success,
+        Failed,
+        NoRequestsFound,
+        SenderNotFound,
+        ReceiverNotFound
+    }
+
+    public static class GetFriendRequestsEnumMessage
+    {
+        public static string GetMessage(this GetFriendRequestsEnum status)
+        {
+            return status switch
+            {
+                GetFriendRequestsEnum.Success => "Friend requests retrieved successfully.",
+                GetFriendRequestsEnum.NoRequestsFound => "No friend requests found.",
+                GetFriendRequestsEnum.SenderNotFound => "Sender not found.",
+                GetFriendRequestsEnum.ReceiverNotFound => "Receiver not found.",
+                GetFriendRequestsEnum.Failed => "Failed to retrieve friend requests.",
+                _ => "Unknown error."
+            };
+        }
+    }
+}

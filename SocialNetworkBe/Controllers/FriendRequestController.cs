@@ -51,6 +51,49 @@ namespace SocialNetworkBe.Controllers
         }
 
         [Authorize]
+        [HttpPost("cancel")]
+        public async Task<IActionResult> CancelFriendRequest([FromBody] SendFriendRequestRequest receiverId)
+        {
+            try
+            {
+                var senderId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+                var success = await _friendRequestService.CancelFriendRequestAsync(senderId, receiverId);
+
+                if (!success)
+                    return BadRequest(new { Message = "Friend request not found or already handled." });
+
+                return Ok(new { Message = "Friend request canceled successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpGet("sent/{userId}")]
+        public async Task<IActionResult> GetSentFriendRequests(Guid userId, int skip = 0, int take = 10)
+        {
+            try
+            {
+                var (status, requests) = await _friendRequestService.GetSentFriendRequestsAsync(userId, skip, take);
+
+                if (status == GetFriendRequestsEnum.NoRequestsFound)
+                    return NotFound("No sent friend requests found.");
+                if (status == GetFriendRequestsEnum.SenderNotFound)
+                    return BadRequest("Sender not found.");
+
+                return Ok(requests);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new RespondFriendRequestResponse { Message = ex.Message });
+            }
+        }
+
+
+        [Authorize]
         [HttpPost("respond")]
         public async Task<IActionResult> RespondFriendRequest([FromBody] RespondFriendRequestRequest request)
         {
