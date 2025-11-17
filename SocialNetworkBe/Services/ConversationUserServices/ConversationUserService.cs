@@ -48,7 +48,7 @@ namespace SocialNetworkBe.Services.ConversationUserServices
                     {
                         ConversationId = conversationId,
                         UserId = userId,
-                        JoinedAt = DateTime.Now,
+                        JoinedAt = DateTime.UtcNow,
                         RoleName = ConversationRole.User,
                         NickName = userInfo.UserName,
                         DraftMessage = null

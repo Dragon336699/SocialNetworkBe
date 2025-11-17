@@ -18,6 +18,7 @@ namespace DataAccess.UnitOfWork
         public IUserRepository UserRepository { get; set; }      
 
         public IMessageAttachmentRepository MessageAttachmentRepository { get; set; }
+        public INotificationRepository NotificationRepository { get; set; }
         public IPostReactionUserRepository PostReactionUserRepository { get; set; }
         public IFriendRequestRepository FriendRequestRepository { get; set; }
         public IUserRelationRepository UserRelationRepository { get; set; }
@@ -33,6 +34,7 @@ namespace DataAccess.UnitOfWork
             IUserRepository userRepository,
             IMessageAttachmentRepository messageAttachmentRepository,
             IMessageReactionUserRepository messageReactionUserRepository,
+            INotificationRepository notificationRepository,
             IPostReactionUserRepository postReactionUserRepository,
             IFriendRequestRepository friendRequestRepository,
             IUserRelationRepository userRelationRepository,
@@ -49,6 +51,7 @@ namespace DataAccess.UnitOfWork
             PostRepository = postRepository;           
             UserRepository = userRepository;
             MessageAttachmentRepository = messageAttachmentRepository;
+            NotificationRepository = notificationRepository;
             PostReactionUserRepository = postReactionUserRepository;
             FriendRequestRepository = friendRequestRepository;
             UserRelationRepository = userRelationRepository;

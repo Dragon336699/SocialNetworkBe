@@ -1,9 +1,12 @@
 ﻿using Domain.Contracts.Requests.Post;
+using Domain.Contracts.Responses.Notification;
 using Domain.Contracts.Responses.Post;
 using Domain.Contracts.Responses.User;
 using Domain.Entities;
+using Domain.Enum.Notification.Types;
 using Domain.Enum.Post.Functions;
 using Domain.Enum.Post.Types;
+using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 
@@ -14,12 +17,16 @@ namespace SocialNetworkBe.Services.PostServices
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<PostService> _logger;
         private readonly IUploadService _uploadService;
+        private readonly INotificationDataBuilder _notificationDataBuilder;
+        private readonly INotificationService _notificationService;
 
-        public PostService(IUnitOfWork unitOfWork, ILogger<PostService> logger, IUploadService uploadService)
+        public PostService(IUnitOfWork unitOfWork, ILogger<PostService> logger, IUploadService uploadService, INotificationDataBuilder notificationDataBuilder, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _uploadService = uploadService;
+            _notificationDataBuilder = notificationDataBuilder;
+            _notificationService = notificationService;
         }
 
         public async Task<(CreatePostEnum, Guid?)> CreatePostAsync(CreatePostRequest request, Guid userId)
@@ -439,7 +446,7 @@ namespace SocialNetworkBe.Services.PostServices
                 // Tìm reaction hiện có của user cho post
                 PostReactionUser? postReactionUser = await _unitOfWork.PostReactionUserRepository
                     .FindFirstAsync(r => r.PostId == request.PostId && r.UserId == userId);
-              
+
                 var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
                     p => p.Id == request.PostId,
                     p => p.User,
@@ -449,6 +456,11 @@ namespace SocialNetworkBe.Services.PostServices
 
                 var post = posts?.FirstOrDefault();
                 if (post == null) return null;
+
+                // Tìm chủ của post
+                User? owner = post.User;
+                // Tìm actor của post
+                User? actor = await _unitOfWork.UserRepository.FindFirstAsync(u => u.Id == userId);
 
                 if (postReactionUser == null)
                 {
@@ -463,6 +475,13 @@ namespace SocialNetworkBe.Services.PostServices
 
                     _unitOfWork.PostReactionUserRepository.Add(postReactionUser);
                     post.TotalLiked += 1;
+                    if (userId != post.UserId) {
+                        // Tạo data cho notification
+                        NotificationData notiData = _notificationDataBuilder.BuilderDataForReactPost(post, actor, null);
+                        string mergeKey = NotificationType.LikePost.ToString() + "_" + post.Id.ToString() + "_" + owner.Id.ToString();
+                        string navigateUrl = $"/post/{post.Id}";
+                        await _notificationService.ProcessAndSendNotiForReactPost(NotificationType.LikePost, notiData, navigateUrl, mergeKey, owner.Id);
+                    }
                 }
                 else if (postReactionUser.Reaction == request.Reaction)
                 {                 
@@ -474,6 +493,14 @@ namespace SocialNetworkBe.Services.PostServices
                     postReactionUser.Reaction = request.Reaction;
                     postReactionUser.UpdatedAt = DateTime.UtcNow;
                     _unitOfWork.PostReactionUserRepository.Update(postReactionUser);
+                    if (userId != post.UserId)
+                    {
+                        // Tạo data cho notification
+                        NotificationData notiData = _notificationDataBuilder.BuilderDataForReactPost(post, actor, null);
+                        string mergeKey = NotificationType.LikePost.ToString() + "_" + post.Id.ToString() + "_" + owner.Id.ToString();
+                        string navigateUrl = $"/post/{post.Id}";
+                        await _notificationService.ProcessAndSendNotiForReactPost(NotificationType.LikePost, notiData, navigateUrl, mergeKey, owner.Id);
+                    }
                 }
 
                 _unitOfWork.PostRepository.Update(post);

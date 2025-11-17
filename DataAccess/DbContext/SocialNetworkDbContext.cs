@@ -1,8 +1,10 @@
 ﻿
+using Domain.Contracts.Responses.Notification;
 using Domain.Entities;
 using Domain.Enum.User.Types;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace DataAccess.DbContext
 {
@@ -25,7 +27,6 @@ namespace DataAccess.DbContext
         public DbSet<MessageAttachment> MessageAttachment { get; set; }
         public DbSet<MessageReactionUser> MessageReactionUser { get; set; }
         public DbSet<Notification> Notification { get; set; }
-        public DbSet<NotificationUser> NotificationUser { get; set; }
         public DbSet<Post> Post { get; set; }
         public DbSet<PostImage> PostImage { get; set; }
         public DbSet<PostReactionUser> PostReactionUser { get; set; }
@@ -62,9 +63,6 @@ namespace DataAccess.DbContext
             builder.Entity<MessageReactionUser>()
                .HasKey(e => new { e.UserId, e.MessageId });
 
-            builder.Entity<NotificationUser>()
-               .HasKey(e => new { e.UserId, e.NotificationId });
-
             builder.Entity<PostReactionUser>()
                .HasKey(e => new { e.UserId, e.PostId });
 
@@ -87,6 +85,12 @@ namespace DataAccess.DbContext
             {
                 entity.Property(n => n.NoficationType)
                     .HasConversion<string>();
+                entity.Property(n => n.Data)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize<NotificationData>(v, (JsonSerializerOptions?)null),
+                        v => JsonSerializer.Deserialize<NotificationData>(v, (JsonSerializerOptions?)null)!);
+                entity.HasIndex(n => n.MergeKey)
+                    .IsUnique();
             });
 
             builder.Entity<Message>(entity =>

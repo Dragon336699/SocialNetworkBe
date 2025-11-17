@@ -13,6 +13,7 @@ namespace Domain.Interfaces.UnitOfWorkInterface
         IConversationUserRepository ConversationUserRepository { get; }
         IConversationRepository ConversationRepository { get; }
         IMessageReactionUserRepository MessageReactionUserRepository { get; }
+        INotificationRepository NotificationRepository { get; }
 
         IPostRepository PostRepository { get; }
         IUserRepository UserRepository { get; }

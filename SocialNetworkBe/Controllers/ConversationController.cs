@@ -90,6 +90,7 @@ namespace SocialNetworkBe.Controllers
             }
         }
 
+        // Bỏ rồi
         [Authorize]
         [HttpPost]
         [Route("getConversationForList")]

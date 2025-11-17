@@ -33,18 +33,6 @@ namespace SocialNetworkBe.ChatServer
             _userService = userService;
             _logger = logger;
         }
-
-        public async Task<bool?> UpdateMessageStatus(UpdateMessageStatusRequest request)
-        {
-            bool? updatedMessageStatus = await _messageService.UpdateMessage(request.MessageId, request.Status);
-            if (updatedMessageStatus == null) return false;
-
-            MessageDto? updatedMessage = await _messageService.GetMessageById(request.MessageId);
-            if (updatedMessage == null) return false;
-            await Clients.User(updatedMessage.SenderId.ToString().ToLower()).SendAsync("UpdatedMessage", updatedMessage);
-            return updatedMessageStatus;
-        }
-
         public override async Task OnConnectedAsync()
         {
             try
@@ -92,6 +80,17 @@ namespace SocialNetworkBe.ChatServer
             {
                 _logger.LogError(ex, "Error occured when disconnect to server!");
             }
+        }
+
+        public async Task<bool?> UpdateMessageStatus(UpdateMessageStatusRequest request)
+        {
+            bool? updatedMessageStatus = await _messageService.UpdateMessage(request.MessageId, request.Status);
+            if (updatedMessageStatus == null) return false;
+
+            MessageDto? updatedMessage = await _messageService.GetMessageById(request.MessageId);
+            if (updatedMessage == null) return false;
+            await Clients.User(updatedMessage.SenderId.ToString().ToLower()).SendAsync("UpdatedMessage", updatedMessage);
+            return updatedMessageStatus;
         }
     }
 }

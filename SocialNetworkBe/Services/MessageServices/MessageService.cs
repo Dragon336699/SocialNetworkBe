@@ -67,8 +67,8 @@ namespace SocialNetworkBe.Services.MessageService
                 {
                     Content = request.Content == null ? "" : request.Content,
                     Status = MessageStatus.Sent,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                     RepliedMessageId = request.RepliedMessageId,
                     ConversationId = request.ConversationId,
                     SenderId = request.SenderId,

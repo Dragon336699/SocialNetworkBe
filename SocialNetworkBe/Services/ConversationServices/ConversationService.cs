@@ -59,7 +59,7 @@ namespace SocialNetworkBe.Services.ConversationServices
                 {
                     Id = Guid.NewGuid(),
                     Type = conversationType,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                 };
                 _unitOfWork.ConversationRepository.Add(conversation);
 

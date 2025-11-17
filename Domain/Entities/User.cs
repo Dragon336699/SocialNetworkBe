@@ -17,7 +17,6 @@ namespace Domain.Entities
         public required UserGender Gender { get; set; }
         public ICollection<ConversationUser>? ConversationUsers { get; set; }
         public ICollection<GroupUser>? GroupUsers { get; set; }
-        public ICollection<NotificationUser>? NotificationUsers { get; set; }
         public ICollection<FriendRequest>? SentFriendRequests { get; set; }
         public ICollection<FriendRequest>? ReceivedFriendRequests { get; set; }
         public ICollection<SearchingHistory>? SearchingHistories { get; set; }
@@ -27,6 +26,5 @@ namespace Domain.Entities
         public ICollection<UserRelation>? Relations { get; set; }
         public ICollection<UserRelation>? RelatedTo { get; set; }
         public ICollection<Message>? MessageSent { get; set; }
-        //public ICollection<Message>? MessageReceive { get; set; }
     }
 }
