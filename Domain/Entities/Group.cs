@@ -14,6 +14,8 @@ namespace Domain.Entities
         public required string Name { get; set; }
         [Required]
         public required string Description { get; set; }
+        [Required]
+        public required string ImageUrl { get; set; }
         public ICollection<GroupUser>? GroupUsers { get; set; }
         public ICollection<Post>? Posts { get; set; }
 
