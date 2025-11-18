@@ -10,11 +10,11 @@ namespace Domain.Entities
         public Guid Id { get; set; }
         [Required]
         public required string Content { get; set; }
-        //[Required]
-        //public DateTime CreatedAt { get; set; }
-        //[Required]
-        //public DateTime UpdatedAt { get; set; }
-        //public int TotalLiked { get; set; } = 0;
+        [Required]
+        public DateTime CreatedAt { get; set; }
+        [Required]
+        public DateTime UpdatedAt { get; set; }
+        public int TotalLiked { get; set; } = 0;
         public Guid PostId { get; set; }
         public Post? Post { get; set; }
         public Guid UserId { get; set; }

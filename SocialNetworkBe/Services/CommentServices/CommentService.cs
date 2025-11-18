@@ -84,9 +84,9 @@ namespace SocialNetworkBe.Services.CommentServices
                 var comment = new Comment
                 {
                     Content = request.Content.Trim(),
-                    //CreatedAt = DateTime.UtcNow,
-                    //UpdatedAt = DateTime.UtcNow,
-                    //TotalLiked = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    TotalLiked = 0,
                     PostId = request.PostId,
                     UserId = userId,
                     RepliedCommentId = request.RepliedCommentId
@@ -172,6 +172,9 @@ namespace SocialNetworkBe.Services.CommentServices
                 Content = comment.Content,
                 PostId = comment.PostId,
                 UserId = comment.UserId,
+                CreatedAt = comment.CreatedAt,
+                UpdatedAt = comment.UpdatedAt,
+                TotalLiked = comment.TotalLiked,
                 RepliedCommentId = comment.RepliedCommentId,
                 User = comment.User == null ? null : new UserDto
                 {
@@ -296,9 +299,9 @@ namespace SocialNetworkBe.Services.CommentServices
                     {
                         Id = comment.Id,
                         Content = comment.Content,
-                        //CreatedAt = comment.CreatedAt,
-                        //UpdatedAt = comment.UpdatedAt,
-                        //TotalLiked = comment.TotalLiked,
+                        CreatedAt = comment.CreatedAt,
+                        UpdatedAt = comment.UpdatedAt,
+                        TotalLiked = comment.TotalLiked,
                         PostId = comment.PostId,
                         UserId = comment.UserId,
                         RepliedCommentId = comment.RepliedCommentId,

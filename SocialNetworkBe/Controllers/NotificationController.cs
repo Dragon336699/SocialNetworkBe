@@ -1,4 +1,4 @@
-﻿using Domain.Contracts.Requests;
+﻿using Domain.Contracts.Requests.Notification;
 using Domain.Entities;
 using Domain.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Mvc;
