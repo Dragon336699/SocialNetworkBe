@@ -15,11 +15,13 @@ namespace DataAccess.Repositories
         public CommentRepository(SocialNetworkDbContext context) : base(context)
         {
         }      
-        public async Task<List<Comment>?> GetCommentsByPostIdAsync(Guid postId, int skip = 0, int take = 20)
+        public async Task<List<Comment>?> GetCommentsByPostIdAsync(Guid postId, int skip = 0, int take = 10)
         {
             try
             {                
                 var comments = await _context.Comment
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Where(c => c.PostId == postId && c.RepliedCommentId == null)
                     .Include(c => c.User)
                     .Include(c => c.CommentImage)
@@ -41,8 +43,10 @@ namespace DataAccess.Repositories
 
         private async Task LoadRepliesRecursive(Comment comment)
         {
-            // Lấy các replies của comment hiện tại
+            // Lấy các replies của comment hiện tại 
             comment.Replies = await _context.Comment
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Where(c => c.RepliedCommentId == comment.Id)
                 .Include(c => c.User)
                 .Include(c => c.CommentImage)
@@ -61,11 +65,13 @@ namespace DataAccess.Repositories
             try
             {
                 return await _context.Comment
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Where(c => c.RepliedCommentId == commentId)
                     .Include(c => c.User)
                     .Include(c => c.CommentImage)
                     .Include(c => c.CommentReactionUsers)
-                    //.OrderBy(c => c.CreatedAt)
+                    .OrderBy(c => c.CreatedAt)
                     .Skip(skip)
                     .Take(take)
                     .ToListAsync();
@@ -74,6 +80,16 @@ namespace DataAccess.Repositories
             {
                 return null;
             }
+        }
+
+        public async Task<Comment?> GetCommentByIdWithTrackingAsync(Guid commentId)
+        {
+            return await _context.Comment
+                .Include(c => c.User)
+                .Include(c => c.CommentImage)
+                .Include(c => c.CommentReactionUsers)
+                .Include(c => c.Post)
+                .FirstOrDefaultAsync(c => c.Id == commentId);
         }
     }
 }
