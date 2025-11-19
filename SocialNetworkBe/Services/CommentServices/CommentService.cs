@@ -432,9 +432,9 @@ namespace SocialNetworkBe.Services.CommentServices
                 {
                     Id = comment.Id,
                     Content = comment.Content,
-                    //CreatedAt = comment.CreatedAt,
-                    //UpdatedAt = comment.UpdatedAt,
-                    //TotalLiked = comment.TotalLiked,
+                    CreatedAt = comment.CreatedAt,
+                    UpdatedAt = comment.UpdatedAt,
+                    TotalLiked = comment.TotalLiked,
                     PostId = comment.PostId,
                     UserId = comment.UserId,
                     RepliedCommentId = comment.RepliedCommentId,
