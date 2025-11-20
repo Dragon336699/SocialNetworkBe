@@ -22,6 +22,6 @@ namespace Domain.Contracts.Responses.Post
         public UserDto? User { get; set; }
         public Guid? GroupId { get; set; }
         public List<PostImageDto>? PostImages { get; set; }
-        public ICollection<PostReactionUser>? PostReactionUsers { get; set; }
+        public ICollection<PostReactionUserDto>? PostReactionUsers { get; set; }
     }
 }

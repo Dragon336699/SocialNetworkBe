@@ -11,5 +11,6 @@ namespace Domain.Interfaces.RepositoryInterfaces
     {
         Task<List<Comment>?> GetCommentsByPostIdAsync(Guid postId, int skip = 0, int take = 10);
         Task<List<Comment>?> GetRepliesByCommentIdAsync(Guid commentId, int skip = 0, int take = 10);
+        Task<Comment?> GetCommentByIdWithTrackingAsync(Guid commentId);
     }
 }

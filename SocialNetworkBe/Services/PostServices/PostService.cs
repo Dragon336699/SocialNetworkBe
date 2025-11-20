@@ -1,4 +1,5 @@
-﻿using Domain.Contracts.Requests.Post;
+﻿using AutoMapper;
+using Domain.Contracts.Requests.Post;
 using Domain.Contracts.Responses.Notification;
 using Domain.Contracts.Responses.Post;
 using Domain.Contracts.Responses.User;
@@ -19,28 +20,28 @@ namespace SocialNetworkBe.Services.PostServices
         private readonly IUploadService _uploadService;
         private readonly INotificationDataBuilder _notificationDataBuilder;
         private readonly INotificationService _notificationService;
+        private readonly IMapper _mapper;
 
-        public PostService(IUnitOfWork unitOfWork, ILogger<PostService> logger, IUploadService uploadService, INotificationDataBuilder notificationDataBuilder, INotificationService notificationService)
+        public PostService(IUnitOfWork unitOfWork, ILogger<PostService> logger, IUploadService uploadService, INotificationDataBuilder notificationDataBuilder, INotificationService notificationService, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _uploadService = uploadService;
             _notificationDataBuilder = notificationDataBuilder;
             _notificationService = notificationService;
+            _mapper = mapper;
         }
 
         public async Task<(CreatePostEnum, Guid?)> CreatePostAsync(CreatePostRequest request, Guid userId)
         {
             try
-            {
-                // Kiểm tra user tồn tại
+            {            
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
                 if (user == null)
                 {
                     return (CreatePostEnum.UserNotFound, null);
                 }
-
-                // Validate content
+              
                 if (string.IsNullOrWhiteSpace(request.Content))
                 {
                     return (CreatePostEnum.InvalidContent, null);
@@ -122,11 +123,10 @@ namespace SocialNetworkBe.Services.PostServices
             try
             {
                 // Lấy tất cả posts với includes cho User và PostImages
-                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
-                    p => true, // Lấy tất cả posts
+                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
+                    p => true,
                     p => p.User,
-                    p => p.PostImages,
-                    p => p.PostReactionUsers
+                    p => p.PostImages
                 );
 
                 if (posts == null || !posts.Any())
@@ -141,35 +141,7 @@ namespace SocialNetworkBe.Services.PostServices
                     .Take(take)
                     .ToList();
 
-                var postDtos = sortedPosts.Select(post => new PostDto
-                {
-                    Id = post.Id,
-                    Content = post.Content,
-                    TotalLiked = post.TotalLiked,
-                    TotalComment = post.TotalComment,
-                    CreatedAt = post.CreatedAt,
-                    UpdatedAt = post.UpdatedAt,
-                    PostPrivacy = post.PostPrivacy,
-                    UserId = post.UserId,
-                    GroupId = post.GroupId,
-                    User = post.User == null ? null : new UserDto
-                    {
-                        Id = post.User.Id,
-                        Email = post.User.Email,
-                        UserName = post.User.UserName ?? "",
-                        Status = post.User.Status.ToString(),
-                        FirstName = post.User.FirstName,
-                        LastName = post.User.LastName,
-                        AvatarUrl = post.User.AvatarUrl
-                    },
-                    PostImages = post.PostImages?.Select(img => new PostImageDto
-                    {
-                        Id = img.Id,
-                        ImageUrl = img.ImageUrl
-                    }).ToList(),
-                    PostReactionUsers = post.PostReactionUsers
-                }).ToList();
-
+                var postDtos = _mapper.Map<List<PostDto>>(sortedPosts);
                 return (GetAllPostsEnum.Success, postDtos);
             }
             catch (Exception ex)
@@ -183,12 +155,10 @@ namespace SocialNetworkBe.Services.PostServices
         {
             try
             {
-                // Lấy post với includes
-                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
+                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
                     p => p.Id == postId,
                     p => p.User,
-                    p => p.PostImages,
-                    p => p.PostReactionUsers
+                    p => p.PostImages
                 );
 
                 var post = posts?.FirstOrDefault();
@@ -210,35 +180,8 @@ namespace SocialNetworkBe.Services.PostServices
                             break;
                     }
                 }
-             
-                var postDto = new PostDto
-                {
-                    Id = post.Id,
-                    Content = post.Content,
-                    TotalLiked = post.TotalLiked,
-                    TotalComment = post.TotalComment,
-                    CreatedAt = post.CreatedAt,
-                    UpdatedAt = post.UpdatedAt,
-                    PostPrivacy = post.PostPrivacy,
-                    UserId = post.UserId,
-                    GroupId = post.GroupId,
-                    User = post.User == null ? null : new UserDto
-                    {
-                        Id = post.User.Id,
-                        Email = post.User.Email,
-                        UserName = post.User.UserName ?? "",
-                        Status = post.User.Status.ToString(),
-                        FirstName = post.User.FirstName,
-                        LastName = post.User.LastName,
-                        AvatarUrl = post.User.AvatarUrl
-                    },
-                    PostImages = post.PostImages?.Select(img => new PostImageDto
-                    {
-                        Id = img.Id,
-                        ImageUrl = img.ImageUrl
-                    }).ToList(),
-                    PostReactionUsers = post.PostReactionUsers
-                };
+
+                var postDto = _mapper.Map<PostDto>(post);
 
                 return (GetPostByIdEnum.Success, postDto);
             }
@@ -252,8 +195,8 @@ namespace SocialNetworkBe.Services.PostServices
         public async Task<(UpdatePostEnum, PostDto?)> UpdatePostAsync(Guid postId, UpdatePostRequest request, Guid userId)
         {
             try
-            {               
-                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
+            {
+                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
                     p => p.Id == postId,
                     p => p.User,
                     p => p.PostImages
@@ -359,36 +302,8 @@ namespace SocialNetworkBe.Services.PostServices
                 var result = await _unitOfWork.CompleteAsync();
 
                 if (result > 0)
-                {                  
-                    var postDto = new PostDto
-                    {
-                        Id = post.Id,
-                        Content = post.Content,
-                        TotalLiked = post.TotalLiked,
-                        TotalComment = post.TotalComment,
-                        CreatedAt = post.CreatedAt,
-                        UpdatedAt = post.UpdatedAt,
-                        PostPrivacy = post.PostPrivacy,
-                        UserId = post.UserId,
-                        GroupId = post.GroupId,
-                        User = post.User == null ? null : new UserDto
-                        {
-                            Id = post.User.Id,
-                            Email = post.User.Email,
-                            UserName = post.User.UserName ?? "",
-                            Status = post.User.Status.ToString(),
-                            FirstName = post.User.FirstName,
-                            LastName = post.User.LastName,
-                            AvatarUrl = post.User.AvatarUrl
-                        },
-                        PostImages = post.PostImages?.Select(img => new PostImageDto
-                        {
-                            Id = img.Id,
-                            ImageUrl = img.ImageUrl
-                        }).ToList(),
-                        PostReactionUsers = post.PostReactionUsers
-                    };
-
+                {
+                    var postDto = _mapper.Map<PostDto>(post);
                     return (UpdatePostEnum.UpdatePostSuccess, postDto);
                 }
 
@@ -447,11 +362,10 @@ namespace SocialNetworkBe.Services.PostServices
                 PostReactionUser? postReactionUser = await _unitOfWork.PostReactionUserRepository
                     .FindFirstAsync(r => r.PostId == request.PostId && r.UserId == userId);
 
-                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
+                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
                     p => p.Id == request.PostId,
                     p => p.User,
-                    p => p.PostImages,
-                    p => p.PostReactionUsers
+                    p => p.PostImages
                 );
 
                 var post = posts?.FirstOrDefault();
@@ -480,7 +394,7 @@ namespace SocialNetworkBe.Services.PostServices
                         NotificationData notiData = _notificationDataBuilder.BuilderDataForReactPost(post, actor, null);
                         string mergeKey = NotificationType.LikePost.ToString() + "_" + post.Id.ToString() + "_" + owner.Id.ToString();
                         string navigateUrl = $"/post/{post.Id}";
-                        await _notificationService.ProcessAndSendNotiForReactPost(NotificationType.LikePost, notiData, navigateUrl, mergeKey, owner.Id);
+                        await _notificationService.ProcessAndSendNotiForReactPost(NotificationType.LikePost, notiData, navigateUrl, mergeKey, owner.Id);                             
                     }
                 }
                 else if (postReactionUser.Reaction == request.Reaction)
@@ -505,36 +419,8 @@ namespace SocialNetworkBe.Services.PostServices
 
                 _unitOfWork.PostRepository.Update(post);
                 await _unitOfWork.CompleteAsync();
-             
-                var postDto = new PostDto
-                {
-                    Id = post.Id,
-                    Content = post.Content,
-                    TotalLiked = post.TotalLiked,
-                    TotalComment = post.TotalComment,
-                    CreatedAt = post.CreatedAt,
-                    UpdatedAt = post.UpdatedAt,
-                    PostPrivacy = post.PostPrivacy,
-                    UserId = post.UserId,
-                    GroupId = post.GroupId,
-                    User = post.User == null ? null : new UserDto
-                    {
-                        Id = post.User.Id,
-                        Email = post.User.Email,
-                        UserName = post.User.UserName ?? "",
-                        Status = post.User.Status.ToString(),
-                        FirstName = post.User.FirstName,
-                        LastName = post.User.LastName,
-                        AvatarUrl = post.User.AvatarUrl
-                    },
-                    PostImages = post.PostImages?.Select(img => new PostImageDto
-                    {
-                        Id = img.Id,
-                        ImageUrl = img.ImageUrl
-                    }).ToList(),
-                    PostReactionUsers = post.PostReactionUsers
-                };
 
+                var postDto = _mapper.Map<PostDto>(post);
                 return postDto;
             }
             catch (Exception ex)
@@ -548,12 +434,11 @@ namespace SocialNetworkBe.Services.PostServices
         {
             try
             {
-                // Lấy tất cả posts của user với includes cho User và PostImages
-                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludes(
-                    p => p.UserId == userId, // Lọc theo UserId
+                // Lấy tất cả posts của user với includes cho User và PostImages          
+                var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
+                    p => p.UserId == userId,
                     p => p.User,
-                    p => p.PostImages,
-                    p => p.PostReactionUsers
+                    p => p.PostImages
                 );
 
                 if (posts == null || !posts.Any())
@@ -568,34 +453,7 @@ namespace SocialNetworkBe.Services.PostServices
                     .Take(take)
                     .ToList();
 
-                var postDtos = sortedPosts.Select(post => new PostDto
-                {
-                    Id = post.Id,
-                    Content = post.Content,
-                    TotalLiked = post.TotalLiked,
-                    TotalComment = post.TotalComment,
-                    CreatedAt = post.CreatedAt,
-                    UpdatedAt = post.UpdatedAt,
-                    PostPrivacy = post.PostPrivacy,
-                    UserId = post.UserId,
-                    GroupId = post.GroupId,
-                    User = post.User == null ? null : new UserDto
-                    {
-                        Id = post.User.Id,
-                        Email = post.User.Email,
-                        UserName = post.User.UserName ?? "",
-                        Status = post.User.Status.ToString(),
-                        FirstName = post.User.FirstName,
-                        LastName = post.User.LastName,
-                        AvatarUrl = post.User.AvatarUrl
-                    },
-                    PostImages = post.PostImages?.Select(img => new PostImageDto
-                    {
-                        Id = img.Id,
-                        ImageUrl = img.ImageUrl
-                    }).ToList(),
-                    PostReactionUsers = post.PostReactionUsers
-                }).ToList();
+                var postDtos = _mapper.Map<List<PostDto>>(sortedPosts);
 
                 return (GetPostsByUserEnum.Success, postDtos);
             }

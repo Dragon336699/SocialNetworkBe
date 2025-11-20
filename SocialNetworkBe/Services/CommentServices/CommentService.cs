@@ -1,6 +1,6 @@
-﻿using Domain.Contracts.Requests.Comment;
+﻿using AutoMapper;
+using Domain.Contracts.Requests.Comment;
 using Domain.Contracts.Responses.Comment;
-using Domain.Contracts.Responses.User;
 using Domain.Entities;
 using Domain.Enum.Comment.Functions;
 using Domain.Interfaces.ServiceInterfaces;
@@ -13,12 +13,18 @@ namespace SocialNetworkBe.Services.CommentServices
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<CommentService> _logger;
         private readonly IUploadService _uploadService;
+        private readonly IMapper _mapper;
 
-        public CommentService(IUnitOfWork unitOfWork, ILogger<CommentService> logger, IUploadService uploadService)
+        public CommentService(
+            IUnitOfWork unitOfWork,
+            ILogger<CommentService> logger,
+            IUploadService uploadService,
+            IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _uploadService = uploadService;
+            _mapper = mapper;
         }
 
         public async Task<(CreateCommentEnum, Guid?)> CreateCommentAsync(CreateCommentRequest request, Guid userId)
@@ -30,13 +36,13 @@ namespace SocialNetworkBe.Services.CommentServices
                 {
                     return (CreateCommentEnum.UserNotFound, null);
                 }
-                
+
                 var post = await _unitOfWork.PostRepository.GetByIdAsync(request.PostId);
                 if (post == null)
                 {
                     return (CreateCommentEnum.PostNotFound, null);
                 }
-               
+
                 if (string.IsNullOrWhiteSpace(request.Content))
                 {
                     return (CreateCommentEnum.InvalidContent, null);
@@ -55,7 +61,7 @@ namespace SocialNetworkBe.Services.CommentServices
                 // Upload images 
                 List<string>? imageUrls = null;
                 if (request.Images != null && request.Images.Any())
-                {                   
+                {
                     var validImageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
                     var invalidFiles = request.Images.Where(file =>
                         !validImageExtensions.Any(ext =>
@@ -65,7 +71,7 @@ namespace SocialNetworkBe.Services.CommentServices
                     {
                         return (CreateCommentEnum.InvalidImageFormat, null);
                     }
-                  
+
                     const long maxFileSize = 10 * 1024 * 1024;
                     var oversizedFiles = request.Images.Where(file => file.Length > maxFileSize).ToList();
 
@@ -73,25 +79,26 @@ namespace SocialNetworkBe.Services.CommentServices
                     {
                         return (CreateCommentEnum.FileTooLarge, null);
                     }
-                  
+
                     imageUrls = await _uploadService.UploadFile(request.Images, "comments/images");
                     if (imageUrls == null || !imageUrls.Any())
                     {
                         return (CreateCommentEnum.ImageUploadFailed, null);
                     }
                 }
-          
+
+                var currentTime = DateTime.UtcNow;
                 var comment = new Comment
                 {
                     Content = request.Content.Trim(),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    TotalLiked = 0,
                     PostId = request.PostId,
                     UserId = userId,
-                    RepliedCommentId = request.RepliedCommentId
+                    RepliedCommentId = request.RepliedCommentId,
+                    CreatedAt = currentTime,
+                    UpdatedAt = currentTime,
+                    TotalLiked = 0
                 };
-                
+
                 if (imageUrls != null && imageUrls.Any())
                 {
                     comment.CommentImage = imageUrls
@@ -103,7 +110,7 @@ namespace SocialNetworkBe.Services.CommentServices
                 }
 
                 _unitOfWork.CommentRepository.Add(comment);
-            
+
                 post.TotalComment += 1;
                 _unitOfWork.PostRepository.Update(post);
 
@@ -139,11 +146,7 @@ namespace SocialNetworkBe.Services.CommentServices
                     return (GetCommentsEnum.NoCommentsFound, null);
                 }
 
-                // Tạo HashSet để theo dõi các comment đã xử lý
-                var processedComments = new HashSet<Guid>();
-
-                // Sử dụng phương thức đệ quy để ánh xạ các comment và replies
-                var commentDtos = comments.Select(comment => MapCommentToDto(comment, processedComments)).Where(dto => dto != null).ToList();
+                var commentDtos = _mapper.Map<List<CommentDto>>(comments);
 
                 return (GetCommentsEnum.Success, commentDtos);
             }
@@ -154,60 +157,12 @@ namespace SocialNetworkBe.Services.CommentServices
             }
         }
 
-        // Đệ quy để ánh xạ Comment sang CommentDto
-        private CommentDto MapCommentToDto(Comment comment, HashSet<Guid> processedComments)
-        {
-            // Nếu comment đã được xử lý, trả về null để tránh vòng lặp
-            if (processedComments.Contains(comment.Id))
-            {
-                return null;
-            }
-
-            // Đánh dấu comment này là đã xử lý
-            processedComments.Add(comment.Id);
-
-            return new CommentDto
-            {
-                Id = comment.Id,
-                Content = comment.Content,
-                PostId = comment.PostId,
-                UserId = comment.UserId,
-                CreatedAt = comment.CreatedAt,
-                UpdatedAt = comment.UpdatedAt,
-                TotalLiked = comment.TotalLiked,
-                RepliedCommentId = comment.RepliedCommentId,
-                User = comment.User == null ? null : new UserDto
-                {
-                    Id = comment.User.Id,
-                    Email = comment.User.Email,
-                    UserName = comment.User.UserName ?? "",
-                    Status = comment.User.Status.ToString(),
-                    FirstName = comment.User.FirstName,
-                    LastName = comment.User.LastName,
-                    AvatarUrl = comment.User.AvatarUrl
-                },
-                CommentImages = comment.CommentImage?.Select(img => new CommentImageDto
-                {
-                    Id = img.Id,
-                    ImageUrl = img.ImageUrl
-                }).ToList(),
-                Replies = comment.Replies?.Select(reply => MapCommentToDto(reply, processedComments)).Where(r => r != null).ToList(),
-                CommentReactionUsers = comment.CommentReactionUsers
-            };
-        }
-
         public async Task<(UpdateCommentEnum, CommentDto?)> UpdateCommentAsync(Guid commentId, UpdateCommentRequest request, Guid userId)
         {
             try
-            {
-                var comments = await _unitOfWork.CommentRepository.FindAsyncWithIncludes(
-                    c => c.Id == commentId,
-                    c => c.User,
-                    c => c.CommentImage,
-                    c => c.CommentReactionUsers
-                );
+            {             
+                var comment = await _unitOfWork.CommentRepository.GetCommentByIdWithTrackingAsync(commentId);
 
-                var comment = comments?.FirstOrDefault();
                 if (comment == null)
                 {
                     return (UpdateCommentEnum.CommentNotFound, null);
@@ -217,7 +172,7 @@ namespace SocialNetworkBe.Services.CommentServices
                 {
                     return (UpdateCommentEnum.Unauthorized, null);
                 }
-                
+
                 if (request.Content != null)
                 {
                     if (string.IsNullOrWhiteSpace(request.Content))
@@ -226,8 +181,8 @@ namespace SocialNetworkBe.Services.CommentServices
                     }
                     comment.Content = request.Content.Trim();
                 }
-               
-                else if (request.ImageIdsToDelete != null && request.ImageIdsToDelete.Any())
+
+                if (request.ImageIdsToDelete != null && request.ImageIdsToDelete.Any())
                 {
                     var imagesToDelete = comment.CommentImage?
                         .Where(img => request.ImageIdsToDelete.Contains(img.Id))
@@ -241,10 +196,9 @@ namespace SocialNetworkBe.Services.CommentServices
                         }
                     }
                 }
-               
+
                 if (request.NewImages != null && request.NewImages.Any())
                 {
-                    // Validate file types
                     var validImageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
                     var invalidFiles = request.NewImages.Where(file =>
                         !validImageExtensions.Any(ext =>
@@ -254,7 +208,7 @@ namespace SocialNetworkBe.Services.CommentServices
                     {
                         return (UpdateCommentEnum.InvalidImageFormat, null);
                     }
-                   
+
                     const long maxFileSize = 10 * 1024 * 1024;
                     var oversizedFiles = request.NewImages.Where(file => file.Length > maxFileSize).ToList();
 
@@ -262,7 +216,7 @@ namespace SocialNetworkBe.Services.CommentServices
                     {
                         return (UpdateCommentEnum.FileTooLarge, null);
                     }
-                 
+
                     var newImageUrls = await _uploadService.UploadFile(request.NewImages, "comments/images");
                     if (newImageUrls == null || !newImageUrls.Any())
                     {
@@ -287,42 +241,14 @@ namespace SocialNetworkBe.Services.CommentServices
                         comment.CommentImage.Add(newImage);
                     }
                 }
-
-                //comment.UpdatedAt = DateTime.UtcNow;
+                comment.UpdatedAt = DateTime.UtcNow;
 
                 _unitOfWork.CommentRepository.Update(comment);
                 var result = await _unitOfWork.CompleteAsync();
 
                 if (result > 0)
-                {
-                    var commentDto = new CommentDto
-                    {
-                        Id = comment.Id,
-                        Content = comment.Content,
-                        CreatedAt = comment.CreatedAt,
-                        UpdatedAt = comment.UpdatedAt,
-                        TotalLiked = comment.TotalLiked,
-                        PostId = comment.PostId,
-                        UserId = comment.UserId,
-                        RepliedCommentId = comment.RepliedCommentId,
-                        User = comment.User == null ? null : new UserDto
-                        {
-                            Id = comment.User.Id,
-                            Email = comment.User.Email,
-                            UserName = comment.User.UserName ?? "",
-                            Status = comment.User.Status.ToString(),
-                            FirstName = comment.User.FirstName,
-                            LastName = comment.User.LastName,
-                            AvatarUrl = comment.User.AvatarUrl
-                        },
-                        CommentImages = comment.CommentImage?.Select(img => new CommentImageDto
-                        {
-                            Id = img.Id,
-                            ImageUrl = img.ImageUrl
-                        }).ToList(),
-                        CommentReactionUsers = comment.CommentReactionUsers
-                    };
-
+                {                   
+                    var commentDto = _mapper.Map<CommentDto>(comment);
                     return (UpdateCommentEnum.UpdateCommentSuccess, commentDto);
                 }
 
@@ -338,13 +264,9 @@ namespace SocialNetworkBe.Services.CommentServices
         public async Task<(DeleteCommentEnum, bool)> DeleteCommentAsync(Guid commentId, Guid userId)
         {
             try
-            {
-                var comments = await _unitOfWork.CommentRepository.FindAsyncWithIncludes(
-                    c => c.Id == commentId,
-                    c => c.Post
-                );
+            {               
+                var comment = await _unitOfWork.CommentRepository.GetCommentByIdWithTrackingAsync(commentId);
 
-                var comment = comments?.FirstOrDefault();
                 if (comment == null)
                 {
                     return (DeleteCommentEnum.CommentNotFound, false);
@@ -383,22 +305,16 @@ namespace SocialNetworkBe.Services.CommentServices
         public async Task<CommentDto?> AddUpdateDeleteReactionComment(ReactionCommentRequest request, Guid userId)
         {
             try
-            {              
+            {
                 var commentReactionUser = await _unitOfWork.CommentReactionUserRepository
                     .FindFirstAsync(r => r.CommentId == request.CommentId && r.UserId == userId);
 
-                var comments = await _unitOfWork.CommentRepository.FindAsyncWithIncludes(
-                    c => c.Id == request.CommentId,
-                    c => c.User,
-                    c => c.CommentImage,
-                    c => c.CommentReactionUsers
-                );
+                var comment = await _unitOfWork.CommentRepository.GetCommentByIdWithTrackingAsync(request.CommentId);
 
-                var comment = comments?.FirstOrDefault();
                 if (comment == null) return null;
 
                 if (commentReactionUser == null)
-                {                    
+                {
                     commentReactionUser = new CommentReactionUser
                     {
                         UserId = userId,
@@ -409,13 +325,13 @@ namespace SocialNetworkBe.Services.CommentServices
                     };
 
                     _unitOfWork.CommentReactionUserRepository.Add(commentReactionUser);
-                    //comment.TotalLiked += 1;
+                    comment.TotalLiked += 1;
                 }
                 else if (commentReactionUser.Reaction == request.Reaction)
                 {
                     // Xóa reaction nếu trùng
                     _unitOfWork.CommentReactionUserRepository.Remove(commentReactionUser);
-                    //comment.TotalLiked = Math.Max(0, comment.TotalLiked - 1);
+                    comment.TotalLiked = Math.Max(0, comment.TotalLiked - 1);
                 }
                 else
                 {
@@ -427,35 +343,8 @@ namespace SocialNetworkBe.Services.CommentServices
 
                 _unitOfWork.CommentRepository.Update(comment);
                 await _unitOfWork.CompleteAsync();
-
-                var commentDto = new CommentDto
-                {
-                    Id = comment.Id,
-                    Content = comment.Content,
-                    CreatedAt = comment.CreatedAt,
-                    UpdatedAt = comment.UpdatedAt,
-                    TotalLiked = comment.TotalLiked,
-                    PostId = comment.PostId,
-                    UserId = comment.UserId,
-                    RepliedCommentId = comment.RepliedCommentId,
-                    User = comment.User == null ? null : new UserDto
-                    {
-                        Id = comment.User.Id,
-                        Email = comment.User.Email,
-                        UserName = comment.User.UserName ?? "",
-                        Status = comment.User.Status.ToString(),
-                        FirstName = comment.User.FirstName,
-                        LastName = comment.User.LastName,
-                        AvatarUrl = comment.User.AvatarUrl
-                    },
-                    CommentImages = comment.CommentImage?.Select(img => new CommentImageDto
-                    {
-                        Id = img.Id,
-                        ImageUrl = img.ImageUrl
-                    }).ToList(),
-                    CommentReactionUsers = comment.CommentReactionUsers
-                };
-
+               
+                var commentDto = _mapper.Map<CommentDto>(comment);
                 return commentDto;
             }
             catch (Exception ex)
