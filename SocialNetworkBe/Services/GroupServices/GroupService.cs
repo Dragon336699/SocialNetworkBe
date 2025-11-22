@@ -94,7 +94,7 @@ namespace SocialNetworkBe.Services.GroupServices
                 {
                     UserId = userId,
                     GroupId = group.Id,
-                    RoleName = GroupRole.Administrator,
+                    RoleName = GroupRole.SuperAdministrator,
                     JoinedAt = DateTime.UtcNow
                 };
 
@@ -189,7 +189,9 @@ namespace SocialNetworkBe.Services.GroupServices
                 }
 
                 var groupUser = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == userId);
-                if (groupUser == null || groupUser.RoleName != GroupRole.Administrator)
+                if (groupUser == null ||
+                    (groupUser.RoleName != GroupRole.Administrator &&
+                     groupUser.RoleName != GroupRole.SuperAdministrator))
                 {
                     return (UpdateGroupEnum.Unauthorized, null);
                 }
@@ -273,7 +275,7 @@ namespace SocialNetworkBe.Services.GroupServices
                 }
 
                 var groupUser = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == userId);
-                if (groupUser == null || groupUser.RoleName != GroupRole.Administrator)
+                if (groupUser == null || groupUser.RoleName != GroupRole.SuperAdministrator)
                 {
                     return (DeleteGroupEnum.Unauthorized, false);
                 }
@@ -356,9 +358,9 @@ namespace SocialNetworkBe.Services.GroupServices
                     return (LeaveGroupEnum.NotMember, false);
                 }
 
-                if (groupUser.RoleName == GroupRole.Administrator)
+                if (groupUser.RoleName == GroupRole.SuperAdministrator)
                 {
-                    return (LeaveGroupEnum.CannotLeaveAsAdmin, false);
+                    return (LeaveGroupEnum.CannotLeaveAsOwner, false);
                 }
 
                 _unitOfWork.GroupUserRepository.Remove(groupUser);
@@ -412,6 +414,211 @@ namespace SocialNetworkBe.Services.GroupServices
             {
                 _logger.LogError(ex, "Error when getting groups for user {UserId}", userId);
                 return (GetUserGroupsEnum.Failed, null);
+            }
+        }
+
+        public async Task<(PromoteToAdminEnum, GroupUserDto?)> PromoteToAdminAsync(Guid groupId, Guid targetUserId, Guid currentUserId)
+        {
+            try
+            {           
+                if (currentUserId == targetUserId)
+                {
+                    return (PromoteToAdminEnum.CannotPromoteSelf, null);
+                }
+
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (PromoteToAdminEnum.GroupNotFound, null);
+                }
+
+                var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
+                if (currentUserRole == null || currentUserRole.RoleName != GroupRole.SuperAdministrator)
+                {
+                    return (PromoteToAdminEnum.Unauthorized, null);
+                }
+
+                var targetGroupUser = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == targetUserId);
+                if (targetGroupUser == null)
+                {
+                    return (PromoteToAdminEnum.UserNotMember, null);
+                }
+
+                if (targetGroupUser.RoleName == GroupRole.Administrator ||
+                    targetGroupUser.RoleName == GroupRole.SuperAdministrator)
+                {
+                    return (PromoteToAdminEnum.AlreadyAdmin, null);
+                }
+
+                var adminCount = group.GroupUsers?.Count(gu =>
+                    gu.RoleName == GroupRole.Administrator ||
+                    gu.RoleName == GroupRole.SuperAdministrator) ?? 0;
+
+                if (adminCount >= 10)
+                {
+                    return (PromoteToAdminEnum.MaxAdminReached, null);
+                }
+
+                targetGroupUser.RoleName = GroupRole.Administrator;
+
+                _unitOfWork.GroupUserRepository.Update(targetGroupUser);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    var updatedGroupUser = await _unitOfWork.GroupUserRepository.FindFirstAsyncWithIncludes(
+                        gu => gu.GroupId == groupId && gu.UserId == targetUserId,
+                        gu => gu.User
+                    );
+
+                    var groupUserDto = _mapper.Map<GroupUserDto>(updatedGroupUser);
+                    return (PromoteToAdminEnum.Success, groupUserDto);
+                }
+
+                return (PromoteToAdminEnum.Failed, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when promoting user {TargetUserId} to admin in group {GroupId}", targetUserId, groupId);
+                return (PromoteToAdminEnum.Failed, null);
+            }
+        }
+
+        public async Task<(DemoteAdminEnum, GroupUserDto?)> DemoteAdminAsync(Guid groupId, Guid targetUserId, Guid currentUserId)
+        {
+            try
+            {
+                if (currentUserId == targetUserId)
+                {
+                    return (DemoteAdminEnum.CannotDemoteSelf, null);
+                }
+
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (DemoteAdminEnum.GroupNotFound, null);
+                }
+
+                var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
+                if (currentUserRole == null || currentUserRole.RoleName != GroupRole.SuperAdministrator)
+                {
+                    return (DemoteAdminEnum.Unauthorized, null);
+                }
+
+                var targetGroupUser = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == targetUserId);
+                if (targetGroupUser == null)
+                {
+                    return (DemoteAdminEnum.UserNotFound, null);
+                }
+
+                if (targetGroupUser.RoleName == GroupRole.User)
+                {
+                    return (DemoteAdminEnum.UserNotAdmin, null);
+                }
+
+                if (targetGroupUser.RoleName == GroupRole.SuperAdministrator)
+                {
+                    return (DemoteAdminEnum.CannotDemoteSuperAdmin, null);
+                }
+
+                targetGroupUser.RoleName = GroupRole.User;
+
+                _unitOfWork.GroupUserRepository.Update(targetGroupUser);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    var updatedGroupUser = await _unitOfWork.GroupUserRepository.FindFirstAsyncWithIncludes(
+                        gu => gu.GroupId == groupId && gu.UserId == targetUserId,
+                        gu => gu.User
+                    );
+
+                    var groupUserDto = _mapper.Map<GroupUserDto>(updatedGroupUser);
+                    return (DemoteAdminEnum.Success, groupUserDto);
+                }
+
+                return (DemoteAdminEnum.Failed, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when demoting admin {TargetUserId} in group {GroupId}", targetUserId, groupId);
+                return (DemoteAdminEnum.Failed, null);
+            }
+        }
+
+        public async Task<(KickMemberEnum, bool)> KickMemberAsync(Guid groupId, Guid targetUserId, Guid currentUserId)
+        {
+            try
+            {
+                if (currentUserId == targetUserId)
+                {
+                    return (KickMemberEnum.CannotKickSelf, false);
+                }
+
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (KickMemberEnum.GroupNotFound, false);
+                }
+
+                var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
+                if (currentUserRole == null)
+                {
+                    return (KickMemberEnum.Unauthorized, false);
+                }
+
+                if (currentUserRole.RoleName != GroupRole.SuperAdministrator &&
+                    currentUserRole.RoleName != GroupRole.Administrator)
+                {
+                    return (KickMemberEnum.Unauthorized, false);
+                }
+          
+                var targetGroupUser = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == targetUserId);
+                if (targetGroupUser == null)
+                {
+                    return (KickMemberEnum.TargetUserNotMember, false);
+                }
+             
+                if (targetGroupUser.RoleName == GroupRole.SuperAdministrator)
+                {
+                    return (KickMemberEnum.CannotKickSuperAdmin, false);
+                }
+                
+                if (currentUserRole.RoleName == GroupRole.Administrator &&
+                    targetGroupUser.RoleName == GroupRole.Administrator)
+                {
+                    return (KickMemberEnum.AdminCannotKickAdmin, false);
+                }
+
+                _unitOfWork.GroupUserRepository.Remove(targetGroupUser);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    return (KickMemberEnum.Success, true);
+                }
+
+                return (KickMemberEnum.Failed, false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when kicking user {TargetUserId} from group {GroupId}", targetUserId, groupId);
+                return (KickMemberEnum.Failed, false);
             }
         }
     }

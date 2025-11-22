@@ -220,7 +220,7 @@ namespace SocialNetworkBe.Controllers
                 {
                     LeaveGroupEnum.GroupNotFound => NotFound(new LeaveGroupResponse { Message = status.GetMessage() }),
                     LeaveGroupEnum.NotMember => BadRequest(new LeaveGroupResponse { Message = status.GetMessage() }),
-                    LeaveGroupEnum.CannotLeaveAsAdmin => BadRequest(new LeaveGroupResponse { Message = status.GetMessage() }),
+                    LeaveGroupEnum.CannotLeaveAsOwner => BadRequest(new LeaveGroupResponse { Message = status.GetMessage() }),
                     LeaveGroupEnum.LeaveGroupSuccess => Ok(new LeaveGroupResponse { Message = status.GetMessage() }),
                     LeaveGroupEnum.LeaveGroupFailed => StatusCode(500, new LeaveGroupResponse { Message = status.GetMessage() }),
                     _ => StatusCode(500, new LeaveGroupResponse { Message = "Unknown error occurred" })
@@ -277,6 +277,98 @@ namespace SocialNetworkBe.Controllers
                     Groups = null,
                     TotalCount = 0
                 });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("{groupId}/promote-admin")]
+        public async Task<IActionResult> PromoteToAdmin(Guid groupId, [FromBody] PromoteToAdminRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, groupUserDto) = await _groupService.PromoteToAdminAsync(groupId, request.TargetUserId, currentUserId);
+
+                return status switch
+                {
+                    PromoteToAdminEnum.Success => Ok(new PromoteToAdminResponse
+                    {
+                        Message = status.GetMessage(),
+                        GroupUser = groupUserDto
+                    }),
+                    PromoteToAdminEnum.GroupNotFound => NotFound(new PromoteToAdminResponse { Message = status.GetMessage() }),
+                    PromoteToAdminEnum.UserNotFound => NotFound(new PromoteToAdminResponse { Message = status.GetMessage() }),
+                    PromoteToAdminEnum.UserNotMember => BadRequest(new PromoteToAdminResponse { Message = status.GetMessage() }),
+                    PromoteToAdminEnum.AlreadyAdmin => BadRequest(new PromoteToAdminResponse { Message = status.GetMessage() }),
+                    PromoteToAdminEnum.MaxAdminReached => BadRequest(new PromoteToAdminResponse { Message = status.GetMessage() }),
+                    PromoteToAdminEnum.CannotPromoteSelf => BadRequest(new PromoteToAdminResponse { Message = status.GetMessage() }),
+                    PromoteToAdminEnum.Failed => StatusCode(500, new PromoteToAdminResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new PromoteToAdminResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new PromoteToAdminResponse { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("{groupId}/demote-admin")]
+        public async Task<IActionResult> DemoteAdmin(Guid groupId, [FromBody] PromoteToAdminRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, groupUserDto) = await _groupService.DemoteAdminAsync(groupId, request.TargetUserId, currentUserId);
+
+                return status switch
+                {
+                    DemoteAdminEnum.Success => Ok(new DemoteAdminResponse
+                    {
+                        Message = status.GetMessage(),
+                        GroupUser = groupUserDto
+                    }),
+                    DemoteAdminEnum.GroupNotFound => NotFound(new DemoteAdminResponse { Message = status.GetMessage() }),
+                    DemoteAdminEnum.UserNotFound => NotFound(new DemoteAdminResponse { Message = status.GetMessage() }),
+                    DemoteAdminEnum.UserNotAdmin => BadRequest(new DemoteAdminResponse { Message = status.GetMessage() }),
+                    DemoteAdminEnum.CannotDemoteSuperAdmin => BadRequest(new DemoteAdminResponse { Message = status.GetMessage() }),
+                    DemoteAdminEnum.CannotDemoteSelf => BadRequest(new DemoteAdminResponse { Message = status.GetMessage() }),
+                    DemoteAdminEnum.Failed => StatusCode(500, new DemoteAdminResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new DemoteAdminResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new DemoteAdminResponse { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("{groupId}/kick-member")]
+        public async Task<IActionResult> KickMember(Guid groupId, [FromBody] KickMemberRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, result) = await _groupService.KickMemberAsync(groupId, request.TargetUserId, currentUserId);
+
+                return status switch
+                {
+                    KickMemberEnum.Success => Ok(new KickMemberResponse { Message = status.GetMessage(), Success = true }),
+                    KickMemberEnum.GroupNotFound => NotFound(new KickMemberResponse { Message = status.GetMessage(), Success = false }),
+                    KickMemberEnum.UserNotFound => NotFound(new KickMemberResponse { Message = status.GetMessage(), Success = false }),
+                    KickMemberEnum.TargetUserNotMember => BadRequest(new KickMemberResponse { Message = status.GetMessage(), Success = false }),
+                    KickMemberEnum.Unauthorized => StatusCode(403, new KickMemberResponse { Message = status.GetMessage(), Success = false }),
+                    KickMemberEnum.CannotKickSelf => BadRequest(new KickMemberResponse { Message = status.GetMessage(), Success = false }),
+                    KickMemberEnum.CannotKickSuperAdmin => BadRequest(new KickMemberResponse { Message = status.GetMessage(), Success = false }),
+                    KickMemberEnum.AdminCannotKickAdmin => StatusCode(403, new KickMemberResponse { Message = status.GetMessage(), Success = false }),
+                    KickMemberEnum.Failed => StatusCode(500, new KickMemberResponse { Message = status.GetMessage(), Success = false }),
+                    _ => StatusCode(500, new KickMemberResponse { Message = "Unknown error occurred", Success = false })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new KickMemberResponse { Message = ex.Message, Success = false });
             }
         }
     }

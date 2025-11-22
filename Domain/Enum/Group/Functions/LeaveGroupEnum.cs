@@ -10,7 +10,7 @@ namespace Domain.Enum.Group.Functions
     {
         GroupNotFound,
         NotMember,
-        CannotLeaveAsAdmin,
+        CannotLeaveAsOwner,
         LeaveGroupSuccess,
         LeaveGroupFailed
     }
@@ -23,7 +23,7 @@ namespace Domain.Enum.Group.Functions
             {
                 LeaveGroupEnum.GroupNotFound => "Group not found.",
                 LeaveGroupEnum.NotMember => "You are not a member of this group.",
-                LeaveGroupEnum.CannotLeaveAsAdmin => "Admin cannot leave the group. Transfer admin role or delete the group first.",
+                LeaveGroupEnum.CannotLeaveAsOwner => "Admin cannot leave the group. Transfer admin role or delete the group first.",
                 LeaveGroupEnum.LeaveGroupSuccess => "Left group successfully.",
                 LeaveGroupEnum.LeaveGroupFailed => "Failed to leave group.",
                 _ => "Unknown error."
