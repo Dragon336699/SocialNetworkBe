@@ -76,6 +76,36 @@ namespace SocialNetworkBe.Controllers
             }
         }
 
+        [Authorize]
+        [HttpPost]
+        [Route("user/logout")]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null) return Unauthorized(new { message = "User not authenticated" });
+             
+                Response.Cookies.Delete("jwt", new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None
+                });
+               
+                if (Guid.TryParse(userId, out Guid userGuid))
+                {
+                    await _userService.UpdateUserStatus(userGuid, Domain.Enum.User.Types.UserStatus.Offline);
+                }
+
+                return Ok(new { message = "Logout successful" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
         private IActionResult HandleLoginSuccess(string token, LoginEnum loginResult)
         {
             var cookieOptions = new CookieOptions
