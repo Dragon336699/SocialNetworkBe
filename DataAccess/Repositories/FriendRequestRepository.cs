@@ -56,5 +56,37 @@ namespace DataAccess.Repositories
                 return false;
             }
         }
+
+        public async Task<(List<FriendRequest> Items, int TotalCount)> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize)
+        {
+            try
+            {
+                var query = _context.FriendRequest
+                    .Include(fr => fr.Receiver)
+                    .Where(fr => fr.SenderId == senderId &&
+                                 fr.FriendRequestStatus == FriendRequestStatus.Pending.ToString());
+
+                // 1. Đếm tổng số bản ghi trước khi phân trang
+                var totalCount = await query.CountAsync();
+
+                // 2. Sắp xếp (Quan trọng: Phân trang bắt buộc phải có OrderBy để ổn định dữ liệu)
+                // Nếu Entity có CreatedAt
+                // query = query.OrderByDescending(fr => fr.CreatedAt); 
+                // Nếu chưa có CreatedAt, hãy dùng Id tạm thời:
+                //query = query.OrderByDescending(fr => fr.Id);
+
+                // 3. Phân trang (Skip & Take)
+                var items = await query
+                    .Skip((pageIndex - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            }
+            catch (Exception)
+            {
+                return (new List<FriendRequest>(), 0);
+            }
+        }
     }
 }

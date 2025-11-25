@@ -1,4 +1,5 @@
 ﻿using Domain.Contracts.Requests.FriendRequest;
+using Domain.Contracts.Responses.Common;
 using Domain.Contracts.Responses.FriendRequest;
 using Domain.Contracts.Responses.User;
 using Domain.Entities;
@@ -205,6 +206,69 @@ namespace SocialNetworkBe.Services.FriendRequestServices
             {
                 _logger.LogError(ex, "Error when responding to friend request from {SenderId} to {ReceiverId}", request.SenderId, receiverId);
                 return (RespondFriendRequestEnum.RespondFriendRequestFailed, null);
+            }
+        }
+        public async Task<PagedResponse<FriendRequestDto>> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize)
+        {
+            // Đảm bảo pageIndex >= 1
+            if (pageIndex < 1) pageIndex = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            // Gọi Repository lấy dữ liệu và tổng số
+            var (friendRequests, totalCount) = await _unitOfWork.FriendRequestRepository.GetSentFriendRequestsAsync(senderId, pageIndex, pageSize);
+
+            // Map sang DTO
+            var requestDtos = friendRequests.Select(fr => new FriendRequestDto
+            {
+                SenderId = fr.SenderId,
+                ReceiverId = fr.ReceiverId,
+                Status = Enum.Parse<FriendRequestStatus>(fr.FriendRequestStatus),
+                Receiver = fr.Receiver == null ? null : new UserDto
+                {
+                    Id = fr.Receiver.Id,
+                    Email = fr.Receiver.Email,
+                    UserName = fr.Receiver.UserName ?? "",
+                    Status = fr.Receiver.Status.ToString(),
+                    FirstName = fr.Receiver.FirstName,
+                    LastName = fr.Receiver.LastName,
+                    AvatarUrl = fr.Receiver.AvatarUrl
+                }
+            }).ToList();
+
+            // Trả về PagedResponse
+            return new PagedResponse<FriendRequestDto>(requestDtos, pageIndex, pageSize, totalCount);
+        }
+
+        public async Task<CancelFriendRequestEnum> CancelFriendRequestAsync(CancelFriendRequestRequest request, Guid senderId)
+        {
+            try
+            {
+                var friendRequest = await _unitOfWork.FriendRequestRepository.GetFriendRequestAsync(senderId, request.ReceiverId);
+
+                if (friendRequest == null)
+                {
+                    return CancelFriendRequestEnum.RequestNotFound;
+                }
+
+                if (friendRequest.FriendRequestStatus != FriendRequestStatus.Pending.ToString())
+                {
+                    return CancelFriendRequestEnum.NotPending;
+                }
+
+                _unitOfWork.FriendRequestRepository.Remove(friendRequest);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    return CancelFriendRequestEnum.Success;
+                }
+
+                return CancelFriendRequestEnum.Failed;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when cancelling friend request from {SenderId} to {ReceiverId}", senderId, request.ReceiverId);
+                return CancelFriendRequestEnum.Failed;
             }
         }
 

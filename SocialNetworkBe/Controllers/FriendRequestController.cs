@@ -78,7 +78,51 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new RespondFriendRequestResponse { Message = ex.Message });
             }
         }
- 
-        
+        [Authorize]
+        [HttpGet("sent")]
+        public async Task<IActionResult> GetSentFriendRequests([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var senderId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+                // Gọi service
+                var result = await _friendRequestService.GetSentFriendRequestsAsync(senderId, pageIndex, pageSize);
+
+                // Trả về kết quả
+                return Ok(new
+                {
+                    Message = "Get sent friend requests successfully.",
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("cancel")]
+        public async Task<IActionResult> CancelFriendRequest([FromBody] CancelFriendRequestRequest request)
+        {
+            try
+            {
+                var senderId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var status = await _friendRequestService.CancelFriendRequestAsync(request, senderId);
+
+                return status switch
+                {
+                    CancelFriendRequestEnum.RequestNotFound => NotFound(new { Message = status.GetMessage() }),
+                    CancelFriendRequestEnum.NotPending => BadRequest(new { Message = status.GetMessage() }),
+                    CancelFriendRequestEnum.Success => Ok(new { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new { Message = status.GetMessage() })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
     }
 }
