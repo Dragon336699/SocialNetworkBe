@@ -19,16 +19,16 @@ namespace SocialNetworkBe.Services.PostServices
         private readonly ILogger<PostService> _logger;
         private readonly IUploadService _uploadService;
         private readonly INotificationDataBuilder _notificationDataBuilder;
-        private readonly INotificationService _notificationService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly IMapper _mapper;
 
-        public PostService(IUnitOfWork unitOfWork, ILogger<PostService> logger, IUploadService uploadService, INotificationDataBuilder notificationDataBuilder, INotificationService notificationService, IMapper mapper)
+        public PostService(IUnitOfWork unitOfWork, ILogger<PostService> logger, IUploadService uploadService, INotificationDataBuilder notificationDataBuilder, IServiceProvider serviceProvider, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _uploadService = uploadService;
             _notificationDataBuilder = notificationDataBuilder;
-            _notificationService = notificationService;
+            _serviceProvider = serviceProvider;
             _mapper = mapper;
         }
 
@@ -356,6 +356,7 @@ namespace SocialNetworkBe.Services.PostServices
 
         public async Task<PostDto?> AddUpdateDeleteReactionPost(ReactionPostRequest request, Guid userId)
         {
+            var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
             try
             {
                 // Tìm reaction hiện có của user cho post
@@ -391,10 +392,10 @@ namespace SocialNetworkBe.Services.PostServices
                     post.TotalLiked += 1;
                     if (userId != post.UserId) {
                         // Tạo data cho notification
-                        NotificationData notiData = _notificationDataBuilder.BuilderDataForReactPost(post, actor, null);
+                        NotificationData? notiData = await _notificationDataBuilder.BuilderDataForReactPost(post, actor, null);
                         string mergeKey = NotificationType.LikePost.ToString() + "_" + post.Id.ToString() + "_" + owner.Id.ToString();
                         string navigateUrl = $"/post/{post.Id}";
-                        await _notificationService.ProcessAndSendNotiForReactPost(NotificationType.LikePost, notiData, navigateUrl, mergeKey, owner.Id);                             
+                        await notificationService.ProcessAndSendNotiForReactPost(NotificationType.LikePost, notiData, navigateUrl, mergeKey, owner.Id);                             
                     }
                 }
                 else if (postReactionUser.Reaction == request.Reaction)
@@ -410,10 +411,10 @@ namespace SocialNetworkBe.Services.PostServices
                     if (userId != post.UserId)
                     {
                         // Tạo data cho notification
-                        NotificationData notiData = _notificationDataBuilder.BuilderDataForReactPost(post, actor, null);
+                        NotificationData? notiData = await _notificationDataBuilder.BuilderDataForReactPost(post, actor, null);
                         string mergeKey = NotificationType.LikePost.ToString() + "_" + post.Id.ToString() + "_" + owner.Id.ToString();
                         string navigateUrl = $"/post/{post.Id}";
-                        await _notificationService.ProcessAndSendNotiForReactPost(NotificationType.LikePost, notiData, navigateUrl, mergeKey, owner.Id);
+                        await notificationService.ProcessAndSendNotiForReactPost(NotificationType.LikePost, notiData, navigateUrl, mergeKey, owner.Id);
                     }
                 }
 

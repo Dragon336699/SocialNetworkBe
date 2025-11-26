@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Domain.Contracts.Responses.Notification;
+using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,6 @@ namespace Domain.Interfaces.ServiceInterfaces
 {
     public interface IRealtimeService
     {
-        Task SendPrivateNotification(Notification noti, Guid receiverId);
+        Task SendPrivateNotification(NotificationDto noti, Guid receiverId);
     }
 }

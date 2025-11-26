@@ -13,6 +13,7 @@ namespace Domain.Interfaces.ServiceInterfaces
     {
         Task<(CreateCommentEnum, Guid?)> CreateCommentAsync(CreateCommentRequest request, Guid userId);
         Task<(GetCommentsEnum, List<CommentDto>?)> GetCommentsByPostIdAsync(Guid postId, int skip = 0, int take = 10);
+        Task<(GetCommentsEnum, CommentDto?)> GetCommentById(Guid commentId);
         Task<(UpdateCommentEnum, CommentDto?)> UpdateCommentAsync(Guid commentId, UpdateCommentRequest request, Guid userId);
         Task<(DeleteCommentEnum, bool)> DeleteCommentAsync(Guid commentId, Guid userId);
         Task<CommentDto?> AddUpdateDeleteReactionComment(ReactionCommentRequest request, Guid userId);

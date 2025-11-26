@@ -11,8 +11,9 @@ namespace Domain.Interfaces.ServiceInterfaces
 {
     public interface INotificationService
     {
-        Task ProcessAndSendNotiForReactPost(NotificationType type, NotificationData data, string navigateUrl, string mergeKey, Guid receiverId);
-        Task<List<Notification>?> GetNotis(Guid userId, int skip, int take);
+        Task ProcessAndSendNotiForReactPost(NotificationType type, NotificationData? data, string navigateUrl, string mergeKey, Guid receiverId);
+        Task ProcessAndSendNotiForCommentPost(NotificationType type, NotificationData data, string navigateUrl, string mergeKey, Guid receiverId);
+        Task<List<NotificationDto>?> GetNotis(Guid userId, int skip, int take);
         Task<int> GetUnreadNotifications(Guid userId);
         Task MarkNotificationAsRead(Guid notificationId);
         Task MarkAllNotificationsAsRead();

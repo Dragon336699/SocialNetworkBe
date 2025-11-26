@@ -1,10 +1,11 @@
-﻿namespace Domain.Contracts.Responses.Notification
+﻿using Domain.Enum.Notification.Types;
+
+namespace Domain.Contracts.Responses.Notification
 {
     public class NotificationObject
     {
-        public Guid Id { get; set; }
-        public required string Name {  get; set; }
-        public required string Type { get; set; }
-        public string? ImageUrl { get; set; } = null;
+        public Guid? Id { get; set; }
+        public string? Name {  get; set; }
+        public required NotificationObjectType Type { get; set; }
     }
 }

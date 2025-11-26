@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Domain.Enum.Notification.Types;
 
 namespace Domain.Contracts.Responses.Notification
 {
@@ -10,10 +6,10 @@ namespace Domain.Contracts.Responses.Notification
     {
         public required List<NotificationObject> Subjects { get; set; }
         public int SubjectCount { get; set; }
-        public required string Content { get; set; }
-        public required NotificationObject DiObject {  get; set; } // Direct Object
+        public required Verb Verb { get; set; }
+        public required NotificationObject DiObject { get; set; } // Direct Object
         public NotificationObject? InObject { get; set; } // Indirect Object
         public NotificationObject? PrObject { get; set; } // Prepositional Object
-        public List<HighlightOffset>? Highlights { get; set; }
+        public Preposition? Preposition { get; set; }
     }
 }

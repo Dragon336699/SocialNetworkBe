@@ -17,6 +17,7 @@ using SocialNetworkBe.Services.MessageService;
 using SocialNetworkBe.Services.NotificationService;
 using SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder;
 using SocialNetworkBe.Services.OTPServices;
+using SocialNetworkBe.Services.PostReactionServices;
 using SocialNetworkBe.Services.PostServices;
 using SocialNetworkBe.Services.RealtimeServices;
 using SocialNetworkBe.Services.TokenServices;
@@ -61,7 +62,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddScoped<IUploadService, UploadService>();
             services.AddScoped<IRealtimeService, RealTimeService>();
             services.AddScoped<ICommentService, CommentService>();
-
+            services.AddScoped<IPostReactionUserService, PostReactionUserService>();
 
             services.AddScoped<TokenService>();
             services.AddScoped<OTPService>();
