@@ -166,6 +166,9 @@ namespace DataAccess.Migrations
                     b.Property<Guid>("ReceiverId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("FriendRequestStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

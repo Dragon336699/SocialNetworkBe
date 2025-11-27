@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Services\Group\**" />
+    <Content Remove="Services\Group\**" />
+    <EmbeddedResource Remove="Services\Group\**" />
+    <None Remove="Services\Group\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
     <PackageReference Include="CloudinaryDotNet" Version="1.27.8" />
     <PackageReference Include="Google.Apis.Auth" Version="1.72.0" />

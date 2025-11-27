@@ -10,6 +10,7 @@ namespace Domain.Interfaces.BuilderInterfaces
 {
     public interface INotificationDataBuilder
     {
-        NotificationData BuilderDataForReactPost(Post post, User actor, Group? group);
+        Task<NotificationData?> BuilderDataForReactPost(Post post, User actor, Group? group);
+        NotificationData BuilderDataForComment(Post post, Comment comment, User actor);
     }
 }

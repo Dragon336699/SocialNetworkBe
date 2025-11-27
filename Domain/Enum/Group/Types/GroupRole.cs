@@ -8,6 +8,7 @@ namespace Domain.Enum.Group.Types
 {
     public enum GroupRole
     {
+        SuperAdministrator,
         Administrator,
         User
     }

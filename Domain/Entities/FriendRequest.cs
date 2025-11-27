@@ -9,6 +9,8 @@ namespace Domain.Entities
         public Guid ReceiverId { get; set; }
         [Required]
         public required string FriendRequestStatus { get; set; }
+        [Required]
+        public DateTime CreatedAt { get; set; }
         public User? Sender { get; set; }
         public User? Receiver { get; set; }
     }

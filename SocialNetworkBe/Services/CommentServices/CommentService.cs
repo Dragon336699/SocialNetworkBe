@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
 using Domain.Contracts.Requests.Comment;
 using Domain.Contracts.Responses.Comment;
+using Domain.Contracts.Responses.Notification;
 using Domain.Entities;
 using Domain.Enum.Comment.Functions;
+using Domain.Enum.Notification.Types;
+using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 
@@ -14,23 +17,32 @@ namespace SocialNetworkBe.Services.CommentServices
         private readonly ILogger<CommentService> _logger;
         private readonly IUploadService _uploadService;
         private readonly IMapper _mapper;
+        private readonly INotificationDataBuilder _notificationDataBuilder;
+        private readonly IServiceProvider _serviceProvider;
 
         public CommentService(
             IUnitOfWork unitOfWork,
             ILogger<CommentService> logger,
             IUploadService uploadService,
-            IMapper mapper)
+            IMapper mapper,
+            INotificationDataBuilder notificationDataBuilder,
+            IServiceProvider serviceProvider
+
+            )
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _uploadService = uploadService;
             _mapper = mapper;
+            _notificationDataBuilder = notificationDataBuilder;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<(CreateCommentEnum, Guid?)> CreateCommentAsync(CreateCommentRequest request, Guid userId)
         {
             try
             {
+                var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
                 if (user == null)
                 {
@@ -117,6 +129,11 @@ namespace SocialNetworkBe.Services.CommentServices
                 var result = await _unitOfWork.CompleteAsync();
                 if (result > 0)
                 {
+                    // Noti
+                    NotificationData? notiData = _notificationDataBuilder.BuilderDataForComment(post, comment, user);
+                    string mergeKey = NotificationType.CommentPost.ToString() + "_" + comment.Id.ToString() + "_" + user.Id.ToString();
+                    string navigateUrl = $"/comment/{comment.Id}";
+                    await notificationService.ProcessAndSendNotiForCommentPost(NotificationType.CommentPost, notiData, navigateUrl, mergeKey, post.UserId);
                     return (CreateCommentEnum.CreateCommentSuccess, comment.Id);
                 }
 
@@ -153,6 +170,27 @@ namespace SocialNetworkBe.Services.CommentServices
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error when getting comments for post {PostId}", postId);
+                return (GetCommentsEnum.Failed, null);
+            }
+        }
+
+        public async Task<(GetCommentsEnum, CommentDto?)> GetCommentById(Guid commentId)
+        {
+            try
+            {
+                var comment = await _unitOfWork.CommentRepository.GetByIdAsync(commentId);
+                if (comment == null)
+                {
+                    return (GetCommentsEnum.NoCommentsFound, null);
+                }
+
+                var commentDto = _mapper.Map<CommentDto>(comment);
+
+                return (GetCommentsEnum.Success, commentDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when getting comments for commment {CommentId}", commentId);
                 return (GetCommentsEnum.Failed, null);
             }
         }
