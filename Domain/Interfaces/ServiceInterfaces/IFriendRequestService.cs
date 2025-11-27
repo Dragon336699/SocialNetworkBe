@@ -1,4 +1,5 @@
 ﻿using Domain.Contracts.Requests.FriendRequest;
+using Domain.Contracts.Responses.Common;
 using Domain.Contracts.Responses.FriendRequest;
 using Domain.Enum.FriendRequest.Functions;
 using System;
@@ -13,6 +14,9 @@ namespace Domain.Interfaces.ServiceInterfaces
     {
         Task<(SendFriendRequestEnum, FriendRequestDto?)> SendFriendRequestAsync(SendFriendRequestRequest request, Guid senderId);
         Task<(RespondFriendRequestEnum, FriendRequestDto?)> RespondFriendRequestAsync(RespondFriendRequestRequest request, Guid receiverId);
+        Task<PagedResponse<FriendRequestDto>> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize);
+
+        Task<CancelFriendRequestEnum> CancelFriendRequestAsync(CancelFriendRequestRequest request, Guid senderId);
 
     }
 }
