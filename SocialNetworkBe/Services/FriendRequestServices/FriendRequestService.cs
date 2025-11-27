@@ -68,6 +68,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 {
                     SenderId = senderId,
                     ReceiverId = request.ReceiverId,
+                    CreatedAt = DateTime.UtcNow,
                     FriendRequestStatus = FriendRequestStatus.Pending.ToString(),              
                 };
 
@@ -221,6 +222,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
             var requestDtos = friendRequests.Select(fr => new FriendRequestDto
             {
                 SenderId = fr.SenderId,
+                CreatedAt = fr.CreatedAt,
                 ReceiverId = fr.ReceiverId,
                 Status = Enum.Parse<FriendRequestStatus>(fr.FriendRequestStatus),
                 Receiver = fr.Receiver == null ? null : new UserDto

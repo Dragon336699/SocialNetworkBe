@@ -327,7 +327,7 @@ namespace SocialNetworkBe.Controllers
                         BadRequest(new { message }),
 
                     UpdateAvatarEnum.UploadFailed =>
-                        StatusCode(500, new { message }),
+                        BadRequest(new { message }),
 
                     _ =>
                         StatusCode(500, new { message = "Unexpected error occurred." })
