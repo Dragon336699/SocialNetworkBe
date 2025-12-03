@@ -154,7 +154,7 @@ namespace SocialNetworkBe.Services.GroupServices
 
                 if (group.IsPublic == 0)
                 {
-                    var isMember = group.GroupUsers?.Any(gu => gu.UserId == userId) ?? false;
+                    var isMember = group.GroupUsers?.Any(gu => gu.UserId == userId && gu.RoleName != GroupRole.Pending) ?? false;
                     if (!isMember)
                     {
                         return (GetGroupByIdEnum.Unauthorized, null);
@@ -312,6 +312,10 @@ namespace SocialNetworkBe.Services.GroupServices
 
                 if (existingMember != null)
                 {
+                    if (existingMember.RoleName == GroupRole.Pending)
+                    {
+                        return (JoinGroupEnum.AlreadyRequested, false);
+                    }
                     return (JoinGroupEnum.AlreadyMember, false);
                 }
 
@@ -319,7 +323,7 @@ namespace SocialNetworkBe.Services.GroupServices
                 {
                     UserId = userId,
                     GroupId = groupId,
-                    RoleName = GroupRole.User,
+                    RoleName = GroupRole.Pending,
                     JoinedAt = DateTime.UtcNow
                 };
 
@@ -328,7 +332,7 @@ namespace SocialNetworkBe.Services.GroupServices
 
                 if (result > 0)
                 {
-                    return (JoinGroupEnum.JoinGroupSuccess, true);
+                    return (JoinGroupEnum.JoinRequestSent, true);
                 }
 
                 return (JoinGroupEnum.JoinGroupFailed, false);
@@ -337,6 +341,215 @@ namespace SocialNetworkBe.Services.GroupServices
             {
                 _logger.LogError(ex, "Error when user {UserId} joining group {GroupId}", userId, groupId);
                 return (JoinGroupEnum.JoinGroupFailed, false);
+            }
+        }
+
+        public async Task<(ApproveJoinRequestEnum, GroupUserDto?)> ApproveJoinRequestAsync(
+            Guid groupId,
+            Guid targetUserId,
+            Guid currentUserId)
+        {
+            try
+            {
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (ApproveJoinRequestEnum.GroupNotFound, null);
+                }
+              
+                var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
+                if (currentUserRole == null ||
+                    (currentUserRole.RoleName != GroupRole.SuperAdministrator &&
+                     currentUserRole.RoleName != GroupRole.Administrator))
+                {
+                    return (ApproveJoinRequestEnum.Unauthorized, null);
+                }
+               
+                var joinRequest = group.GroupUsers?.FirstOrDefault(
+                    gu => gu.UserId == targetUserId && gu.RoleName == GroupRole.Pending);
+
+                if (joinRequest == null)
+                {                 
+                    var existingMember = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == targetUserId);
+                    if (existingMember != null && existingMember.RoleName != GroupRole.Pending)
+                    {
+                        return (ApproveJoinRequestEnum.AlreadyMember, null);
+                    }
+                    return (ApproveJoinRequestEnum.RequestNotFound, null);
+                }
+               
+                joinRequest.RoleName = GroupRole.User;
+                joinRequest.JoinedAt = DateTime.UtcNow;
+
+                _unitOfWork.GroupUserRepository.Update(joinRequest);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    var updatedGroupUser = await _unitOfWork.GroupUserRepository.FindFirstAsyncWithIncludes(
+                        gu => gu.GroupId == groupId && gu.UserId == targetUserId,
+                        gu => gu.User
+                    );
+
+                    var groupUserDto = _mapper.Map<GroupUserDto>(updatedGroupUser);
+                    return (ApproveJoinRequestEnum.Success, groupUserDto);
+                }
+
+                return (ApproveJoinRequestEnum.Failed, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when approving join request for user {TargetUserId} in group {GroupId}",
+                    targetUserId, groupId);
+                return (ApproveJoinRequestEnum.Failed, null);
+            }
+        }
+        public async Task<(RejectJoinRequestEnum, bool)> RejectJoinRequestAsync(
+            Guid groupId,
+            Guid targetUserId,
+            Guid currentUserId)
+        {
+            try
+            {
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (RejectJoinRequestEnum.GroupNotFound, false);
+                }
+             
+                var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
+                if (currentUserRole == null ||
+                    (currentUserRole.RoleName != GroupRole.SuperAdministrator &&
+                     currentUserRole.RoleName != GroupRole.Administrator))
+                {
+                    return (RejectJoinRequestEnum.Unauthorized, false);
+                }
+              
+                var joinRequest = group.GroupUsers?.FirstOrDefault(
+                    gu => gu.UserId == targetUserId && gu.RoleName == GroupRole.Pending);
+
+                if (joinRequest == null)
+                {
+                    return (RejectJoinRequestEnum.RequestNotFound, false);
+                }
+               
+                _unitOfWork.GroupUserRepository.Remove(joinRequest);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    return (RejectJoinRequestEnum.Success, true);
+                }
+
+                return (RejectJoinRequestEnum.Failed, false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when rejecting join request for user {TargetUserId} in group {GroupId}",
+                    targetUserId, groupId);
+                return (RejectJoinRequestEnum.Failed, false);
+            }
+        }
+     
+        public async Task<(CancelJoinRequestEnum, bool)> CancelJoinRequestAsync(Guid groupId, Guid userId)
+        {
+            try
+            {
+                var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+                if (group == null)
+                {
+                    return (CancelJoinRequestEnum.GroupNotFound, false);
+                }
+
+                var joinRequest = await _unitOfWork.GroupUserRepository
+                    .FindFirstAsync(gu => gu.GroupId == groupId &&
+                                         gu.UserId == userId &&
+                                         gu.RoleName == GroupRole.Pending);
+
+                if (joinRequest == null)
+                {
+                    return (CancelJoinRequestEnum.RequestNotFound, false);
+                }
+
+                _unitOfWork.GroupUserRepository.Remove(joinRequest);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    return (CancelJoinRequestEnum.Success, true);
+                }
+
+                return (CancelJoinRequestEnum.Failed, false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when user {UserId} cancelling join request to group {GroupId}",
+                    userId, groupId);
+                return (CancelJoinRequestEnum.Failed, false);
+            }
+        }
+      
+        public async Task<(GetPendingJoinRequestsEnum, List<GroupUserDto>?)> GetPendingJoinRequestsAsync(
+            Guid groupId,
+            Guid currentUserId,
+            int skip = 0,
+            int take = 10)
+        {
+            try
+            {
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (GetPendingJoinRequestsEnum.GroupNotFound, null);
+                }
+               
+                var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
+                if (currentUserRole == null ||
+                    (currentUserRole.RoleName != GroupRole.SuperAdministrator &&
+                     currentUserRole.RoleName != GroupRole.Administrator))
+                {
+                    return (GetPendingJoinRequestsEnum.Unauthorized, null);
+                }
+              
+                var pendingRequests = await _unitOfWork.GroupUserRepository.FindAsyncWithIncludes(
+                    gu => gu.GroupId == groupId && gu.RoleName == GroupRole.Pending,
+                    gu => gu.User
+                );
+
+                if (pendingRequests == null || !pendingRequests.Any())
+                {
+                    return (GetPendingJoinRequestsEnum.NoRequestsFound, null);
+                }
+
+                var paginatedRequests = pendingRequests
+                    .OrderBy(gu => gu.JoinedAt)
+                    .Skip(skip)
+                    .Take(take)
+                    .ToList();
+
+                var groupUserDtos = _mapper.Map<List<GroupUserDto>>(paginatedRequests);
+
+                return (GetPendingJoinRequestsEnum.Success, groupUserDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when getting pending join requests for group {GroupId}", groupId);
+                return (GetPendingJoinRequestsEnum.Failed, null);
             }
         }
 

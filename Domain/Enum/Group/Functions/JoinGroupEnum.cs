@@ -10,7 +10,8 @@ namespace Domain.Enum.Group.Functions
     {
         GroupNotFound,
         AlreadyMember,
-        JoinGroupSuccess,
+        AlreadyRequested,
+        JoinRequestSent,
         JoinGroupFailed
     }
 
@@ -22,7 +23,8 @@ namespace Domain.Enum.Group.Functions
             {
                 JoinGroupEnum.GroupNotFound => "Group not found.",
                 JoinGroupEnum.AlreadyMember => "You are already a member of this group.",
-                JoinGroupEnum.JoinGroupSuccess => "Joined group successfully.",
+                JoinGroupEnum.AlreadyRequested => "You have already sent a join request to this group.",
+                JoinGroupEnum.JoinRequestSent => "Join request sent successfully. Waiting for approval.",
                 JoinGroupEnum.JoinGroupFailed => "Failed to join group.",
                 _ => "Unknown error."
             };
