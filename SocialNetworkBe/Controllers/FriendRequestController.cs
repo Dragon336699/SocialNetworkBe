@@ -86,10 +86,8 @@ namespace SocialNetworkBe.Controllers
             {
                 var senderId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-                // Gọi service
                 var result = await _friendRequestService.GetSentFriendRequestsAsync(senderId, pageIndex, pageSize);
 
-                // Trả về kết quả
                 return Ok(new
                 {
                     Message = "Get sent friend requests successfully.",
@@ -118,6 +116,26 @@ namespace SocialNetworkBe.Controllers
                     CancelFriendRequestEnum.Success => Ok(new { Message = status.GetMessage() }),
                     _ => StatusCode(500, new { Message = status.GetMessage() })
                 };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+        [Authorize]
+        [HttpGet("received")]
+        public async Task<IActionResult> GetReceivedFriendRequests([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var receiverId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var result = await _friendRequestService.GetReceivedFriendRequestsAsync(receiverId, pageIndex, pageSize);
+
+                return Ok(new
+                {
+                    Message = "Get received friend requests successfully.",
+                    Data = result
+                });
             }
             catch (Exception ex)
             {
