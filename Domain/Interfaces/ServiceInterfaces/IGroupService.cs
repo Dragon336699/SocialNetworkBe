@@ -17,6 +17,10 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<(UpdateGroupEnum, GroupDto?)> UpdateGroupAsync(Guid groupId, UpdateGroupRequest request, Guid userId);
         Task<(DeleteGroupEnum, bool)> DeleteGroupAsync(Guid groupId, Guid userId);
         Task<(JoinGroupEnum, bool)> JoinGroupAsync(Guid groupId, Guid userId);
+        Task<(ApproveJoinRequestEnum, GroupUserDto?)> ApproveJoinRequestAsync(Guid groupId, Guid targetUserId, Guid currentUserId);
+        Task<(RejectJoinRequestEnum, bool)> RejectJoinRequestAsync(Guid groupId, Guid targetUserId, Guid currentUserId);
+        Task<(CancelJoinRequestEnum, bool)> CancelJoinRequestAsync(Guid groupId, Guid userId);
+        Task<(GetPendingJoinRequestsEnum, List<GroupUserDto>?)> GetPendingJoinRequestsAsync(Guid groupId, Guid currentUserId, int skip = 0, int take = 10);
         Task<(LeaveGroupEnum, bool)> LeaveGroupAsync(Guid groupId, Guid userId);
         Task<(GetUserGroupsEnum, List<GroupDto>?)> GetUserGroupsAsync(Guid userId, int skip = 0, int take = 10);
         Task<(PromoteToAdminEnum, GroupUserDto?)> PromoteToAdminAsync(Guid groupId, Guid targetUserId, Guid currentUserId);

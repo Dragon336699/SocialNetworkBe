@@ -8,6 +8,7 @@ using Domain.Contracts.Responses.Message;
 using Domain.Contracts.Responses.Post;
 using Domain.Contracts.Responses.User;
 using Domain.Entities;
+using Domain.Enum.Group.Types;
 
 namespace DataAccess.AutoMapper
 {
@@ -34,7 +35,7 @@ namespace DataAccess.AutoMapper
 
             CreateMap<Group, GroupDto>()
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.IsPublic == 1))
-                .ForMember(dest => dest.MemberCount, opt => opt.MapFrom(src => src.GroupUsers != null ? src.GroupUsers.Count : 0))
+                .ForMember(dest => dest.MemberCount, opt => opt.MapFrom(src => src.GroupUsers != null ? src.GroupUsers.Count(gu => gu.RoleName != GroupRole.Pending) : 0))
                 .ForMember(dest => dest.PostCount, opt => opt.MapFrom(src => src.Posts != null ? src.Posts.Count : 0))
                 .ForMember(dest => dest.GroupUsers, opt => opt.MapFrom(src => src.GroupUsers))
                 .ForMember(dest => dest.Posts, opt => opt.MapFrom(src => src.Posts));

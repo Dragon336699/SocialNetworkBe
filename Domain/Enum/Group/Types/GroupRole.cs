@@ -10,6 +10,7 @@ namespace Domain.Enum.Group.Types
     {
         SuperAdministrator,
         Administrator,
-        User
+        User,
+        Pending
     }
 }

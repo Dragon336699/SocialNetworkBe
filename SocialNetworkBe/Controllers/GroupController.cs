@@ -196,7 +196,8 @@ namespace SocialNetworkBe.Controllers
                 {
                     JoinGroupEnum.GroupNotFound => NotFound(new JoinGroupResponse { Message = status.GetMessage() }),
                     JoinGroupEnum.AlreadyMember => BadRequest(new JoinGroupResponse { Message = status.GetMessage() }),
-                    JoinGroupEnum.JoinGroupSuccess => Ok(new JoinGroupResponse { Message = status.GetMessage() }),
+                    JoinGroupEnum.AlreadyRequested => BadRequest(new JoinGroupResponse { Message = status.GetMessage() }),
+                    JoinGroupEnum.JoinRequestSent => Ok(new JoinGroupResponse { Message = status.GetMessage() }),
                     JoinGroupEnum.JoinGroupFailed => StatusCode(500, new JoinGroupResponse { Message = status.GetMessage() }),
                     _ => StatusCode(500, new JoinGroupResponse { Message = "Unknown error occurred" })
                 };
@@ -204,6 +205,113 @@ namespace SocialNetworkBe.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new JoinGroupResponse { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("{groupId}/approve-join-request")]
+        public async Task<IActionResult> ApproveJoinRequest(Guid groupId, [FromBody] ApproveJoinRequestRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, groupUserDto) = await _groupService.ApproveJoinRequestAsync(groupId, request.TargetUserId, currentUserId);
+
+                return status switch
+                {
+                    ApproveJoinRequestEnum.Success => Ok(new ApproveJoinRequestResponse { Message = status.GetMessage(), GroupUser = groupUserDto }),
+                    ApproveJoinRequestEnum.GroupNotFound => NotFound(new ApproveJoinRequestResponse { Message = status.GetMessage() }),
+                    ApproveJoinRequestEnum.UserNotFound => NotFound(new ApproveJoinRequestResponse { Message = status.GetMessage() }),
+                    ApproveJoinRequestEnum.RequestNotFound => NotFound(new ApproveJoinRequestResponse { Message = status.GetMessage() }),
+                    ApproveJoinRequestEnum.AlreadyMember => BadRequest(new ApproveJoinRequestResponse { Message = status.GetMessage() }),
+                    ApproveJoinRequestEnum.Unauthorized => StatusCode(403, new ApproveJoinRequestResponse { Message = status.GetMessage() }),
+                    ApproveJoinRequestEnum.Failed => StatusCode(500, new ApproveJoinRequestResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new ApproveJoinRequestResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApproveJoinRequestResponse { Message = ex.Message });
+            }
+        }
+    
+        [Authorize]
+        [HttpPost("{groupId}/reject-join-request")]
+        public async Task<IActionResult> RejectJoinRequest(Guid groupId, [FromBody] RejectJoinRequestRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, result) = await _groupService.RejectJoinRequestAsync(groupId, request.TargetUserId, currentUserId);
+
+                return status switch
+                {
+                    RejectJoinRequestEnum.Success => Ok(new RejectJoinRequestResponse { Message = status.GetMessage() }),
+                    RejectJoinRequestEnum.GroupNotFound => NotFound(new RejectJoinRequestResponse { Message = status.GetMessage() }),
+                    RejectJoinRequestEnum.UserNotFound => NotFound(new RejectJoinRequestResponse { Message = status.GetMessage() }),
+                    RejectJoinRequestEnum.RequestNotFound => NotFound(new RejectJoinRequestResponse { Message = status.GetMessage() }),
+                    RejectJoinRequestEnum.Unauthorized => StatusCode(403, new RejectJoinRequestResponse { Message = status.GetMessage() }),
+                    RejectJoinRequestEnum.Failed => StatusCode(500, new RejectJoinRequestResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new RejectJoinRequestResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new RejectJoinRequestResponse { Message = ex.Message });
+            }
+        }
+   
+        [Authorize]
+        [HttpPost("{groupId}/cancel-join-request")]
+        public async Task<IActionResult> CancelJoinRequest(Guid groupId)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, result) = await _groupService.CancelJoinRequestAsync(groupId, userId);
+
+                return status switch
+                {
+                    CancelJoinRequestEnum.Success => Ok(new CancelJoinRequestResponse { Message = status.GetMessage() }),
+                    CancelJoinRequestEnum.GroupNotFound => NotFound(new CancelJoinRequestResponse { Message = status.GetMessage() }),
+                    CancelJoinRequestEnum.RequestNotFound => NotFound(new CancelJoinRequestResponse { Message = status.GetMessage() }),
+                    CancelJoinRequestEnum.Failed => StatusCode(500, new CancelJoinRequestResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new CancelJoinRequestResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new CancelJoinRequestResponse { Message = ex.Message });
+            }
+        }
+       
+        [Authorize]
+        [HttpGet("{groupId}/pending-join-requests")]
+        public async Task<IActionResult> GetPendingJoinRequests(Guid groupId, [FromQuery] int skip = 0, [FromQuery] int take = 10)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, pendingRequests) = await _groupService.GetPendingJoinRequestsAsync(groupId, currentUserId, skip, take);
+
+                return status switch
+                {
+                    GetPendingJoinRequestsEnum.Success => Ok(new GetPendingJoinRequestsResponse { Message = status.GetMessage(), PendingRequests = pendingRequests, TotalCount = pendingRequests?.Count ?? 0 }),
+                    GetPendingJoinRequestsEnum.GroupNotFound => NotFound(new GetPendingJoinRequestsResponse { Message = status.GetMessage(), PendingRequests = null, TotalCount = 0 }),
+                    GetPendingJoinRequestsEnum.Unauthorized => StatusCode(403, new GetPendingJoinRequestsResponse { Message = status.GetMessage(), PendingRequests = null, TotalCount = 0 }),
+                    GetPendingJoinRequestsEnum.NoRequestsFound => Ok(new GetPendingJoinRequestsResponse { Message = status.GetMessage(), PendingRequests = new List<GroupUserDto>(), TotalCount = 0 }),
+                    GetPendingJoinRequestsEnum.Failed => StatusCode(500, new GetPendingJoinRequestsResponse { Message = status.GetMessage(), PendingRequests = null, TotalCount = 0 }),
+                    _ => StatusCode(500, new GetPendingJoinRequestsResponse { Message = "Unknown error occurred", PendingRequests = null, TotalCount = 0 })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new GetPendingJoinRequestsResponse
+                {
+                    Message = ex.Message,
+                    PendingRequests = null,
+                    TotalCount = 0
+                });
             }
         }
 
