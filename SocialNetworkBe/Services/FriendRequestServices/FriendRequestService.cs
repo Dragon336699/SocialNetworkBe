@@ -211,14 +211,11 @@ namespace SocialNetworkBe.Services.FriendRequestServices
         }
         public async Task<PagedResponse<FriendRequestDto>> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize)
         {
-            // Đảm bảo pageIndex >= 1
             if (pageIndex < 1) pageIndex = 1;
             if (pageSize < 1) pageSize = 10;
 
-            // Gọi Repository lấy dữ liệu và tổng số
             var (friendRequests, totalCount) = await _unitOfWork.FriendRequestRepository.GetSentFriendRequestsAsync(senderId, pageIndex, pageSize);
 
-            // Map sang DTO
             var requestDtos = friendRequests.Select(fr => new FriendRequestDto
             {
                 SenderId = fr.SenderId,
@@ -237,7 +234,6 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 }
             }).ToList();
 
-            // Trả về PagedResponse
             return new PagedResponse<FriendRequestDto>(requestDtos, pageIndex, pageSize, totalCount);
         }
 
@@ -272,6 +268,35 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 _logger.LogError(ex, "Error when cancelling friend request from {SenderId} to {ReceiverId}", senderId, request.ReceiverId);
                 return CancelFriendRequestEnum.Failed;
             }
+        }
+        public async Task<PagedResponse<FriendRequestDto>> GetReceivedFriendRequestsAsync(Guid receiverId, int pageIndex, int pageSize)
+        {
+            if (pageIndex < 1) pageIndex = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var (friendRequests, totalCount) = await _unitOfWork.FriendRequestRepository.GetReceivedFriendRequestsAsync(receiverId, pageIndex, pageSize);
+
+            var requestDtos = friendRequests.Select(fr => new FriendRequestDto
+            {
+                SenderId = fr.SenderId,
+                ReceiverId = fr.ReceiverId,
+                Status = Enum.Parse<FriendRequestStatus>(fr.FriendRequestStatus),
+                CreatedAt = fr.CreatedAt,
+
+                Sender = fr.Sender == null ? null : new UserDto
+                {
+                    Id = fr.Sender.Id,
+                    Email = fr.Sender.Email,
+                    UserName = fr.Sender.UserName ?? "",
+                    Status = fr.Sender.Status.ToString(),
+                    FirstName = fr.Sender.FirstName,
+                    LastName = fr.Sender.LastName,
+                    AvatarUrl = fr.Sender.AvatarUrl
+                },
+                Receiver = null
+            }).ToList();
+
+            return new PagedResponse<FriendRequestDto>(requestDtos, pageIndex, pageSize, totalCount);
         }
 
     }

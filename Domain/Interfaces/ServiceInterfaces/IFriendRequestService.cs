@@ -17,6 +17,7 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<PagedResponse<FriendRequestDto>> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize);
 
         Task<CancelFriendRequestEnum> CancelFriendRequestAsync(CancelFriendRequestRequest request, Guid senderId);
+        Task<PagedResponse<FriendRequestDto>> GetReceivedFriendRequestsAsync(Guid receiverId, int pageIndex, int pageSize);
 
     }
 }

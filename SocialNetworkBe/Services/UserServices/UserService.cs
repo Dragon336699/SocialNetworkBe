@@ -464,6 +464,7 @@ namespace SocialNetworkBe.Services.UserServices
 
                 user.FirstName = request.FirstName ?? user.FirstName;
                 user.UserName = request.UserName ?? user.UserName;
+                user.NormalizedUserName = user.UserName.ToUpper();
                 user.LastName = request.LastName ?? user.LastName;
                 user.Email = request.Email ?? user.Email;
                 if (!string.IsNullOrEmpty(request.Gender))
@@ -474,8 +475,9 @@ namespace SocialNetworkBe.Services.UserServices
                     }
                 }
                 user.Description = request.Description ?? user.Description;
-                var result = await _userManager.UpdateAsync(user);
-                if (result.Succeeded)
+                _unitOfWork.UserRepository.Update(user);
+                var saved = await _unitOfWork.CompleteAsync();
+                if (saved > 0)
                     return UpdateUserInfoEnum.Success;
 
                 return (UpdateUserInfoEnum.UpdateFailed);

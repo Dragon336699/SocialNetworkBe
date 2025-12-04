@@ -13,5 +13,6 @@ namespace Domain.Interfaces.RepositoryInterfaces
         Task<FriendRequest?> GetFriendRequestAsync(Guid senderId, Guid receiverId);
         Task<bool> AreFriendsAsync(Guid userId1, Guid userId2);
         Task<(List<FriendRequest> Items, int TotalCount)> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize);
+        Task<(List<FriendRequest> Items, int TotalCount)> GetReceivedFriendRequestsAsync(Guid receiverId, int pageIndex, int pageSize);
     }
 }

@@ -25,6 +25,7 @@ using SocialNetworkBe.Services.UploadService;
 using SocialNetworkBe.Services.UserServices;
 using SocialNetworkBe.Services.GroupServices;
 using SocialNetworkBe.SignalR;
+using SocialNetworkBe.Services.UserRelationServices;
 
 namespace SocialNetworkBe.AddServicesCollection
 {
@@ -57,6 +58,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<IConversationService, ConversationService>();        
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IFriendRequestService, FriendRequestService>();
+            services.AddScoped<IUserRelationService, UserRelationService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IMessageService, MessageService>();
             services.AddScoped<INotificationService, NotificationService>();
