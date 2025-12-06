@@ -65,5 +65,11 @@ namespace DataAccess.Repositories
             var items = await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
             return (items, totalCount);
         }
+        public async Task<UserRelation?> GetExistingRelationAsync(Guid userId, Guid relatedUserId)
+        {
+            return await _context.UserRelation
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.RelatedUserId == relatedUserId);
+        }
+
     }
 }

@@ -120,53 +120,85 @@ namespace SocialNetworkBe.Services.FriendRequestServices
         {
             try
             {
-                // Lấy thông tin lời mời kết bạn
+                // 1. Lấy thông tin lời mời kết bạn
                 var friendRequest = await _unitOfWork.FriendRequestRepository.GetFriendRequestAsync(request.SenderId, receiverId);
                 if (friendRequest == null)
                 {
                     return (RespondFriendRequestEnum.FriendRequestNotFound, null);
                 }
 
-                // Kiểm tra xem lời mời đã được xử lý chưa
+                // 2. Kiểm tra xem lời mời đã được xử lý chưa
                 if (friendRequest.FriendRequestStatus != FriendRequestStatus.Pending.ToString())
                 {
                     return (RespondFriendRequestEnum.AlreadyProcessed, null);
                 }
 
-                // Kiểm tra trạng thái phản hồi hợp lệ
+                // 3. Kiểm tra trạng thái phản hồi hợp lệ
                 if (request.Status != FriendRequestStatus.Accepted && request.Status != FriendRequestStatus.Rejected)
                 {
                     return (RespondFriendRequestEnum.InvalidStatus, null);
                 }
-          
+
+                // Cập nhật trạng thái friend request
                 friendRequest.FriendRequestStatus = request.Status.ToString();
-                
                 _unitOfWork.FriendRequestRepository.Update(friendRequest);
-               
+
+                // 4. Xử lý logic khi CHẤP NHẬN
                 if (request.Status == FriendRequestStatus.Accepted)
                 {
-                    var userRelation1 = new UserRelation
-                    {
-                        UserId = friendRequest.SenderId,
-                        RelatedUserId = friendRequest.ReceiverId,
-                        RelationType = UserRelationType.Friend,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
+                    // --- XỬ LÝ CHIỀU 1: Sender -> Receiver ---
+                    // Sử dụng hàm mới viết ở Bước 1 & 2
+                    var relationFromSender = await _unitOfWork.UserRelationRepository
+                        .GetExistingRelationAsync(friendRequest.SenderId, friendRequest.ReceiverId);
 
-                    var userRelation2 = new UserRelation
+                    if (relationFromSender != null)
                     {
-                        UserId = friendRequest.ReceiverId,
-                        RelatedUserId = friendRequest.SenderId,
-                        RelationType = UserRelationType.Friend,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
+                        // Nếu đã có quan hệ (ví dụ: Following), update thành Friend
+                        relationFromSender.RelationType = UserRelationType.Friend;
+                        relationFromSender.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.UserRelationRepository.Update(relationFromSender);
+                    }
+                    else
+                    {
+                        // Nếu chưa có, tạo mới
+                        var newRelation = new UserRelation
+                        {
+                            UserId = friendRequest.SenderId,
+                            RelatedUserId = friendRequest.ReceiverId,
+                            RelationType = UserRelationType.Friend,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        _unitOfWork.UserRelationRepository.Add(newRelation);
+                    }
 
-                    _unitOfWork.UserRelationRepository.Add(userRelation1);
-                    _unitOfWork.UserRelationRepository.Add(userRelation2);
+                    // --- XỬ LÝ CHIỀU 2: Receiver -> Sender ---
+                    var relationFromReceiver = await _unitOfWork.UserRelationRepository
+                        .GetExistingRelationAsync(friendRequest.ReceiverId, friendRequest.SenderId);
+
+                    if (relationFromReceiver != null)
+                    {
+                        // Nếu đã có quan hệ, update thành Friend
+                        relationFromReceiver.RelationType = UserRelationType.Friend;
+                        relationFromReceiver.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.UserRelationRepository.Update(relationFromReceiver);
+                    }
+                    else
+                    {
+                        // Nếu chưa có, tạo mới
+                        var newRelation = new UserRelation
+                        {
+                            UserId = friendRequest.ReceiverId,
+                            RelatedUserId = friendRequest.SenderId,
+                            RelationType = UserRelationType.Friend,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        _unitOfWork.UserRelationRepository.Add(newRelation);
+                    }
                 }
 
+                // 5. Lưu xuống DB
                 var result = await _unitOfWork.CompleteAsync();
 
                 if (result > 0)

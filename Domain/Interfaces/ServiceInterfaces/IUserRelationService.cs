@@ -13,6 +13,7 @@ namespace Domain.Interfaces.ServiceInterfaces
     {
         Task<FollowUserEnum> FollowUserAsync(Guid currentUserId, Guid targetUserId);
         Task<UnfollowUserEnum> UnfollowUserAsync(Guid currentUserId, Guid targetUserId);
+        Task<UnfriendUserEnum> UnfriendUserAsync(Guid currentUserId, Guid targetUserId);
 
         Task<PagedResponse<UserDto>> GetFollowersAsync(Guid userId, int pageIndex, int pageSize);
         Task<PagedResponse<UserDto>> GetFollowingAsync(Guid userId, int pageIndex, int pageSize);
