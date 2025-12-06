@@ -17,5 +17,6 @@ namespace Domain.Interfaces.RepositoryInterfaces
         Task<(List<User> Users, int TotalCount)> GetFollowingAsync(Guid userId, int pageIndex, int pageSize);
 
         Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int pageIndex, int pageSize);
+        Task<UserRelation?> GetExistingRelationAsync(Guid userId, Guid relatedUserId);
     }
 }

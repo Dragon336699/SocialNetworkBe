@@ -21,7 +21,7 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpPost("follow")]
-        public async Task<IActionResult> FollowUser([FromBody] FollowUserRequest request)
+        public async Task<IActionResult> FollowUser([FromBody] UserIdRequest request)
         {
             try
             {
@@ -45,7 +45,7 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpPost("unfollow")]
-        public async Task<IActionResult> UnfollowUser([FromBody] FollowUserRequest request)
+        public async Task<IActionResult> UnfollowUser([FromBody] UserIdRequest request)
         {
             try
             {
@@ -58,6 +58,28 @@ namespace SocialNetworkBe.Controllers
                     UnfollowUserEnum.NotFollowing => BadRequest(new { Message = status.GetMessage() }),
                     UnfollowUserEnum.TargetUserNotFound => NotFound(new { Message = "User not found." }),
                     _ => StatusCode(500, new { Message = status.GetMessage() })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("unfriend")]
+        public async Task<IActionResult> UnfriendUser([FromBody] UserIdRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var result = await _userRelationService.UnfriendUserAsync(currentUserId, request.TargetUserId);
+
+                return result switch
+                {
+                    UnfriendUserEnum.Success => Ok(new { Message = result.GetMessage() }),
+                    UnfriendUserEnum.NotFriends => BadRequest(new { Message = result.GetMessage() }),
+                    _ => StatusCode(500, new { Message = result.GetMessage() })
                 };
             }
             catch (Exception ex)
