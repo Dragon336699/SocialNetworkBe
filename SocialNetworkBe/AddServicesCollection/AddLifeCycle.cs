@@ -25,6 +25,8 @@ using SocialNetworkBe.Services.UploadService;
 using SocialNetworkBe.Services.UserServices;
 using SocialNetworkBe.Services.GroupServices;
 using SocialNetworkBe.SignalR;
+using DataAccess.DbContext;
+using SocialNetworkBe.Services.FeedServices;
 using SocialNetworkBe.Services.UserRelationServices;
 
 namespace SocialNetworkBe.AddServicesCollection
@@ -53,6 +55,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<ICommentReactionUserRepository, CommentReactionUserRepository>();
             services.AddTransient<IGroupRepository, GroupRepository>();
             services.AddTransient<IGroupUserRepository, GroupUserRepository>();
+            services.AddTransient<IFeedRepository, FeedRepository>();
 
             services.AddTransient<IConversationUserService, ConversationUserService>();
             services.AddTransient<IConversationService, ConversationService>();        
@@ -68,6 +71,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddScoped<IRealtimeService, RealTimeService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IGroupService, GroupService>();
+            services.AddScoped<IFeedService, FeedService>();
 
             services.AddScoped<IPostReactionUserService, PostReactionUserService>();
 
@@ -77,6 +81,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<INotificationDataBuilder, NotificationDataBuilder>();
 
             services.AddSingleton<IUserIdProvider, CustomerUserIdProvider>();
+            services.AddSingleton<CassandraContext>();
             services.AddSingleton<IUserConnectionManager, UserConnectionManager>();
             services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
         }

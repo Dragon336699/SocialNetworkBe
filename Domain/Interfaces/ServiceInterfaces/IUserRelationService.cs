@@ -16,6 +16,7 @@ namespace Domain.Interfaces.ServiceInterfaces
 
         Task<PagedResponse<UserDto>> GetFollowersAsync(Guid userId, int pageIndex, int pageSize);
         Task<PagedResponse<UserDto>> GetFollowingAsync(Guid userId, int pageIndex, int pageSize);
-        Task<PagedResponse<UserDto>> GetFriendsAsync(Guid userId, int pageIndex, int pageSize);
+        Task<List<UserDto>> GetFriendsAsync(Guid userId, int skip, int take);
+        Task<List<UserDto>> GetFullFriends(Guid userId);
     }
 }

@@ -14,10 +14,13 @@ namespace SocialNetworkBe.Controllers
     public class PostController : ControllerBase
     {
         private readonly IPostService _postService;
+        private readonly IFeedService _feedService;
 
-        public PostController(IPostService postService)
+        public PostController(IPostService postService, IFeedService feedService)
         {
             _postService = postService;
+            _feedService = feedService;
+
         }
 
         [Authorize]
@@ -51,12 +54,15 @@ namespace SocialNetworkBe.Controllers
         }
 
         [Authorize]
-        [HttpGet("all")]
-        public async Task<IActionResult> GetAllPosts([FromQuery] int skip = 0, [FromQuery] int take = 10)
+        [HttpGet("getNewsFeed")]
+        public async Task<IActionResult> GetPostsForNewFeed([FromQuery] int skip = 0, [FromQuery] int take = 10)
         {
             try
             {
-                var (status, posts) = await _postService.GetAllPostsAsync(skip, take);
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null) return BadRequest(new { message = "User not found" });
+
+                var (status, posts) = await _feedService.GetFeedsForUser(Guid.Parse(userId));
 
                 return status switch
                 {

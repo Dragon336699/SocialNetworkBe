@@ -69,7 +69,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                     SenderId = senderId,
                     ReceiverId = request.ReceiverId,
                     CreatedAt = DateTime.UtcNow,
-                    FriendRequestStatus = FriendRequestStatus.Pending.ToString(),              
+                    FriendRequestStatus = FriendRequestStatus.Pending.ToString(),
                 };
 
                 _unitOfWork.FriendRequestRepository.Add(friendRequest);
@@ -81,7 +81,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                     {
                         SenderId = friendRequest.SenderId,
                         ReceiverId = friendRequest.ReceiverId,
-                        Status = Enum.Parse<FriendRequestStatus>(friendRequest.FriendRequestStatus),                     
+                        Status = Enum.Parse<FriendRequestStatus>(friendRequest.FriendRequestStatus),
                         Sender = new UserDto
                         {
                             Id = sender.Id,
@@ -116,7 +116,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
             }
         }
 
-        public async Task<(RespondFriendRequestEnum, FriendRequestDto?)> RespondFriendRequestAsync(RespondFriendRequestRequest request, Guid receiverId)
+        public async Task<(RespondFriendRequestEnum, FriendRequestDto?)> ApproveFriendRequestAsync(RespondFriendRequestRequest request, Guid receiverId)
         {
             try
             {
@@ -127,45 +127,18 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                     return (RespondFriendRequestEnum.FriendRequestNotFound, null);
                 }
 
-                // Kiểm tra xem lời mời đã được xử lý chưa
-                if (friendRequest.FriendRequestStatus != FriendRequestStatus.Pending.ToString())
-                {
-                    return (RespondFriendRequestEnum.AlreadyProcessed, null);
-                }
+                _unitOfWork.FriendRequestRepository.Remove(friendRequest);
 
-                // Kiểm tra trạng thái phản hồi hợp lệ
-                if (request.Status != FriendRequestStatus.Accepted && request.Status != FriendRequestStatus.Rejected)
+                var userRelation = new UserRelation
                 {
-                    return (RespondFriendRequestEnum.InvalidStatus, null);
-                }
-          
-                friendRequest.FriendRequestStatus = request.Status.ToString();
-                
-                _unitOfWork.FriendRequestRepository.Update(friendRequest);
-               
-                if (request.Status == FriendRequestStatus.Accepted)
-                {
-                    var userRelation1 = new UserRelation
-                    {
-                        UserId = friendRequest.SenderId,
-                        RelatedUserId = friendRequest.ReceiverId,
-                        RelationType = UserRelationType.Friend,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
+                    UserId = friendRequest.SenderId,
+                    RelatedUserId = friendRequest.ReceiverId,
+                    RelationType = UserRelationType.Friend,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
 
-                    var userRelation2 = new UserRelation
-                    {
-                        UserId = friendRequest.ReceiverId,
-                        RelatedUserId = friendRequest.SenderId,
-                        RelationType = UserRelationType.Friend,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-
-                    _unitOfWork.UserRelationRepository.Add(userRelation1);
-                    _unitOfWork.UserRelationRepository.Add(userRelation2);
-                }
+                _unitOfWork.UserRelationRepository.Add(userRelation);
 
                 var result = await _unitOfWork.CompleteAsync();
 
@@ -209,7 +182,31 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 return (RespondFriendRequestEnum.RespondFriendRequestFailed, null);
             }
         }
-        public async Task<PagedResponse<FriendRequestDto>> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize)
+
+        public async Task<RespondFriendRequestEnum> DeclineFriendRequestAsync(RespondFriendRequestRequest request, Guid receiverId)
+        {
+            try
+            {
+                // Lấy thông tin lời mời kết bạn
+                var friendRequest = await _unitOfWork.FriendRequestRepository.GetFriendRequestAsync(request.SenderId, receiverId);
+                if (friendRequest == null)
+                {
+                    return (RespondFriendRequestEnum.FriendRequestNotFound);
+                }
+
+                _unitOfWork.FriendRequestRepository.Remove(friendRequest);
+
+                await _unitOfWork.CompleteAsync();
+
+                return (RespondFriendRequestEnum.RespondFriendRequestSuccess);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when responding to friend request from {SenderId} to {ReceiverId}", request.SenderId, receiverId);
+                return (RespondFriendRequestEnum.RespondFriendRequestFailed);
+            }
+        }
+        public async Task<List<FriendRequestDto>> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize)
         {
             if (pageIndex < 1) pageIndex = 1;
             if (pageSize < 1) pageSize = 10;
@@ -234,7 +231,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 }
             }).ToList();
 
-            return new PagedResponse<FriendRequestDto>(requestDtos, pageIndex, pageSize, totalCount);
+            return requestDtos;
         }
 
         public async Task<CancelFriendRequestEnum> CancelFriendRequestAsync(CancelFriendRequestRequest request, Guid senderId)
@@ -269,7 +266,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 return CancelFriendRequestEnum.Failed;
             }
         }
-        public async Task<PagedResponse<FriendRequestDto>> GetReceivedFriendRequestsAsync(Guid receiverId, int pageIndex, int pageSize)
+        public async Task<List<FriendRequestDto>> GetReceivedFriendRequestsAsync(Guid receiverId, int pageIndex, int pageSize)
         {
             if (pageIndex < 1) pageIndex = 1;
             if (pageSize < 1) pageSize = 10;
@@ -296,7 +293,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 Receiver = null
             }).ToList();
 
-            return new PagedResponse<FriendRequestDto>(requestDtos, pageIndex, pageSize, totalCount);
+            return requestDtos;
         }
 
     }

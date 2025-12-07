@@ -100,12 +100,12 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpGet("friends")]
-        public async Task<IActionResult> GetFriends([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetFriends([FromQuery] int skip = 0, [FromQuery] int take = 10)
         {
             try
             {
                 var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var result = await _userRelationService.GetFriendsAsync(userId, pageIndex, pageSize);
+                var result = await _userRelationService.GetFriendsAsync(userId, skip, take);
                 return Ok(new { Message = "Get friends list successfully", Data = result });
             }
             catch (Exception ex)

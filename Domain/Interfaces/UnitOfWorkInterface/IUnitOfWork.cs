@@ -16,6 +16,7 @@ namespace Domain.Interfaces.UnitOfWorkInterface
         INotificationRepository NotificationRepository { get; }
 
         IPostRepository PostRepository { get; }
+        IFeedRepository FeedRepository { get; }
         IUserRepository UserRepository { get; }
 
         IMessageAttachmentRepository MessageAttachmentRepository { get; }

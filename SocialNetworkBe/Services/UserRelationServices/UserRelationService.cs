@@ -99,10 +99,18 @@ namespace SocialNetworkBe.Services.UserRelationServices
             return new PagedResponse<UserDto>(MapToUserDtos(users), pageIndex, pageSize, totalCount);
         }
 
-        public async Task<PagedResponse<UserDto>> GetFriendsAsync(Guid userId, int pageIndex, int pageSize)
+        public async Task<List<UserDto>> GetFriendsAsync(Guid userId, int skip, int take)
         {
-            var (users, totalCount) = await _unitOfWork.UserRelationRepository.GetFriendsAsync(userId, pageIndex, pageSize);
-            return new PagedResponse<UserDto>(MapToUserDtos(users), pageIndex, pageSize, totalCount);
+            var (users, totalCount) = await _unitOfWork.UserRelationRepository.GetFriendsAsync(userId, skip, take);
+            var userDtos = MapToUserDtos(users);
+            return userDtos;
+        }
+
+        public async Task<List<UserDto>> GetFullFriends(Guid userId)
+        {
+            var users = await _unitOfWork.UserRelationRepository.GetFullFriends(userId);
+            var userDtos = MapToUserDtos(users);
+            return userDtos;
         }
     }
 }

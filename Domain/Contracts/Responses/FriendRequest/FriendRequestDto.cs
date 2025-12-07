@@ -14,7 +14,6 @@ namespace Domain.Contracts.Responses.FriendRequest
         public Guid ReceiverId { get; set; }
         public FriendRequestStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
         public string? Message { get; set; }
         public UserDto? Sender { get; set; }
         public UserDto? Receiver { get; set; }
