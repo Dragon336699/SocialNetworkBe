@@ -10,6 +10,5 @@ namespace Domain.Contracts.Requests.FriendRequest
     public class RespondFriendRequestRequest
     {
         public Guid SenderId { get; set; }
-        public FriendRequestStatus Status { get; set; } 
     }
 }

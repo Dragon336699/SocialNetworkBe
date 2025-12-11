@@ -35,7 +35,8 @@ namespace SocialNetworkBe.Services.PostServices
         public async Task<(CreatePostEnum, Guid?)> CreatePostAsync(CreatePostRequest request, Guid userId)
         {
             try
-            {            
+            {   
+                var feedService = _serviceProvider.GetRequiredService<IFeedService>();
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
                 if (user == null)
                 {
@@ -106,6 +107,8 @@ namespace SocialNetworkBe.Services.PostServices
                 var result = await _unitOfWork.CompleteAsync();
                 if (result > 0)
                 {
+                    // Tạo feed cho user khác
+                    feedService.FeedForPost(post.Id, userId);
                     return (CreatePostEnum.CreatePostSuccess, post.Id);
                 }
                 

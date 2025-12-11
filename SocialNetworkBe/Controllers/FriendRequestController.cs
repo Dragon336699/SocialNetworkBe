@@ -51,13 +51,13 @@ namespace SocialNetworkBe.Controllers
         }
 
         [Authorize]
-        [HttpPost("respond")]
-        public async Task<IActionResult> RespondFriendRequest([FromBody] RespondFriendRequestRequest request)
+        [HttpPost("approve")]
+        public async Task<IActionResult> ApproveFriendRequest([FromBody] RespondFriendRequestRequest request)
         {
             try
             {
                 var receiverId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var (status, friendRequestDto) = await _friendRequestService.RespondFriendRequestAsync(request, receiverId);
+                var (status, friendRequestDto) = await _friendRequestService.ApproveFriendRequestAsync(request, receiverId);
 
                 return status switch
                 {
@@ -65,10 +65,10 @@ namespace SocialNetworkBe.Controllers
                     RespondFriendRequestEnum.Unauthorized => Forbid(),
                     RespondFriendRequestEnum.InvalidStatus => BadRequest(new RespondFriendRequestResponse { Message = status.GetMessage() }),
                     RespondFriendRequestEnum.AlreadyProcessed => BadRequest(new RespondFriendRequestResponse { Message = status.GetMessage() }),
-                    RespondFriendRequestEnum.RespondFriendRequestSuccess => Ok(new RespondFriendRequestResponse
+                    RespondFriendRequestEnum.RespondFriendRequestSuccess => Ok(new
                     {
                         Message = status.GetMessage(),
-                        FriendRequest = friendRequestDto
+                        Data = friendRequestDto
                     }),
                     _ => StatusCode(500, new RespondFriendRequestResponse { Message = status.GetMessage() })
                 };
@@ -78,6 +78,35 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new RespondFriendRequestResponse { Message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpPost("decline")]
+        public async Task<IActionResult> DeclineFriendRequest([FromBody] RespondFriendRequestRequest request)
+        {
+            try
+            {
+                var receiverId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var status = await _friendRequestService.DeclineFriendRequestAsync(request, receiverId);
+
+                return status switch
+                {
+                    RespondFriendRequestEnum.FriendRequestNotFound => NotFound(new RespondFriendRequestResponse { Message = status.GetMessage() }),
+                    RespondFriendRequestEnum.Unauthorized => Forbid(),
+                    RespondFriendRequestEnum.InvalidStatus => BadRequest(new RespondFriendRequestResponse { Message = status.GetMessage() }),
+                    RespondFriendRequestEnum.AlreadyProcessed => BadRequest(new RespondFriendRequestResponse { Message = status.GetMessage() }),
+                    RespondFriendRequestEnum.RespondFriendRequestSuccess => Ok(new
+                    {
+                        Message = status.GetMessage(),
+                    }),
+                    _ => StatusCode(500, new RespondFriendRequestResponse { Message = status.GetMessage() })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new RespondFriendRequestResponse { Message = ex.Message });
+            }
+        }
+
         [Authorize]
         [HttpGet("sent")]
         public async Task<IActionResult> GetSentFriendRequests([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)

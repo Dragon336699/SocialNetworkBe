@@ -129,6 +129,12 @@ namespace DataAccess.DbContext
                     .HasConversion<string>();
             });
 
+            builder.Entity<UserRelation>(entity =>
+            {
+                entity.Property(ur => ur.RelationType)
+                    .HasConversion<string>();
+            });
+
             //  Config self relationship
             builder.Entity<Comment>()
                 .HasOne(c => c.User)

@@ -9,12 +9,14 @@ namespace DataAccess.UnitOfWork
     public class UnitOfWork : IUnitOfWork
     {
         private readonly SocialNetworkDbContext _context;
+        private readonly CassandraContext _cassandraContext;
         public IMessageRepository MessageRepository { get; set; }
         public IConversationUserRepository ConversationUserRepository { get; set; }
         public IConversationRepository ConversationRepository { get; set; }
         public IMessageReactionUserRepository MessageReactionUserRepository { get; set; }
 
         public IPostRepository PostRepository { get; set; }
+        public IFeedRepository FeedRepository { get; set; }
         public IUserRepository UserRepository { get; set; }      
 
         public IMessageAttachmentRepository MessageAttachmentRepository { get; set; }
@@ -30,10 +32,12 @@ namespace DataAccess.UnitOfWork
 
         public UnitOfWork(
             SocialNetworkDbContext context,
+            CassandraContext cassandraContext,
             IMessageRepository messageRepository,
             IConversationUserRepository conversationUserRepository,
             IConversationRepository conversationRepository,
-            IPostRepository postRepository,           
+            IPostRepository postRepository,
+            IFeedRepository feedRepository,
             IUserRepository userRepository,
             IMessageAttachmentRepository messageAttachmentRepository,
             IMessageReactionUserRepository messageReactionUserRepository,
@@ -50,11 +54,13 @@ namespace DataAccess.UnitOfWork
         )
         {
             _context = context;
+            _cassandraContext = cassandraContext;
             MessageRepository = messageRepository;
             ConversationUserRepository = conversationUserRepository;
             ConversationRepository = conversationRepository;
             MessageReactionUserRepository = messageReactionUserRepository;
-            PostRepository = postRepository;           
+            PostRepository = postRepository;
+            FeedRepository = feedRepository;
             UserRepository = userRepository;
             MessageAttachmentRepository = messageAttachmentRepository;
             NotificationRepository = notificationRepository;

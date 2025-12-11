@@ -3,11 +3,6 @@ using Domain.Entities;
 using Domain.Enum.User.Types;
 using Domain.Interfaces.RepositoryInterfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DataAccess.Repositories
 {
@@ -54,16 +49,29 @@ namespace DataAccess.Repositories
         // Lấy danh sách bạn bè
         // Dựa vào logic cũ: Khi accept kết bạn, hệ thống tạo 2 bản ghi Friend 2 chiều.
         // Nên chỉ cần query UserId == Mình và Type == Friend là đủ.
-        public async Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int pageIndex, int pageSize)
+        public async Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take)
         {
             var query = _context.UserRelation
-                .Where(ur => ur.UserId == userId && ur.RelationType == UserRelationType.Friend)
+                .Where(ur => (ur.UserId == userId || ur.RelatedUserId == userId) && ur.RelationType == UserRelationType.Friend)
+                .Include(ur => ur.User)
                 .Include(ur => ur.RelatedUser)
-                .Select(ur => ur.RelatedUser!);
+                .AsSplitQuery()
+                .Select(ur => ur.UserId == userId ? ur.RelatedUser : ur.User);
 
             var totalCount = await query.CountAsync();
-            var items = await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+            var items = await query.Skip(skip).Take(take).ToListAsync();
             return (items, totalCount);
+        }
+
+        public async Task<List<User>> GetFullFriends(Guid userId)
+        {
+            return await _context.UserRelation
+                .Where(ur =>
+                    (ur.UserId == userId || ur.RelatedUserId == userId) &&
+                    ur.RelationType == UserRelationType.Friend)
+                .Select(ur => ur.UserId == userId ? ur.RelatedUser : ur.User)
+                .AsNoTracking()
+                .ToListAsync();
         }
         public async Task<UserRelation?> GetExistingRelationAsync(Guid userId, Guid relatedUserId)
         {
