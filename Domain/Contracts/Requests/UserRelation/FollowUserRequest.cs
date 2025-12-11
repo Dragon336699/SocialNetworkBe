@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Contracts.Requests.UserRelation
 {
-    public class FollowUserRequest
+    public class UserIdRequest
     {
         public Guid TargetUserId { get; set; }
     }

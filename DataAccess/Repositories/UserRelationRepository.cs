@@ -73,5 +73,11 @@ namespace DataAccess.Repositories
                 .AsNoTracking()
                 .ToListAsync();
         }
+        public async Task<UserRelation?> GetExistingRelationAsync(Guid userId, Guid relatedUserId)
+        {
+            return await _context.UserRelation
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.RelatedUserId == relatedUserId);
+        }
+
     }
 }

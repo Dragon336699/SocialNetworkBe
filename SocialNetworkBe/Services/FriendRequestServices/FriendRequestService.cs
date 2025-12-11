@@ -120,7 +120,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
         {
             try
             {
-                // Lấy thông tin lời mời kết bạn
+                // 1. Lấy thông tin lời mời kết bạn
                 var friendRequest = await _unitOfWork.FriendRequestRepository.GetFriendRequestAsync(request.SenderId, receiverId);
                 if (friendRequest == null)
                 {
