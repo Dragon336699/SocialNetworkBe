@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Domain.Contracts.Requests.Search;
 using Domain.Contracts.Responses.Group;
 using Domain.Contracts.Responses.Post;
@@ -8,6 +8,7 @@ using Domain.Entities;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 using Domain.Enum.Search.Types;
+
 namespace SocialNetworkBe.Services.SearchServices
 {
     public class SearchService : ISearchService
@@ -23,7 +24,7 @@ namespace SocialNetworkBe.Services.SearchServices
             _logger = logger;
         }
 
-        public async Task<SearchResultDto?> SearchAsync(SearchRequest request, Guid userId, bool saveHistory = true)
+        public async Task<SearchResultDto?> SearchAsync(SearchRequest request, Guid userId, bool saveHistory = false)
         {
             try
             {
@@ -57,11 +58,6 @@ namespace SocialNetworkBe.Services.SearchServices
                         result.TotalPostsCount = result.Posts?.Count ?? 0;
                         break;
                 }
-              
-                if (saveHistory)
-                {
-                    await SaveSearchHistoryAsync(userId, request.Keyword);
-                }
 
                 return result;
             }
@@ -72,15 +68,15 @@ namespace SocialNetworkBe.Services.SearchServices
             }
         }
 
-        public async Task<bool> SaveSearchHistoryAsync(Guid userId, string keyword, Guid? searchedUserId = null, Guid? groupId = null)
+        public async Task<bool> SaveSearchHistoryAsync(Guid userId, SaveSearchHistoryRequest request)
         {
             try
             {
+                var contentTrimmed = request.Content.Trim();
+
+                // Remove existing history with same content
                 var existingHistory = await _unitOfWork.SearchingHistoryRepository
-                    .FindFirstAsync(sh => sh.UserId == userId &&
-                                         sh.Content == keyword.Trim() &&
-                                         sh.SearchedUserId == searchedUserId &&
-                                         sh.GroupId == groupId);
+                    .FindFirstAsync(sh => sh.UserId == userId && sh.Content == contentTrimmed);
 
                 if (existingHistory != null)
                 {
@@ -91,9 +87,9 @@ namespace SocialNetworkBe.Services.SearchServices
                 var searchHistory = new SearchingHistory
                 {
                     Id = Guid.NewGuid(),
-                    Content = keyword.Trim(),
-                    SearchedUserId = searchedUserId,
-                    GroupId = groupId,
+                    Content = contentTrimmed,
+                    ImageUrl = request.ImageUrl,
+                    NavigateUrl = request.NavigateUrl,
                     UserId = userId
                 };
 
@@ -119,12 +115,8 @@ namespace SocialNetworkBe.Services.SearchServices
                 {
                     Id = h.Id,
                     Content = h.Content,
-                    SearchedUserId = h.SearchedUserId,
-                    SearchedUserName = h.SearchedUser?.UserName,
-                    SearchedUserAvatar = h.SearchedUser?.AvatarUrl,
-                    GroupId = h.GroupId,
-                    GroupName = h.Group?.Name,
-                    GroupImageUrl = h.Group?.ImageUrl
+                    ImageUrl = h.ImageUrl,
+                    NavigateUrl = h.NavigateUrl
                 }).ToList();
 
                 return historyDtos;
@@ -195,7 +187,7 @@ namespace SocialNetworkBe.Services.SearchServices
         }
 
         private async Task<List<PostDto>?> SearchPostsAsync(string keywordNormalized, int skip, int take)
-        {     
+        {
             var postsByContent = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
                 p => p.Content.ToLower().Contains(keywordNormalized),
                 p => p.User,
@@ -212,7 +204,7 @@ namespace SocialNetworkBe.Services.SearchServices
                     .ToList();
                 return _mapper.Map<List<PostDto>>(paginatedPosts);
             }
-           
+
             var matchedUsers = await _unitOfWork.UserRepository.SearchUsers(keywordNormalized);
             if (matchedUsers != null && matchedUsers.Any())
             {
@@ -234,7 +226,7 @@ namespace SocialNetworkBe.Services.SearchServices
                         .ToList();
                     return _mapper.Map<List<PostDto>>(paginatedPosts);
                 }
-            }         
+            }
             return null;
         }
     }

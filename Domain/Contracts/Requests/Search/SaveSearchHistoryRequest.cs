@@ -8,8 +8,8 @@ namespace Domain.Contracts.Requests.Search
 {
     public class SaveSearchHistoryRequest
     {
-        public required string Keyword { get; set; }
-        public Guid? SearchedUserId { get; set; }
-        public Guid? GroupId { get; set; }
+        public required string Content { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? NavigateUrl { get; set; }
     }
 }

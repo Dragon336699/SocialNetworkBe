@@ -10,12 +10,7 @@ namespace Domain.Contracts.Responses.Search
     {
         public Guid Id { get; set; }
         public string? Content { get; set; }
-        public Guid? SearchedUserId { get; set; }
-        public string? SearchedUserName { get; set; }
-        public string? SearchedUserAvatar { get; set; }
-        public Guid? GroupId { get; set; }
-        public string? GroupName { get; set; }
-        public string? GroupImageUrl { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? NavigateUrl { get; set; }
     }
 }

@@ -491,20 +491,16 @@ namespace DataAccess.Migrations
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("GroupId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("SearchedUserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("NavigateUrl")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("SearchedUserId");
 
                     b.HasIndex("UserId");
 
@@ -955,23 +951,10 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("Domain.Entities.SearchingHistory", b =>
                 {
-                    b.HasOne("Domain.Entities.Group", "Group")
-                        .WithMany()
-                        .HasForeignKey("GroupId");
-
-                    b.HasOne("Domain.Entities.User", "SearchedUser")
-                        .WithMany("Searched")
-                        .HasForeignKey("SearchedUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany("SearchingHistories")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Group");
-
-                    b.Navigation("SearchedUser");
 
                     b.Navigation("User");
                 });
@@ -1102,8 +1085,6 @@ namespace DataAccess.Migrations
                     b.Navigation("RelatedTo");
 
                     b.Navigation("Relations");
-
-                    b.Navigation("Searched");
 
                     b.Navigation("SearchingHistories");
 

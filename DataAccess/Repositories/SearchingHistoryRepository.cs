@@ -20,8 +20,6 @@ namespace DataAccess.Repositories
         {
             IEnumerable<SearchingHistory>? histories = await _context.Set<SearchingHistory>()
                 .Where(sh => sh.UserId == userId)
-                .Include(sh => sh.SearchedUser)
-                .Include(sh => sh.Group)
                 .AsNoTracking()
                 .OrderByDescending(sh => sh.Id)
                 .Take(take)

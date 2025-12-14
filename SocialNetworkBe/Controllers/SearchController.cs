@@ -1,4 +1,4 @@
-﻿using Domain.Contracts.Requests.Search;
+using Domain.Contracts.Requests.Search;
 using Domain.Contracts.Responses.Search;
 using Domain.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -25,8 +25,7 @@ namespace SocialNetworkBe.Controllers
             [FromQuery] string keyword,
             [FromQuery] SearchType? type = SearchType.All,
             [FromQuery] int skip = 0,
-            [FromQuery] int take = 10,
-            [FromQuery] bool saveHistory = false)
+            [FromQuery] int take = 10)
         {
             try
             {
@@ -48,7 +47,7 @@ namespace SocialNetworkBe.Controllers
                     Take = take
                 };
 
-                var results = await _searchService.SearchAsync(request, userId, saveHistory);
+                var results = await _searchService.SearchAsync(request, userId, false);
 
                 if (results == null)
                 {
@@ -80,13 +79,13 @@ namespace SocialNetworkBe.Controllers
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(request.Content))
+                {
+                    return BadRequest(new { message = "Content is required" });
+                }
+
                 var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var result = await _searchService.SaveSearchHistoryAsync(
-                    userId,
-                    request.Keyword,
-                    request.SearchedUserId,
-                    request.GroupId
-                );
+                var result = await _searchService.SaveSearchHistoryAsync(userId, request);
 
                 if (!result)
                 {
@@ -158,6 +157,5 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-    }    
-    
+    }
 }
