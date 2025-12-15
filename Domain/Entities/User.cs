@@ -20,7 +20,6 @@ namespace Domain.Entities
         public ICollection<FriendRequest>? SentFriendRequests { get; set; }
         public ICollection<FriendRequest>? ReceivedFriendRequests { get; set; }
         public ICollection<SearchingHistory>? SearchingHistories { get; set; }
-        public ICollection<SearchingHistory>? Searched { get; set; }
         public ICollection<Comment>? Comments { get; set; }
         public ICollection<Post>? Posts { get; set; }
         public ICollection<UserRelation>? Relations { get; set; }

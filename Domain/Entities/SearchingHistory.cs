@@ -11,12 +11,11 @@ namespace Domain.Entities
         public Guid Id { get; set; }
         public string? Content { get; set; }
         [AllowNull]
-        public Guid? SearchedUserId { get; set; }
-        public User? SearchedUser { get; set; }
-        [AllowNull]
-        public Guid? GroupId { get; set; }
-        public Group? Group { get; set; }
         public Guid? UserId { get; set; }
         public User? User { get; set; }
+        [AllowNull]
+        public string? ImageUrl { get; set; }
+        [AllowNull]
+        public string? NavigateUrl { get; set; }
     }
 }
