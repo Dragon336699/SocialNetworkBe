@@ -1,8 +1,6 @@
-﻿using DataAccess.DbContext;
-using Domain.Contracts.Responses.Post;
-using Domain.Contracts.Responses.Post.UserFeed;
+﻿using Domain.Contracts.Responses.Feed;
 using Domain.Contracts.Responses.User;
-using Domain.Entities;
+using Domain.Entities.NoSQL;
 using Domain.Enum.Post.Functions;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
@@ -32,26 +30,39 @@ namespace SocialNetworkBe.Services.FeedServices
                 friendIds.AddRange(userDtos.Select(x => x.Id));
                 friendIds.Add(authorId);
                 _unitOfWokrk.FeedRepository.FeedForPost(postId, friendIds, authorId);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while feed for post {PostId}", postId);
                 throw;
             }
         }
 
-        public async Task<(GetAllPostsEnum, List<PostDto>)> GetFeedsForUser(Guid userId)
+        public async Task<(GetAllPostsEnum, List<FeedDto>)> GetFeedsForUser(Guid userId)
         {
             try
             {
-                List<UserFeedResponse> userFeeds = await _unitOfWokrk.FeedRepository.GetFeedsForUser(userId);
-                List<PostDto> posts = new List<PostDto>();
+                List<UserFeedUnseen> userFeeds = await _unitOfWokrk.FeedRepository.GetFeedsForUser(userId);
+                List<FeedDto> feeds = new List<FeedDto>();
                 foreach (var feed in userFeeds)
                 {
                     var (result, post) = await _postService.GetPostByIdAsync(feed.PostId, feed.UserId);
-                    if (post != null) posts.Add(post);
+
+                    if (post != null)
+                    {
+                        FeedDto feedTemp = new FeedDto
+                        {
+                            FeedId = feed.FeedId,
+                            CreatedAt = feed.CreatedAt,
+                            Post = post
+                        };
+
+                        feeds.Add(feedTemp);
+                    };
                 }
-                return (GetAllPostsEnum.Success, posts);
-            } catch (Exception ex)
+                return (GetAllPostsEnum.Success, feeds);
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while getting for user {UserId}", userId);
                 throw;

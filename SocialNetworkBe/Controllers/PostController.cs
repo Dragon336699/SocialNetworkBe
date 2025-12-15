@@ -1,4 +1,5 @@
 ﻿using Domain.Contracts.Requests.Post;
+using Domain.Contracts.Responses.Feed;
 using Domain.Contracts.Responses.Post;
 using Domain.Entities;
 using Domain.Enum.Post.Functions;
@@ -62,20 +63,20 @@ namespace SocialNetworkBe.Controllers
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (userId == null) return BadRequest(new { message = "User not found" });
 
-                var (status, posts) = await _feedService.GetFeedsForUser(Guid.Parse(userId));
+                var (status, feeds) = await _feedService.GetFeedsForUser(Guid.Parse(userId));   
 
                 return status switch
                 {
-                    GetAllPostsEnum.Success => Ok(new GetAllPostsResponse
+                    GetAllPostsEnum.Success => Ok(new
                     {
                         Message = status.GetMessage(),
-                        Posts = posts,
-                        TotalCount = posts?.Count ?? 0
+                        Posts = feeds,
+                        TotalCount = feeds?.Count ?? 0
                     }),
-                    GetAllPostsEnum.NoPostsFound => Ok(new GetAllPostsResponse
+                    GetAllPostsEnum.NoPostsFound => Ok(new
                     {
                         Message = status.GetMessage(),
-                        Posts = new List<PostDto>(),
+                        Posts = new List<FeedDto>(),
                         TotalCount = 0
                     }),
                     GetAllPostsEnum.Failed => BadRequest(new GetAllPostsResponse

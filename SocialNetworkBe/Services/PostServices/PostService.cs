@@ -108,7 +108,7 @@ namespace SocialNetworkBe.Services.PostServices
                 if (result > 0)
                 {
                     // Tạo feed cho user khác
-                    feedService.FeedForPost(post.Id, userId);
+                    await feedService.FeedForPost(post.Id, userId);
                     return (CreatePostEnum.CreatePostSuccess, post.Id);
                 }
                 

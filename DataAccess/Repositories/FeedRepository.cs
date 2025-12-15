@@ -1,7 +1,6 @@
 ﻿using DataAccess.DbContext;
-using Domain.Contracts.Responses.Post.UserFeed;
+using Domain.Entities.NoSQL;
 using Domain.Interfaces.RepositoryInterfaces;
-using Cassandra.Mapping;
 
 namespace DataAccess.Repositories
 {
@@ -18,34 +17,32 @@ namespace DataAccess.Repositories
         {
             var initSeenAt = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            var query = "INSERT INTO user_feed (user_id, post_id, author_id, created_at, seen_at) VALUES (?, ?, ?, ?, ?)";
+            var query = "INSERT INTO user_feed_unseen (user_id, created_at, feed_id, post_id) VALUES (?, ?, ?, ?)";
             var prepared = await _context.Session.PrepareAsync(query);
 
             foreach (var id in userIds)
             {
-                var bound = prepared.Bind(id, postId, authorId, DateTime.UtcNow, initSeenAt);
+                var bound = prepared.Bind(id, DateTime.UtcNow, Guid.NewGuid(), postId);
                 await _context.Session.ExecuteAsync(bound);
             }
         }
 
-        public async Task<List<UserFeedResponse>> GetFeedsForUser(Guid userId)
+        public async Task<List<UserFeedUnseen>> GetFeedsForUser(Guid userId)
         {
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            var query = "SELECT * FROM user_feed WHERE user_id = ? AND seen_at = ? LIMIT 10 ALLOW FILTERING";
+            var query = "SELECT * FROM user_feed_unseen WHERE user_id = ? LIMIT 10";
             var stmt = _context.Session.Prepare(query);
-            var bound = stmt.Bind(userId, epoch);
+            var bound = stmt.Bind(userId);
 
             var rs = await _context.Session.ExecuteAsync(bound);
 
             // Map RowSet sang class
-            var feeds = rs.Select(row => new UserFeedResponse
+            var feeds = rs.Select(row => new UserFeedUnseen
             {
                 UserId = row.GetValue<Guid>("user_id"),
                 CreatedAt = row.GetValue<DateTime>("created_at"),
-                AuthorId = row.GetValue<Guid>("author_id"),
                 PostId = row.GetValue<Guid>("post_id"),
-                SeenAt = row.GetValue<DateTime>("seen_at")
+                FeedId = row.GetValue<Guid>("feed_id"),
             }).ToList();
 
             return feeds;
