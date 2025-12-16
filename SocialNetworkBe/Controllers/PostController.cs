@@ -254,5 +254,26 @@ namespace SocialNetworkBe.Controllers
                 });
             }
         }
+
+        [Authorize]
+        [HttpPost("seen")]
+        public IActionResult SeenPost([FromBody] List<SeenFeedRequest> request)
+        {
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null) return Unauthorized();
+                _feedService.SeenFeed(request, Guid.Parse(userId));
+
+                return StatusCode(201);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Message = ex.Message
+                });
+            }
+        }
     }
 }

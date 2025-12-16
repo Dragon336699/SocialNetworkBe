@@ -1,5 +1,8 @@
-﻿using Domain.Contracts.Responses.Feed;
+﻿using Azure.Core;
+using Domain.Contracts.Requests.Post;
+using Domain.Contracts.Responses.Feed;
 using Domain.Contracts.Responses.User;
+using Domain.Entities;
 using Domain.Entities.NoSQL;
 using Domain.Enum.Post.Functions;
 using Domain.Interfaces.ServiceInterfaces;
@@ -65,6 +68,18 @@ namespace SocialNetworkBe.Services.FeedServices
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while getting for user {UserId}", userId);
+                throw;
+            }
+        }
+
+        public void SeenFeed(List<SeenFeedRequest> request, Guid userId)
+        {
+            try
+            {
+                _unitOfWokrk.FeedRepository.SeenFeed(request, userId);
+            }
+            catch (Exception ex)
+            {
                 throw;
             }
         }
