@@ -15,17 +15,20 @@ namespace DataAccess.Repositories
             _context = context;
         }
 
-        public async Task FeedForPost(Guid postId, List<Guid> userIds, Guid authorId)
+        public void FeedForPost(Guid postId, List<Guid> userIds)
         {
-            var query = "INSERT INTO user_feed_unseen (user_id, created_at, feed_id, post_id) VALUES (?, ?, ?, ?)";
-            var prepared = await _context.Session.PrepareAsync(query);
-
-            foreach (var id in userIds)
+            _ = Task.Run(async () =>
             {
-                var createdAtDt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var bound = prepared.Bind(id, createdAtDt, Guid.NewGuid(), postId);
-                await _context.Session.ExecuteAsync(bound);
-            }
+                var query = "INSERT INTO user_feed_unseen (user_id, created_at, feed_id, post_id) VALUES (?, ?, ?, ?)";
+                var prepared = await _context.Session.PrepareAsync(query);
+
+                foreach (var id in userIds)
+                {
+                    var createdAtDt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    var bound = prepared.Bind(id, createdAtDt, Guid.NewGuid(), postId);
+                    await _context.Session.ExecuteAsync(bound);
+                }
+            });
         }
 
         public async Task<List<UserFeedUnseen>> GetFeedsForUser(Guid userId)

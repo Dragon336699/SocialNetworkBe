@@ -32,7 +32,7 @@ namespace SocialNetworkBe.Services.FeedServices
                 List<Guid> friendIds = new List<Guid>();
                 friendIds.AddRange(userDtos.Select(x => x.Id));
                 friendIds.Add(authorId);
-                _unitOfWokrk.FeedRepository.FeedForPost(postId, friendIds, authorId);
+                _unitOfWokrk.FeedRepository.FeedForPost(postId, friendIds);
             }
             catch (Exception ex)
             {

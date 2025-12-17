@@ -5,7 +5,7 @@ namespace Domain.Interfaces.RepositoryInterfaces
 {
     public interface IFeedRepository
     {
-        Task FeedForPost(Guid postId, List<Guid> userIds, Guid authorId);
+        void FeedForPost(Guid postId, List<Guid> userIds);
         Task<List<UserFeedUnseen>> GetFeedsForUser(Guid userId);
         void SeenFeed(List<SeenFeedRequest> request, Guid userId);
     }
