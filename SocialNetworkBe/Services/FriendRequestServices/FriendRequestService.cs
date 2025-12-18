@@ -1,10 +1,12 @@
 ﻿using Domain.Contracts.Requests.FriendRequest;
-using Domain.Contracts.Responses.Common;
 using Domain.Contracts.Responses.FriendRequest;
+using Domain.Contracts.Responses.Notification;
 using Domain.Contracts.Responses.User;
 using Domain.Entities;
 using Domain.Enum.FriendRequest.Functions;
+using Domain.Enum.Notification.Types;
 using Domain.Enum.User.Types;
+using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 
@@ -14,17 +16,22 @@ namespace SocialNetworkBe.Services.FriendRequestServices
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<FriendRequestService> _logger;
+        private readonly INotificationDataBuilder _notificationDataBuilder;
+        private readonly IServiceProvider _serviceProvider;
 
-        public FriendRequestService(IUnitOfWork unitOfWork, ILogger<FriendRequestService> logger)
+        public FriendRequestService(IUnitOfWork unitOfWork, ILogger<FriendRequestService> logger, INotificationDataBuilder notificationDataBuilder, IServiceProvider serviceProvider)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _notificationDataBuilder = notificationDataBuilder;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<(SendFriendRequestEnum, FriendRequestDto?)> SendFriendRequestAsync(SendFriendRequestRequest request, Guid senderId)
         {
             try
             {
+                var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
                 var sender = await _unitOfWork.UserRepository.GetByIdAsync(senderId);
                 if (sender == null)
                 {
@@ -77,6 +84,11 @@ namespace SocialNetworkBe.Services.FriendRequestServices
 
                 if (result > 0)
                 {
+                    // Send notification
+                    NotificationData? notiData = _notificationDataBuilder.BuilderDataForFriendRequest(sender);
+                    string navigateUrl = $"/profile/{sender.UserName}";
+                    await notificationService.ProcessAndSendNotiForSendFriendRequest(NotificationType.AddFriendRequest, notiData, navigateUrl, request.ReceiverId);
+
                     var friendRequestDto = new FriendRequestDto
                     {
                         SenderId = friendRequest.SenderId,

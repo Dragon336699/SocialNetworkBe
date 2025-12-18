@@ -12,11 +12,10 @@ namespace Domain.Entities
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
         [Required]
-        public required NotificationType NoficationType { get; set; }
+        public required NotificationType NotificationType { get; set; }
         [Required]
         public required NotificationData Data { get; set; }
-        [Required]
-        public required string MergeKey { get; set; } // type + TargetId + userId ( người nhận )
+        public string? MergeKey { get; set; } // type + TargetId + userId ( người nhận )
         public string? NavigateUrl { get; set; }
         [Required]
         public bool Unread { get; set; } = true;

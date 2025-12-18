@@ -82,7 +82,7 @@ namespace DataAccess.DbContext
 
             builder.Entity<Notification>(entity =>
             {
-                entity.Property(n => n.NoficationType)
+                entity.Property(n => n.NotificationType)
                     .HasConversion<string>();
                 entity.Property(n => n.Data)
                     .HasConversion(

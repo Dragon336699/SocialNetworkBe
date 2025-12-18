@@ -4,6 +4,7 @@ using DataAccess.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(SocialNetworkDbContext))]
-    partial class SocialNetworkDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251218074009_AllowNullMergeKeyNoti")]
+    partial class AllowNullMergeKeyNoti
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -340,7 +343,7 @@ namespace DataAccess.Migrations
                     b.Property<string>("NavigateUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("NotificationType")
+                    b.Property<string>("NoficationType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
