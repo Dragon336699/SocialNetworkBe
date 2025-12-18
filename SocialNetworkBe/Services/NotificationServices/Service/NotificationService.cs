@@ -125,7 +125,7 @@ namespace SocialNetworkBe.Services.NotificationService
             }
         }
 
-        public async Task ProcessAndSendNotiForSendFriendRequest(NotificationType type, NotificationData data, string navigateUrl, Guid receiverId)
+        public async Task ProcessAndSendNotiForFriendRequest(NotificationType type, NotificationData data, string navigateUrl, Guid receiverId)
         {
             try
             {
@@ -287,6 +287,11 @@ namespace SocialNetworkBe.Services.NotificationService
                 case (NotificationObjectType.FriendRequest):
                     {
                         content.Append($"you {noti.Data.DiObject.Name}");
+                        break;
+                    }
+                case (NotificationObjectType.AccepFriendRequest):
+                    {
+                        content.Append($"your {noti.Data.DiObject.Name}");
                         break;
                     }
             }

@@ -8,6 +8,7 @@ namespace Domain.Enum.Notification.Types
         Liked,
         Commented,
         Sent,
+        Accepted,
         Invited,
         Replied
     }

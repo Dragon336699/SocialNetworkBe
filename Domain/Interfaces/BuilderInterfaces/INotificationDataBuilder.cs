@@ -13,5 +13,6 @@ namespace Domain.Interfaces.BuilderInterfaces
         Task<NotificationData?> BuilderDataForReactPost(Post post, User actor, Group? group);
         NotificationData BuilderDataForComment(Post post, Comment comment, User actor);
         NotificationData BuilderDataForFriendRequest(User actor);
+        NotificationData BuilderDataForAcceptFriendRequest(User actor);
     }
 }

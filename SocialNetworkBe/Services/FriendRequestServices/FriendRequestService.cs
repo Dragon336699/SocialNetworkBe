@@ -9,6 +9,7 @@ using Domain.Enum.User.Types;
 using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
+using SocialNetworkBe.Services.NotificationService;
 
 namespace SocialNetworkBe.Services.FriendRequestServices
 {
@@ -87,7 +88,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                     // Send notification
                     NotificationData? notiData = _notificationDataBuilder.BuilderDataForFriendRequest(sender);
                     string navigateUrl = $"/profile/{sender.UserName}";
-                    await notificationService.ProcessAndSendNotiForSendFriendRequest(NotificationType.AddFriendRequest, notiData, navigateUrl, request.ReceiverId);
+                    await notificationService.ProcessAndSendNotiForFriendRequest(NotificationType.AddFriendRequest, notiData, navigateUrl, request.ReceiverId);
 
                     var friendRequestDto = new FriendRequestDto
                     {
@@ -132,8 +133,15 @@ namespace SocialNetworkBe.Services.FriendRequestServices
         {
             try
             {
+                var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
                 // Lấy thông tin lời mời kết bạn
                 var friendRequest = await _unitOfWork.FriendRequestRepository.GetFriendRequestAsync(request.SenderId, receiverId);
+                var receiver = await _unitOfWork.UserRepository.GetByIdAsync(receiverId);
+                if (receiver == null)
+                {
+                    return (RespondFriendRequestEnum.ReceiverNotFound, null);
+                }
+
                 if (friendRequest == null)
                 {
                     return (RespondFriendRequestEnum.FriendRequestNotFound, null);
@@ -156,6 +164,11 @@ namespace SocialNetworkBe.Services.FriendRequestServices
 
                 if (result > 0)
                 {
+                    // Send notification
+                    NotificationData? notiData = _notificationDataBuilder.BuilderDataForAcceptFriendRequest(receiver);
+                    string navigateUrl = $"/profile/{receiver.UserName}";
+                    await notificationService.ProcessAndSendNotiForFriendRequest(NotificationType.AcceptFriendRequest, notiData, navigateUrl, request.SenderId);
+
                     var friendRequestDto = new FriendRequestDto
                     {
                         SenderId = friendRequest.SenderId,
