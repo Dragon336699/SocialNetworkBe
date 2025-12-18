@@ -1,5 +1,6 @@
 ﻿using DataAccess.DbContext;
 using Domain.Entities;
+using Domain.Enum.Post.Types;
 using Domain.Interfaces.RepositoryInterfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -33,6 +34,22 @@ namespace DataAccess.Repositories
                         .ThenInclude(pr => pr.User);
        
             return await query.Where(predicate).ToListAsync();
+        }
+
+        public async Task<IEnumerable<Post>?> SearchPosts(string keywordNormalized)
+        {
+            IEnumerable<Post>? posts = await _context.Set<Post>()
+                .Where(p => p.PostPrivacy == PostPrivacy.Public &&
+                       p.Content.ToLower().Contains(keywordNormalized))
+                .Include(p => p.User)
+                .Include(p => p.PostImages)
+                .Include(p => p.PostReactionUsers)
+                    .ThenInclude(pr => pr.User)
+                .AsNoTracking()
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(10)
+                .ToListAsync();
+            return posts;
         }
 
     }

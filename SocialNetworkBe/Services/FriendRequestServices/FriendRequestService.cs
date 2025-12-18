@@ -1,12 +1,15 @@
 ﻿using Domain.Contracts.Requests.FriendRequest;
-using Domain.Contracts.Responses.Common;
 using Domain.Contracts.Responses.FriendRequest;
+using Domain.Contracts.Responses.Notification;
 using Domain.Contracts.Responses.User;
 using Domain.Entities;
 using Domain.Enum.FriendRequest.Functions;
+using Domain.Enum.Notification.Types;
 using Domain.Enum.User.Types;
+using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
+using SocialNetworkBe.Services.NotificationService;
 
 namespace SocialNetworkBe.Services.FriendRequestServices
 {
@@ -14,17 +17,22 @@ namespace SocialNetworkBe.Services.FriendRequestServices
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<FriendRequestService> _logger;
+        private readonly INotificationDataBuilder _notificationDataBuilder;
+        private readonly IServiceProvider _serviceProvider;
 
-        public FriendRequestService(IUnitOfWork unitOfWork, ILogger<FriendRequestService> logger)
+        public FriendRequestService(IUnitOfWork unitOfWork, ILogger<FriendRequestService> logger, INotificationDataBuilder notificationDataBuilder, IServiceProvider serviceProvider)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _notificationDataBuilder = notificationDataBuilder;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<(SendFriendRequestEnum, FriendRequestDto?)> SendFriendRequestAsync(SendFriendRequestRequest request, Guid senderId)
         {
             try
             {
+                var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
                 var sender = await _unitOfWork.UserRepository.GetByIdAsync(senderId);
                 if (sender == null)
                 {
@@ -77,6 +85,11 @@ namespace SocialNetworkBe.Services.FriendRequestServices
 
                 if (result > 0)
                 {
+                    // Send notification
+                    NotificationData? notiData = _notificationDataBuilder.BuilderDataForFriendRequest(sender);
+                    string navigateUrl = $"/profile/{sender.UserName}";
+                    await notificationService.ProcessAndSendNotiForFriendRequest(NotificationType.AddFriendRequest, notiData, navigateUrl, request.ReceiverId);
+
                     var friendRequestDto = new FriendRequestDto
                     {
                         SenderId = friendRequest.SenderId,
@@ -120,8 +133,15 @@ namespace SocialNetworkBe.Services.FriendRequestServices
         {
             try
             {
-                // 1. Lấy thông tin lời mời kết bạn
+                var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
+                // Lấy thông tin lời mời kết bạn
                 var friendRequest = await _unitOfWork.FriendRequestRepository.GetFriendRequestAsync(request.SenderId, receiverId);
+                var receiver = await _unitOfWork.UserRepository.GetByIdAsync(receiverId);
+                if (receiver == null)
+                {
+                    return (RespondFriendRequestEnum.ReceiverNotFound, null);
+                }
+
                 if (friendRequest == null)
                 {
                     return (RespondFriendRequestEnum.FriendRequestNotFound, null);
@@ -144,6 +164,11 @@ namespace SocialNetworkBe.Services.FriendRequestServices
 
                 if (result > 0)
                 {
+                    // Send notification
+                    NotificationData? notiData = _notificationDataBuilder.BuilderDataForAcceptFriendRequest(receiver);
+                    string navigateUrl = $"/profile/{receiver.UserName}";
+                    await notificationService.ProcessAndSendNotiForFriendRequest(NotificationType.AcceptFriendRequest, notiData, navigateUrl, request.SenderId);
+
                     var friendRequestDto = new FriendRequestDto
                     {
                         SenderId = friendRequest.SenderId,

@@ -58,6 +58,20 @@ namespace DataAccess.Repositories
                         .ThenInclude(pru => pru.User)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<IEnumerable<Group>?> SearchGroups(string keywordNormalized)
+        {
+            IEnumerable<Group>? groups = await _context.Set<Group>()
+                .Where(g => g.IsPublic == 1 &&
+                       (g.Name.ToLower().Contains(keywordNormalized) ||
+                        g.Description.ToLower().Contains(keywordNormalized)))
+                .Include(g => g.GroupUsers)
+                    .ThenInclude(gu => gu.User)
+                .AsNoTracking()
+                .Take(10)
+                .ToListAsync();
+            return groups;
+        }
     }
 
 }

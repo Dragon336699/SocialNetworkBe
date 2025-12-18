@@ -91,5 +91,13 @@ namespace DataAccess.Repositories
                 .Include(c => c.Post)
                 .FirstOrDefaultAsync(c => c.Id == commentId);
         }
+
+        public async Task<Comment?> GetCommentNewestByPostId(Guid postId)
+        {
+            return await _context.Comment
+                .Where(c => c.PostId == postId)
+                .OrderByDescending(c => c.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
     }
 }

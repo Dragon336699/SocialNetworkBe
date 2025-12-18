@@ -64,6 +64,7 @@ namespace SocialNetworkBe.Controllers
                     RespondFriendRequestEnum.FriendRequestNotFound => NotFound(new RespondFriendRequestResponse { Message = status.GetMessage() }),
                     RespondFriendRequestEnum.Unauthorized => Forbid(),
                     RespondFriendRequestEnum.InvalidStatus => BadRequest(new RespondFriendRequestResponse { Message = status.GetMessage() }),
+                    RespondFriendRequestEnum.ReceiverNotFound => BadRequest(new RespondFriendRequestResponse { Message = status.GetMessage() }),
                     RespondFriendRequestEnum.AlreadyProcessed => BadRequest(new RespondFriendRequestResponse { Message = status.GetMessage() }),
                     RespondFriendRequestEnum.RespondFriendRequestSuccess => Ok(new
                     {

@@ -29,6 +29,8 @@ namespace DataAccess.UnitOfWork
         public IGroupRepository GroupRepository { get; set; }
         public IGroupUserRepository GroupUserRepository { get; set; }
 
+        public ISearchingHistoryRepository SearchingHistoryRepository { get; set; }
+
 
         public UnitOfWork(
             SocialNetworkDbContext context,
@@ -48,7 +50,8 @@ namespace DataAccess.UnitOfWork
             ICommentRepository commentRepository,
             ICommentReactionUserRepository commentReactionUserRepository,
             IGroupRepository groupRepository,
-            IGroupUserRepository groupUserRepository
+            IGroupUserRepository groupUserRepository,
+            ISearchingHistoryRepository searchingHistoryRepository
 
 
         )
@@ -71,7 +74,7 @@ namespace DataAccess.UnitOfWork
             CommentReactionUserRepository = commentReactionUserRepository;
             GroupRepository = groupRepository;
             GroupUserRepository = groupUserRepository;
-
+            SearchingHistoryRepository = searchingHistoryRepository;
 
         }
         public int Complete()

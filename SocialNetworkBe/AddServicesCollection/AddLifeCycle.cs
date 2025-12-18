@@ -27,6 +27,7 @@ using SocialNetworkBe.Services.GroupServices;
 using SocialNetworkBe.SignalR;
 using DataAccess.DbContext;
 using SocialNetworkBe.Services.FeedServices;
+using SocialNetworkBe.Services.SearchServices;
 using SocialNetworkBe.Services.UserRelationServices;
 
 namespace SocialNetworkBe.AddServicesCollection
@@ -56,6 +57,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<IGroupRepository, GroupRepository>();
             services.AddTransient<IGroupUserRepository, GroupUserRepository>();
             services.AddTransient<IFeedRepository, FeedRepository>();
+            services.AddTransient<ISearchingHistoryRepository, SearchingHistoryRepository>();
 
             services.AddTransient<IConversationUserService, ConversationUserService>();
             services.AddTransient<IConversationService, ConversationService>();        
@@ -72,6 +74,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IGroupService, GroupService>();
             services.AddScoped<IFeedService, FeedService>();
+            services.AddScoped<ISearchService, SearchService>();
 
             services.AddScoped<IPostReactionUserService, PostReactionUserService>();
 
