@@ -1,0 +1,28 @@
+# .NET Build Output
+bin/
+obj/
+out/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.cache
+
+# Environment files (IMPORTANT!)
+.env
+*.env.local
+appsettings.Development.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sensitive files
+*.pfx
+*.p12

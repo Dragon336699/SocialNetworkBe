@@ -17,10 +17,18 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 builder.Services.ConfigureServices(builder.Configuration);
 builder.Services.ConfigureLifeCycle();
+
+// Support for environment variables (for Docker/Cloud deployment)
+var connectionString = builder.Configuration.GetConnectionString("MyDb") 
+    ?? Environment.GetEnvironmentVariable("ConnectionStrings__MyDb");
+
 builder.Services.AddDbContext<SocialNetworkDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("MyDb"));
+    options.UseSqlServer(connectionString);
 });
+
+// Add health checks
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -31,19 +39,38 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Dynamic CORS for production
+var allowedOrigins = builder.Configuration["AllowedOrigins"]
+    ?? Environment.GetEnvironmentVariable("AllowedOrigins")
+    ?? "http://localhost:3000";
+
+var originsArray = allowedOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
 app.UseCors(options => options
-    .WithOrigins("http://localhost:3000")
+    .WithOrigins(originsArray)
     .AllowAnyHeader()
     .AllowAnyMethod()
     .AllowCredentials()
 );
 
-app.UseHttpsRedirection();
+// Only use HTTPS redirection in production with proper SSL
+if (!app.Environment.IsDevelopment())
+{
+    // Comment out if your cloud provider handles SSL termination
+    // app.UseHttpsRedirection();
+}
+else
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication(); // Xác minh user hợp lệ không
 app.UseAuthorization(); // Phân quyền
 
 app.UseMiddleware<ValidationErrorMiddleware>();
+
+// Health check endpoint for container orchestration
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 
