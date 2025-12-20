@@ -16,6 +16,7 @@ namespace Domain.Interfaces.RepositoryInterfaces
             int take = int.MaxValue);
 
         Task<Group?> GetGroupWithFullDetailsByIdAsync(Guid groupId);
+        Task<IEnumerable<Group>?> SearchGroups(string keywordNormalized);
     }
 
 }

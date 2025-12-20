@@ -43,6 +43,8 @@ namespace SocialNetworkBe.Services.CommentServices
             try
             {
                 var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
+                var feedService = _serviceProvider.GetRequiredService<IFeedService>();
+
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
                 if (user == null)
                 {
@@ -134,6 +136,14 @@ namespace SocialNetworkBe.Services.CommentServices
                     string mergeKey = NotificationType.CommentPost.ToString() + "_" + comment.Id.ToString() + "_" + user.Id.ToString();
                     string navigateUrl = $"/comment/{comment.Id}";
                     await notificationService.ProcessAndSendNotiForCommentPost(NotificationType.CommentPost, notiData, navigateUrl, mergeKey, post.UserId);
+
+                    // Refeed post
+                    Comment? commentNewest = await _unitOfWork.CommentRepository.GetCommentNewestByPostId(post.Id);
+
+                    if (commentNewest == null || DateTime.UtcNow.Subtract(commentNewest.CreatedAt).TotalDays > 21)
+                    {
+                        await feedService.FeedForPost(post.Id, post.UserId);
+                    }
                     return (CreateCommentEnum.CreateCommentSuccess, comment.Id);
                 }
 

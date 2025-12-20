@@ -1,4 +1,5 @@
-﻿using Domain.Contracts.Responses.User;
+﻿using Domain.Contracts.Responses.Group;
+using Domain.Contracts.Responses.User;
 using Domain.Entities;
 using Domain.Enum.Post.Types;
 using System;
@@ -21,6 +22,7 @@ namespace Domain.Contracts.Responses.Post
         public Guid UserId { get; set; }
         public UserDto? User { get; set; }
         public Guid? GroupId { get; set; }
+        public GroupDto? Group { get; set; }
         public List<PostImageDto>? PostImages { get; set; }
         public ICollection<PostReactionUserDto>? PostReactionUsers { get; set; }
     }

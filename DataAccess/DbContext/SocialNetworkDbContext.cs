@@ -1,5 +1,4 @@
-﻿
-using Domain.Contracts.Responses.Notification;
+﻿using Domain.Contracts.Responses.Notification;
 using Domain.Entities;
 using Domain.Enum.User.Types;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -83,7 +82,7 @@ namespace DataAccess.DbContext
 
             builder.Entity<Notification>(entity =>
             {
-                entity.Property(n => n.NoficationType)
+                entity.Property(n => n.NotificationType)
                     .HasConversion<string>();
                 entity.Property(n => n.Data)
                     .HasConversion(
@@ -152,12 +151,6 @@ namespace DataAccess.DbContext
                 .HasOne(fe => fe.Receiver)
                 .WithMany(u => u.ReceivedFriendRequests)
                 .HasForeignKey(fe => fe.ReceiverId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<SearchingHistory>()
-                .HasOne(sh => sh.SearchedUser)
-                .WithMany(u => u.Searched)
-                .HasForeignKey(sh => sh.SearchedUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<SearchingHistory>()

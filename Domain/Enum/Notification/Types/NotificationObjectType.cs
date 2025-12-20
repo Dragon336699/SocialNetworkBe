@@ -9,6 +9,7 @@ namespace Domain.Enum.Notification.Types
         Group,
         Post,
         FriendRequest,
+        AccepFriendRequest,
         Comment
     }
 }

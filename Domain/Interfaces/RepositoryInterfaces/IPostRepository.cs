@@ -13,5 +13,6 @@ namespace Domain.Interfaces.RepositoryInterfaces
         Task<IEnumerable<Post>> FindAsyncWithIncludesAndReactionUsers(
             Expression<Func<Post, bool>> predicate,
             params Expression<Func<Post, object>>[] includes);
+        Task<IEnumerable<Post>?> SearchPosts(string keywordNormalized);
     }
 }

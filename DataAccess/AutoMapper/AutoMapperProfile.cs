@@ -52,6 +52,7 @@ namespace DataAccess.AutoMapper
 
             CreateMap<Post, PostDto>()
                 .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.User))
+                .ForMember(dest => dest.Group, opt => opt.MapFrom(src => src.Group))
                 .ForMember(dest => dest.PostImages, opt => opt.MapFrom(src => src.PostImages))
                 .ForMember(dest => dest.PostReactionUsers, opt => opt.MapFrom(src => src.PostReactionUsers));
             CreateMap<PostImage, PostImageDto>();

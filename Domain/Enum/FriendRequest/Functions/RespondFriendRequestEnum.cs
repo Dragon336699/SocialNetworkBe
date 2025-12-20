@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Domain.Enum.FriendRequest.Functions
+﻿namespace Domain.Enum.FriendRequest.Functions
 {
     public enum RespondFriendRequestEnum
     {
         RespondFriendRequestSuccess,
         RespondFriendRequestFailed,
         FriendRequestNotFound,
+        ReceiverNotFound,
         Unauthorized,
         InvalidStatus,
         AlreadyProcessed
@@ -25,6 +20,7 @@ namespace Domain.Enum.FriendRequest.Functions
                 RespondFriendRequestEnum.RespondFriendRequestSuccess => "Friend request responded successfully.",
                 RespondFriendRequestEnum.RespondFriendRequestFailed => "Failed to respond to friend request.",
                 RespondFriendRequestEnum.FriendRequestNotFound => "Friend request not found.",
+                RespondFriendRequestEnum.ReceiverNotFound => "Receiver not found.",
                 RespondFriendRequestEnum.Unauthorized => "You are not authorized to respond to this request.",
                 RespondFriendRequestEnum.InvalidStatus => "Invalid response status.",
                 RespondFriendRequestEnum.AlreadyProcessed => "Friend request has already been processed.",

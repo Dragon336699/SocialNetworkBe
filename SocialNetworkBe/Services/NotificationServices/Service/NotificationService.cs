@@ -55,7 +55,7 @@ namespace SocialNetworkBe.Services.NotificationService
                 {
                     Notification newNoti = new Notification
                     {
-                        NoficationType = type,
+                        NotificationType = type,
                         Data = data,
                         MergeKey = mergeKey,
                         NavigateUrl = navigateUrl,
@@ -103,7 +103,7 @@ namespace SocialNetworkBe.Services.NotificationService
             {
                 Notification newNoti = new Notification
                 {
-                    NoficationType = type,
+                    NotificationType = type,
                     Data = data,
                     MergeKey = mergeKey,
                     NavigateUrl = navigateUrl,
@@ -121,6 +121,32 @@ namespace SocialNetworkBe.Services.NotificationService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occured while sending notification comment post");
+                throw;
+            }
+        }
+
+        public async Task ProcessAndSendNotiForFriendRequest(NotificationType type, NotificationData data, string navigateUrl, Guid receiverId)
+        {
+            try
+            {
+                Notification newNoti = new Notification
+                {
+                    NotificationType = type,
+                    Data = data,
+                    NavigateUrl = navigateUrl,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    ReceiverId = receiverId
+                };
+                NotificationDto notiDto = await CreateNotificationDto(newNoti, receiverId);
+                notiDto.Unread = true;
+
+                await _realtimeService.SendPrivateNotification(notiDto, receiverId);
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occured while sending notification for friend request");
                 throw;
             }
         }
@@ -258,6 +284,16 @@ namespace SocialNetworkBe.Services.NotificationService
                         content.Append($"\"{diObjectName}\" ");
                         break;
                     }
+                case (NotificationObjectType.FriendRequest):
+                    {
+                        content.Append($"you {noti.Data.DiObject.Name}");
+                        break;
+                    }
+                case (NotificationObjectType.AccepFriendRequest):
+                    {
+                        content.Append($"your {noti.Data.DiObject.Name}");
+                        break;
+                    }
             }
             if (noti.Data.Preposition != null)
             {
@@ -294,6 +330,7 @@ namespace SocialNetworkBe.Services.NotificationService
                 CreatedAt = noti.CreatedAt.ToLocalTime(),
                 UpdatedAt = noti.UpdatedAt.ToLocalTime(),
                 ReceiverId = noti.ReceiverId,
+                NavigateUrl = noti.NavigateUrl,
                 Highlights = highlightOffsets
             };
             return notiDto;

@@ -12,6 +12,7 @@ namespace Domain.Enum.Notification.Types
         CommentPost,
         ReplyComment,
         AddFriendRequest,
+        AcceptFriendRequest,
         GroupInvite
     }
 }

@@ -37,6 +37,8 @@ namespace SocialNetworkBe.Services.ConversationServices
         {
             try
             {
+                var names = new List<string>();
+                int count = 0;
                 foreach (var userId in userIds)
                 {
                     var userInfo = await _userService.GetUserInfoByUserId(userId.ToString());
@@ -44,7 +46,15 @@ namespace SocialNetworkBe.Services.ConversationServices
                     {
                         return (CreateConversationEnum.ReceiverNotFound, null);
                     }
+
+                    if (count < 3)
+                    {
+                        names.Add(userInfo.FirstName);
+                    }
+                    count++;
                 }
+
+                var conversationName = string.Join(", ", names);
 
                 if (conversationType == ConversationType.Personal && userIds.Count == 2)
                 {
@@ -54,11 +64,11 @@ namespace SocialNetworkBe.Services.ConversationServices
                         return (CreateConversationEnum.ConversationExists, existingConversationId);
                     }
                 }
-
                 var conversation = new Conversation
                 {
                     Id = Guid.NewGuid(),
                     Type = conversationType,
+                    ConversationName = userIds.Count > 2 ? conversationName : null,
                     CreatedAt = DateTime.UtcNow,
                 };
                 _unitOfWork.ConversationRepository.Add(conversation);

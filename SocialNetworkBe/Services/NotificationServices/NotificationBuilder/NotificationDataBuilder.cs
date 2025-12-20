@@ -91,5 +91,65 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
 
             return notidData;
         }
+
+        public NotificationData BuilderDataForFriendRequest(User actor)
+        {
+            List<NotificationObject> subjects = new List<NotificationObject>();
+
+            NotificationObject subject = new NotificationObject
+            {
+                Id = actor.Id,
+                Name = actor.LastName + " " + actor.FirstName,
+                Type = NotificationObjectType.Actor,
+            };
+
+            subjects.Add(subject);
+
+            NotificationObject diObject = new NotificationObject
+            {
+                Type = NotificationObjectType.FriendRequest,
+                Name = "a friend request"
+            };
+
+            NotificationData notidData = new NotificationData
+            {
+                Subjects = subjects,
+                SubjectCount = subjects.Count,
+                Verb = Verb.Sent,
+                DiObject = diObject,
+            };
+
+            return notidData;
+        }
+
+        public NotificationData BuilderDataForAcceptFriendRequest(User actor)
+        {
+            List<NotificationObject> subjects = new List<NotificationObject>();
+
+            NotificationObject subject = new NotificationObject
+            {
+                Id = actor.Id,
+                Name = actor.LastName + " " + actor.FirstName,
+                Type = NotificationObjectType.Actor,
+            };
+
+            subjects.Add(subject);
+
+            NotificationObject diObject = new NotificationObject
+            {
+                Type = NotificationObjectType.AccepFriendRequest,
+                Name = "friend request"
+            };
+
+            NotificationData notidData = new NotificationData
+            {
+                Subjects = subjects,
+                SubjectCount = subjects.Count,
+                Verb = Verb.Accepted,
+                DiObject = diObject,
+            };
+
+            return notidData;
+        }
     }
 }
