@@ -76,6 +76,47 @@ namespace SocialNetworkBe.Services.UserRelationServices
             }
         }
 
+        public async Task<UnfriendUserEnum> UnfriendUserAsync(Guid currentUserId, Guid targetUserId)
+        {
+            try
+            {
+                var relation1 = await _unitOfWork.UserRelationRepository
+                    .GetRelationAsync(currentUserId, targetUserId, UserRelationType.Friend);
+
+                var relation2 = await _unitOfWork.UserRelationRepository
+                    .GetRelationAsync(targetUserId, currentUserId, UserRelationType.Friend);
+
+                if (relation1 == null && relation2 == null)
+                {
+                    return UnfriendUserEnum.NotFriends;
+                }
+
+                if (relation1 != null) _unitOfWork.UserRelationRepository.Remove(relation1);
+                if (relation2 != null) _unitOfWork.UserRelationRepository.Remove(relation2);
+
+                var requestDirection1 = await _unitOfWork.FriendRequestRepository.GetFriendRequestAsync(currentUserId, targetUserId);
+                if (requestDirection1 != null)
+                {
+                    _unitOfWork.FriendRequestRepository.Remove(requestDirection1);
+                }
+
+                var requestDirection2 = await _unitOfWork.FriendRequestRepository.GetFriendRequestAsync(targetUserId, currentUserId);
+                if (requestDirection2 != null)
+                {
+                    _unitOfWork.FriendRequestRepository.Remove(requestDirection2);
+                }
+
+                var result = await _unitOfWork.CompleteAsync();
+
+                return result > 0 ? UnfriendUserEnum.Success : UnfriendUserEnum.Failed;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unfriending user {TargetId} by {CurrentId}", targetUserId, currentUserId);
+                return UnfriendUserEnum.Failed;
+            }
+        }
+
         private List<UserDto> MapToUserDtos(List<User> users)
         {
             return users.Select(u => new UserDto
@@ -90,16 +131,16 @@ namespace SocialNetworkBe.Services.UserRelationServices
             }).ToList();
         }
 
-        public async Task<PagedResponse<UserDto>> GetFollowersAsync(Guid userId, int pageIndex, int pageSize)
+        public async Task<List<UserDto>> GetFollowersAsync(Guid userId, int skip, int take)
         {
-            var (users, totalCount) = await _unitOfWork.UserRelationRepository.GetFollowersAsync(userId, pageIndex, pageSize);
-            return new PagedResponse<UserDto>(MapToUserDtos(users), pageIndex, pageSize, totalCount);
+            var (users, _) = await _unitOfWork.UserRelationRepository.GetFollowersAsync(userId, skip, take);
+            return MapToUserDtos(users);
         }
 
-        public async Task<PagedResponse<UserDto>> GetFollowingAsync(Guid userId, int pageIndex, int pageSize)
+        public async Task<List<UserDto>> GetFollowingAsync(Guid userId, int skip, int take)
         {
-            var (users, totalCount) = await _unitOfWork.UserRelationRepository.GetFollowingAsync(userId, pageIndex, pageSize);
-            return new PagedResponse<UserDto>(MapToUserDtos(users), pageIndex, pageSize, totalCount);
+            var (users, _) = await _unitOfWork.UserRelationRepository.GetFollowingAsync(userId, skip, take);
+            return MapToUserDtos(users);
         }
 
         public async Task<List<UserDto>> GetFriendsAsync(Guid userId, int skip, int take)
