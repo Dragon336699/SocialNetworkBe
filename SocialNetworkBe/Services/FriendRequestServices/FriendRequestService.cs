@@ -149,7 +149,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
 
                 _unitOfWork.FriendRequestRepository.Remove(friendRequest);
 
-                var userRelation = new UserRelation
+                var userRelation1 = new UserRelation
                 {
                     UserId = friendRequest.SenderId,
                     RelatedUserId = friendRequest.ReceiverId,
@@ -158,7 +158,17 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                _unitOfWork.UserRelationRepository.Add(userRelation);
+                var userRelation2 = new UserRelation
+                {
+                    UserId = friendRequest.ReceiverId,
+                    RelatedUserId = friendRequest.SenderId,
+                    RelationType = UserRelationType.Friend,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _unitOfWork.UserRelationRepository.Add(userRelation1);
+                _unitOfWork.UserRelationRepository.Add(userRelation2);
 
                 var result = await _unitOfWork.CompleteAsync();
 

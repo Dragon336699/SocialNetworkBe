@@ -1,10 +1,6 @@
-﻿using Domain.Entities;
+﻿using Domain.Contracts.Responses.UserRelation;
+using Domain.Entities;
 using Domain.Enum.User.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Domain.Interfaces.RepositoryInterfaces
 {
@@ -18,5 +14,6 @@ namespace Domain.Interfaces.RepositoryInterfaces
 
         Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take);
         Task<List<User>> GetFullFriends(Guid userId);
+        List<MutualFriendIdsResponse> GetListIdsMutualFriends(Guid userId);
     }
 }

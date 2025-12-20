@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Responses.Common;
 using Domain.Contracts.Responses.User;
+using Domain.Contracts.Responses.UserRelation;
 using Domain.Entities;
 using Domain.Enum.User.Types;
 using Domain.Enum.UserRelation.Funtions;
@@ -12,11 +13,13 @@ namespace SocialNetworkBe.Services.UserRelationServices
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<UserRelationService> _logger;
+        private readonly IUserService _userService;
 
-        public UserRelationService(IUnitOfWork unitOfWork, ILogger<UserRelationService> logger)
+        public UserRelationService(IUnitOfWork unitOfWork, ILogger<UserRelationService> logger, IUserService userService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _userService = userService;
         }
 
         public async Task<FollowUserEnum> FollowUserAsync(Guid currentUserId, Guid targetUserId)
@@ -111,6 +114,26 @@ namespace SocialNetworkBe.Services.UserRelationServices
             var users = await _unitOfWork.UserRelationRepository.GetFullFriends(userId);
             var userDtos = MapToUserDtos(users);
             return userDtos;
+        }
+
+        public async Task<List<MutualFriendReponse>> GetMutualFriends(Guid userId)
+        {
+            try
+            {
+                List<MutualFriendIdsResponse> mutualFriendIds = _unitOfWork.UserRelationRepository.GetListIdsMutualFriends(userId);
+                List<MutualFriendReponse> mutualFriendList = new List<MutualFriendReponse>();
+                foreach (var mutualFriendId in mutualFriendIds)
+                {
+                    UserDto? user = await _userService.GetUserInfoByUserId(mutualFriendId.SuggestedUserId.ToString());
+                    MutualFriendReponse mutualFriend = new MutualFriendReponse { MutualFriendCount = mutualFriendId.MutualFriendCount, User = user };
+                    mutualFriendList.Add(mutualFriend);
+                }
+                return mutualFriendList;
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting mutual friends");
+                throw;
+            }
         }
     }
 }

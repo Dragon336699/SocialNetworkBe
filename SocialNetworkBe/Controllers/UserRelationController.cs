@@ -113,5 +113,21 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { Message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpGet("suggest")]
+        public async Task<IActionResult> GetMutualFriends([FromQuery] int skip = 0, [FromQuery] int take = 10)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var result = await _userRelationService.GetMutualFriends(userId);
+                return Ok(new { Message = "Get friends list successfully", Data = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Responses.Common;
 using Domain.Contracts.Responses.User;
+using Domain.Contracts.Responses.UserRelation;
 using Domain.Enum.UserRelation.Funtions;
 using System;
 using System.Collections.Generic;
@@ -18,5 +19,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<PagedResponse<UserDto>> GetFollowingAsync(Guid userId, int pageIndex, int pageSize);
         Task<List<UserDto>> GetFriendsAsync(Guid userId, int skip, int take);
         Task<List<UserDto>> GetFullFriends(Guid userId);
+        Task<List<MutualFriendReponse>> GetMutualFriends(Guid userId);
     }
 }
