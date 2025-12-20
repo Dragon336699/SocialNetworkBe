@@ -15,8 +15,8 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<UnfollowUserEnum> UnfollowUserAsync(Guid currentUserId, Guid targetUserId);
         Task<UnfriendUserEnum> UnfriendUserAsync(Guid currentUserId, Guid targetUserId);
 
-        Task<PagedResponse<UserDto>> GetFollowersAsync(Guid userId, int pageIndex, int pageSize);
-        Task<PagedResponse<UserDto>> GetFollowingAsync(Guid userId, int pageIndex, int pageSize);
+        Task<List<UserDto>> GetFollowersAsync(Guid userId, int skip, int take);
+        Task<List<UserDto>> GetFollowingAsync(Guid userId, int skip, int take);
         Task<List<UserDto>> GetFriendsAsync(Guid userId, int skip, int take);
         Task<List<UserDto>> GetFullFriends(Guid userId);
     }

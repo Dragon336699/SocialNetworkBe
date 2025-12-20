@@ -128,16 +128,16 @@ namespace SocialNetworkBe.Services.UserRelationServices
             }).ToList();
         }
 
-        public async Task<PagedResponse<UserDto>> GetFollowersAsync(Guid userId, int pageIndex, int pageSize)
+        public async Task<List<UserDto>> GetFollowersAsync(Guid userId, int skip, int take)
         {
-            var (users, totalCount) = await _unitOfWork.UserRelationRepository.GetFollowersAsync(userId, pageIndex, pageSize);
-            return new PagedResponse<UserDto>(MapToUserDtos(users), pageIndex, pageSize, totalCount);
+            var (users, _) = await _unitOfWork.UserRelationRepository.GetFollowersAsync(userId, skip, take);
+            return MapToUserDtos(users);
         }
 
-        public async Task<PagedResponse<UserDto>> GetFollowingAsync(Guid userId, int pageIndex, int pageSize)
+        public async Task<List<UserDto>> GetFollowingAsync(Guid userId, int skip, int take)
         {
-            var (users, totalCount) = await _unitOfWork.UserRelationRepository.GetFollowingAsync(userId, pageIndex, pageSize);
-            return new PagedResponse<UserDto>(MapToUserDtos(users), pageIndex, pageSize, totalCount);
+            var (users, _) = await _unitOfWork.UserRelationRepository.GetFollowingAsync(userId, skip, take);
+            return MapToUserDtos(users);
         }
 
         public async Task<List<UserDto>> GetFriendsAsync(Guid userId, int skip, int take)

@@ -20,29 +20,33 @@ namespace DataAccess.Repositories
                                            ur.RelationType == type);
         }
 
-        // Lấy danh sách người Follow mình (UserRelation: UserId (Họ) -> RelatedUserId (Mình))
-        public async Task<(List<User> Users, int TotalCount)> GetFollowersAsync(Guid userId, int pageIndex, int pageSize)
+        public async Task<(List<User> Users, int TotalCount)> GetFollowersAsync(Guid userId, int skip, int take)
         {
             var query = _context.UserRelation
                 .Where(ur => ur.RelatedUserId == userId && ur.RelationType == UserRelationType.Following)
-                .Include(ur => ur.User) // Include người thực hiện hành động follow
-                .Select(ur => ur.User!); // Lấy ra User object
+                .Select(ur => ur.User!);
 
             var totalCount = await query.CountAsync();
-            var items = await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+            var items = await query
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
             return (items, totalCount);
         }
 
-        // Lấy danh sách mình đang Follow (UserRelation: UserId (Mình) -> RelatedUserId (Họ))
-        public async Task<(List<User> Users, int TotalCount)> GetFollowingAsync(Guid userId, int pageIndex, int pageSize)
+        public async Task<(List<User> Users, int TotalCount)> GetFollowingAsync(Guid userId, int skip, int take)
         {
             var query = _context.UserRelation
                 .Where(ur => ur.UserId == userId && ur.RelationType == UserRelationType.Following)
-                .Include(ur => ur.RelatedUser) // Include người được follow
                 .Select(ur => ur.RelatedUser!);
 
             var totalCount = await query.CountAsync();
-            var items = await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+            var items = await query
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
             return (items, totalCount);
         }
 

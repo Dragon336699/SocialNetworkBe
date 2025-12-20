@@ -90,12 +90,16 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpGet("followers")]
-        public async Task<IActionResult> GetFollowers([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetFollowers(
+            [FromQuery] Guid? userId,
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 10)
         {
             try
             {
-                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var result = await _userRelationService.GetFollowersAsync(userId, pageIndex, pageSize);
+                var targetUserId = userId ?? Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+                var result = await _userRelationService.GetFollowersAsync(targetUserId, skip, take);
                 return Ok(new { Message = "Get followers successfully", Data = result });
             }
             catch (Exception ex)
@@ -106,12 +110,16 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpGet("following")]
-        public async Task<IActionResult> GetFollowing([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetFollowing(
+            [FromQuery] Guid? userId,
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 10)
         {
             try
             {
-                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var result = await _userRelationService.GetFollowingAsync(userId, pageIndex, pageSize);
+                var targetUserId = userId ?? Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+                var result = await _userRelationService.GetFollowingAsync(targetUserId, skip, take);
                 return Ok(new { Message = "Get following list successfully", Data = result });
             }
             catch (Exception ex)
@@ -122,13 +130,27 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpGet("friends")]
-        public async Task<IActionResult> GetFriends([FromQuery] int skip = 0, [FromQuery] int take = 10)
+        public async Task<IActionResult> GetFriends(
+            [FromQuery] Guid? userId,
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 10)
         {
             try
             {
-                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var result = await _userRelationService.GetFriendsAsync(userId, skip, take);
-                return Ok(new { Message = "Get friends list successfully", Data = result });
+                var currentUserId = Guid.Parse(
+                    User.FindFirstValue(ClaimTypes.NameIdentifier)!
+                );
+
+                var targetUserId = userId ?? currentUserId;
+
+                var result = await _userRelationService
+                    .GetFriendsAsync(targetUserId, skip, take);
+
+                return Ok(new
+                {
+                    Message = "Get friends list successfully",
+                    Data = result
+                });
             }
             catch (Exception ex)
             {
