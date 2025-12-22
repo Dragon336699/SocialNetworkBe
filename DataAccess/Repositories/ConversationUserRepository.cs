@@ -14,9 +14,11 @@ namespace DataAccess.Repositories
 
         public async Task<Guid?> GetConversationIdBetweenUsersAsync(Guid senderId, Guid receiverId)
         {
-            Guid conversationId = await  _context.ConversationUser.Where(x => x.UserId == senderId)
-                .Join(_context.ConversationUser
-                    .Where(y => y.UserId == receiverId), x => x.ConversationId, y => y.ConversationId, (x, y) => x.ConversationId)
+            Guid conversationId = await _context.ConversationUser
+                .GroupBy(cu => cu.ConversationId)
+                .Where(g =>
+                    g.Count() == 2 && g.Any(cu => cu.UserId == senderId) && g.Any(cu => cu.UserId == receiverId))
+                .Select(g => g.Key)
                 .FirstOrDefaultAsync();
             return conversationId ==  Guid.Empty ? null : conversationId;
         }

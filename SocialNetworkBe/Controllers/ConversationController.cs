@@ -43,7 +43,7 @@ namespace SocialNetworkBe.Controllers
                 return status switch              
                 {
                 CreateConversationEnum.ReceiverNotFound => BadRequest(new { Message = status.GetMessage() }),
-                    CreateConversationEnum.ConversationExists => Ok(new { ConversationId = conversationId, Message = status.GetMessage() }),
+                    CreateConversationEnum.ConversationExists => Ok(new { data = conversationId, Message = status.GetMessage() }),
                     CreateConversationEnum.CreateConversationSuccess => Ok(new { data = conversationId, Message = status.GetMessage() }),
                     _ => StatusCode(500, new { Message = status.GetMessage() })
                 };

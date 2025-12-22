@@ -51,9 +51,6 @@ namespace DataAccess.Repositories
             return (items, totalCount);
         }
 
-        // Lấy danh sách bạn bè
-        // Dựa vào logic cũ: Khi accept kết bạn, hệ thống tạo 2 bản ghi Friend 2 chiều.
-        // Nên chỉ cần query UserId == Mình và Type == Friend là đủ.
         public async Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take)
         {
             var query = _context.UserRelation
