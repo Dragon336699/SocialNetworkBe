@@ -69,7 +69,7 @@ namespace DataAccess.Repositories
         {
             return await _context.UserRelation
                 .Where(ur =>
-                    (ur.UserId == userId || ur.RelatedUserId == userId) &&
+                    (ur.UserId == userId) &&
                     ur.RelationType == UserRelationType.Friend)
                 .Select(ur => ur.UserId == userId ? ur.RelatedUser : ur.User)
                 .AsNoTracking()
