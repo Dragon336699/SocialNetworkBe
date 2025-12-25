@@ -133,7 +133,7 @@ namespace SocialNetworkBe.Controllers
         public async Task<IActionResult> GetFriends(
             [FromQuery] Guid? userId,
             [FromQuery] int skip = 0,
-            [FromQuery] int take = 10)
+            [FromQuery] int take = 20)
         {
             try
             {

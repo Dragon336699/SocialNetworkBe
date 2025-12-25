@@ -14,12 +14,14 @@ namespace SocialNetworkBe.Services.UserRelationServices
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<UserRelationService> _logger;
         private readonly IUserService _userService;
+        private readonly HttpClient _client;
 
-        public UserRelationService(IUnitOfWork unitOfWork, ILogger<UserRelationService> logger, IUserService userService)
+        public UserRelationService(IUnitOfWork unitOfWork, ILogger<UserRelationService> logger, IUserService userService, IHttpClientFactory factory)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _userService = userService;
+            _client = factory.CreateClient("SuggestFriend");
         }
 
         public async Task<FollowUserEnum> FollowUserAsync(Guid currentUserId, Guid targetUserId)
@@ -163,6 +165,17 @@ namespace SocialNetworkBe.Services.UserRelationServices
             {
                 List<MutualFriendIdsResponse> mutualFriendIds = _unitOfWork.UserRelationRepository.GetListIdsMutualFriends(userId);
                 List<MutualFriendReponse> mutualFriendList = new List<MutualFriendReponse>();
+                SuggestUserDataDto? suggestUserData = await _client.GetFromJsonAsync<SuggestUserDataDto>($"/friend/recommend?user_id={userId}");
+                if ( suggestUserData != null )
+                {
+                    foreach (var userRes in suggestUserData.recommendations)
+                    {
+                        UserDto? user = await _userService.GetUserInfoByUserId(userRes.target_user_id.ToString());
+                        MutualFriendReponse mutualFriend = new MutualFriendReponse { MutualFriendCount = 0, User = user };
+                        mutualFriendList.Add(mutualFriend);
+                    }
+                }
+                
                 foreach (var mutualFriendId in mutualFriendIds)
                 {
                     UserDto? user = await _userService.GetUserInfoByUserId(mutualFriendId.SuggestedUserId.ToString());

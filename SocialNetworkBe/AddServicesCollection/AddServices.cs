@@ -69,6 +69,12 @@ namespace Domain.AddServicesCollection
                     options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
                 });
+
+            services.AddHttpClient("SuggestFriend", client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:8000");
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
         }
     }
 }

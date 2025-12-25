@@ -197,7 +197,7 @@ namespace SocialNetworkBe.Controllers
                 if (updatedPost == null)
                     return BadRequest(new ReactionPostResponse { Message = "Reaction failed" });
 
-                return Ok(new ReactionPostResponse{ Message = "Reaction successfully", Post = updatedPost });
+                return Ok(new { Message = "Reaction successfully", data = updatedPost });
             }
             catch (Exception ex)
             {
