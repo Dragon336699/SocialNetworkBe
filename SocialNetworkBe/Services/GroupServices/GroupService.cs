@@ -630,6 +630,47 @@ namespace SocialNetworkBe.Services.GroupServices
             }
         }
 
+        public async Task<(SearchMyGroupsEnum, List<GroupDto>?)> SearchMyGroupsAsync(Guid userId, string searchTerm, int skip = 0, int take = 10)
+        {
+            try
+            {
+                var groupUsers = await _unitOfWork.GroupUserRepository.FindAsync(
+                    gu => gu.UserId == userId
+                );
+
+                if (groupUsers == null || !groupUsers.Any())
+                {
+                    return (SearchMyGroupsEnum.NoGroupsFound, null);
+                }
+
+                var groupIds = groupUsers.Select(gu => gu.GroupId).ToList();
+
+                var searchTermLower = searchTerm.Trim().ToLower();
+
+                var groups = await _unitOfWork.GroupRepository.GetGroupsWithFullDetailsAsync(
+                    g => groupIds.Contains(g.Id) && 
+                        (g.Name.ToLower().Contains(searchTermLower) || 
+                         g.Description.ToLower().Contains(searchTermLower)),
+                    skip,
+                    take
+                );
+
+                if (groups == null || !groups.Any())
+                {
+                    return (SearchMyGroupsEnum.NoGroupsFound, null);
+                }
+
+                var groupDtos = _mapper.Map<List<GroupDto>>(groups);
+
+                return (SearchMyGroupsEnum.Success, groupDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when searching groups for user {UserId} with term {SearchTerm}", userId, searchTerm);
+                return (SearchMyGroupsEnum.Failed, null);
+            }
+        }
+
         public async Task<(PromoteToAdminEnum, GroupUserDto?)> PromoteToAdminAsync(Guid groupId, Guid targetUserId, Guid currentUserId)
         {
             try

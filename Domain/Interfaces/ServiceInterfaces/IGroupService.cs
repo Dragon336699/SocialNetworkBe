@@ -23,6 +23,7 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<(GetPendingJoinRequestsEnum, List<GroupUserDto>?)> GetPendingJoinRequestsAsync(Guid groupId, Guid currentUserId, int skip = 0, int take = 10);
         Task<(LeaveGroupEnum, bool)> LeaveGroupAsync(Guid groupId, Guid userId);
         Task<(GetUserGroupsEnum, List<GroupDto>?)> GetUserGroupsAsync(Guid userId, int skip = 0, int take = 10);
+        Task<(SearchMyGroupsEnum, List<GroupDto>?)> SearchMyGroupsAsync(Guid userId, string searchTerm, int skip = 0, int take = 10);
         Task<(PromoteToAdminEnum, GroupUserDto?)> PromoteToAdminAsync(Guid groupId, Guid targetUserId, Guid currentUserId);
         Task<(DemoteAdminEnum, GroupUserDto?)> DemoteAdminAsync(Guid groupId, Guid targetUserId, Guid currentUserId);
         Task<(KickMemberEnum, bool)> KickMemberAsync(Guid groupId, Guid targetUserId, Guid currentUserId);

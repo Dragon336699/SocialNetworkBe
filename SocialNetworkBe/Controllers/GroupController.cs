@@ -389,6 +389,54 @@ namespace SocialNetworkBe.Controllers
         }
 
         [Authorize]
+        [HttpGet("my-groups/search")]
+        public async Task<IActionResult> SearchMyGroups([FromQuery] string searchTerm, [FromQuery] int skip = 0, [FromQuery] int take = 10)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, groups) = await _groupService.SearchMyGroupsAsync(userId, searchTerm, skip, take);
+
+                return status switch
+                {
+                    SearchMyGroupsEnum.Success => Ok(new SearchMyGroupsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Groups = groups,
+                        TotalCount = groups?.Count ?? 0
+                    }),
+                    SearchMyGroupsEnum.NoGroupsFound => Ok(new SearchMyGroupsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Groups = new List<GroupDto>(),
+                        TotalCount = 0
+                    }),
+                    SearchMyGroupsEnum.Failed => StatusCode(500, new SearchMyGroupsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Groups = null,
+                        TotalCount = 0
+                    }),
+                    _ => StatusCode(500, new SearchMyGroupsResponse
+                    {
+                        Message = "Unknown error occurred",
+                        Groups = null,
+                        TotalCount = 0
+                    })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new SearchMyGroupsResponse
+                {
+                    Message = ex.Message,
+                    Groups = null,
+                    TotalCount = 0
+                });
+            }
+        }
+
+        [Authorize]
         [HttpPost("{groupId}/promote-admin")]
         public async Task<IActionResult> PromoteToAdmin(Guid groupId, [FromBody] PromoteToAdminRequest request)
         {

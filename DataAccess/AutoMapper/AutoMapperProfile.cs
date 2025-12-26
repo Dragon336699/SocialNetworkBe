@@ -38,7 +38,7 @@ namespace DataAccess.AutoMapper
                 .ForMember(dest => dest.MemberCount, opt => opt.MapFrom(src => src.GroupUsers != null ? src.GroupUsers.Count(gu => gu.RoleName != GroupRole.Pending) : 0))
                 .ForMember(dest => dest.PostCount, opt => opt.MapFrom(src => src.Posts != null ? src.Posts.Count : 0))
                 .ForMember(dest => dest.GroupUsers, opt => opt.MapFrom(src => src.GroupUsers))
-                .ForMember(dest => dest.Posts, opt => opt.MapFrom(src => src.Posts));
+                .ForMember(dest => dest.Posts, opt => opt.MapFrom(src => src.Posts != null ? src.Posts.OrderByDescending(p => p.CreatedAt).ToList() : null));
             CreateMap<GroupUser, GroupUserDto>()
                 .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.User));
 
