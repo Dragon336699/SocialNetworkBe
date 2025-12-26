@@ -32,7 +32,7 @@ namespace SocialNetworkBe.Services.PostServices
             _mapper = mapper;
         }
 
-        public async Task<(CreatePostEnum, Guid?)> CreatePostAsync(CreatePostRequest request, Guid userId)
+        public async Task<(CreatePostEnum, PostDto?)> CreatePostAsync(CreatePostRequest request, Guid userId)
         {
             try
             {   
@@ -48,7 +48,6 @@ namespace SocialNetworkBe.Services.PostServices
                     return (CreatePostEnum.InvalidContent, null);
                 }
 
-                // Upload images lên cloud trước khi tạo post
                 List<string>? imageUrls = null;
                 if (request.Images != null && request.Images.Any())
                 {
@@ -107,9 +106,18 @@ namespace SocialNetworkBe.Services.PostServices
                 var result = await _unitOfWork.CompleteAsync();
                 if (result > 0)
                 {
-                    // Tạo feed cho user khác
                     await feedService.FeedForPost(post.Id, userId);
-                    return (CreatePostEnum.CreatePostSuccess, post.Id);
+                    
+                    var createdPosts = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
+                        p => p.Id == post.Id,
+                        p => p.User,
+                        p => p.PostImages,
+                        p => p.Group
+                    );
+                    
+                    var createdPost = createdPosts?.FirstOrDefault();
+                    var postDto = _mapper.Map<PostDto>(createdPost);
+                    return (CreatePostEnum.CreatePostSuccess, postDto);
                 }
                 
                 return (CreatePostEnum.CreatePostFailed, null);

@@ -31,7 +31,7 @@ namespace SocialNetworkBe.Controllers
             try
             {
                 var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));              
-                var (status, postId) = await _postService.CreatePostAsync(request, userId);
+                var (status, postDto) = await _postService.CreatePostAsync(request, userId);
 
                 return status switch
                 {
@@ -43,7 +43,7 @@ namespace SocialNetworkBe.Controllers
                     CreatePostEnum.CreatePostSuccess => Ok(new CreatePostResponse
                     {
                         Message = status.GetMessage(),
-                        PostId = postId
+                        data = postDto
                     }),
                     _ => StatusCode(500, new CreatePostResponse { Message = status.GetMessage() })
                 };

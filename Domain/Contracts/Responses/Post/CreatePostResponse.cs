@@ -8,7 +8,7 @@ namespace Domain.Contracts.Responses.Post
 {
     public class CreatePostResponse
     {
-        public Guid? PostId { get; set; }      
+        public PostDto? data { get; set; }
         public required string Message { get; set; } 
     }
 }
