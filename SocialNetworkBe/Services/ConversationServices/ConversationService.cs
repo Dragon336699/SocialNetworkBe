@@ -128,5 +128,140 @@ namespace SocialNetworkBe.Services.ConversationServices
                 throw;
             }
         }
+
+        public async Task<DeleteConversationEnum> DeleteConversationAsync(Guid conversationId, Guid userId)
+        {
+            try
+            {
+                var conversation = await _unitOfWork.ConversationRepository.GetByIdAsync(conversationId);
+                if (conversation == null)
+                {
+                    return DeleteConversationEnum.ConversationNotFound;
+                }
+
+                var conversationUser = await _unitOfWork.ConversationUserRepository
+                    .FindAsync(cu => cu.ConversationId == conversationId && cu.UserId == userId);
+
+                if (conversationUser == null || !conversationUser.Any())
+                {
+                    return DeleteConversationEnum.UserNotInConversation;
+                }
+
+                var messages = await _unitOfWork.MessageRepository
+                    .FindAsync(m => m.ConversationId == conversationId);
+                if (messages != null && messages.Any())
+                {
+                    _unitOfWork.MessageRepository.RemoveRange(messages);
+                }
+
+                var allConversationUsers = await _unitOfWork.ConversationUserRepository
+                    .FindAsync(cu => cu.ConversationId == conversationId);
+                if (allConversationUsers != null && allConversationUsers.Any())
+                {
+                    _unitOfWork.ConversationUserRepository.RemoveRange(allConversationUsers);
+                }
+
+                _unitOfWork.ConversationRepository.Remove(conversation);
+               
+                int rowsAffected = await _unitOfWork.CompleteAsync();
+                if (rowsAffected == 0)
+                {
+                    return DeleteConversationEnum.Failed;
+                }
+
+                return DeleteConversationEnum.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting conversation");
+                return DeleteConversationEnum.Failed;
+            }
+        }
+
+        public async Task<ChangeNicknameEnum> ChangeNicknameAsync(Guid conversationId, Guid currentUserId, Guid targetUserId, string newNickname)
+        {
+            try
+            {
+                var conversation = await _unitOfWork.ConversationRepository.GetByIdAsync(conversationId);
+                if (conversation == null)
+                {
+                    return ChangeNicknameEnum.ConversationNotFound;
+                }
+
+                var currentUserInConversation = await _unitOfWork.ConversationUserRepository
+                    .FindAsync(cu => cu.ConversationId == conversationId && cu.UserId == currentUserId);
+
+                if (currentUserInConversation == null || !currentUserInConversation.Any())
+                {
+                    return ChangeNicknameEnum.UserNotInConversation;
+                }
+
+                var targetConversationUser = await _unitOfWork.ConversationUserRepository
+                    .FindAsync(cu => cu.ConversationId == conversationId && cu.UserId == targetUserId);
+
+                if (targetConversationUser == null || !targetConversationUser.Any())
+                {
+                    return ChangeNicknameEnum.UserNotInConversation;
+                }
+
+                var conversationUserToUpdate = targetConversationUser.First();
+                conversationUserToUpdate.NickName = newNickname;
+                _unitOfWork.ConversationUserRepository.Update(conversationUserToUpdate);
+             
+                int rowsAffected = await _unitOfWork.CompleteAsync();
+                if (rowsAffected == 0)
+                {
+                    return ChangeNicknameEnum.Failed;
+                }
+
+                return ChangeNicknameEnum.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while changing nickname");
+                return ChangeNicknameEnum.Failed;
+            }
+        }
+     
+        public async Task<ChangeConversationNameEnum> ChangeConversationNameAsync(Guid conversationId, Guid userId, string newConversationName)
+        {
+            try
+            {               
+                var conversation = await _unitOfWork.ConversationRepository.GetByIdAsync(conversationId);
+                if (conversation == null)
+                {
+                    return ChangeConversationNameEnum.ConversationNotFound;
+                }
+              
+                if (conversation.Type != ConversationType.Group)
+                {
+                    return ChangeConversationNameEnum.NotGroupConversation;
+                }
+             
+                var conversationUser = await _unitOfWork.ConversationUserRepository
+                    .FindAsync(cu => cu.ConversationId == conversationId && cu.UserId == userId);
+
+                if (conversationUser == null || !conversationUser.Any())
+                {
+                    return ChangeConversationNameEnum.UserNotInConversation;
+                }
+            
+                conversation.ConversationName = newConversationName;
+                _unitOfWork.ConversationRepository.Update(conversation);
+           
+                int rowsAffected = await _unitOfWork.CompleteAsync();
+                if (rowsAffected == 0)
+                {
+                    return ChangeConversationNameEnum.Failed;
+                }
+
+                return ChangeConversationNameEnum.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while changing conversation name");
+                return ChangeConversationNameEnum.Failed;
+            }
+        }
     }
 }

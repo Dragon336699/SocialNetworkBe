@@ -90,6 +90,88 @@ namespace SocialNetworkBe.Controllers
             }
         }
 
+        [Authorize]
+        [HttpDelete]
+        [Route("deleteConversation")]
+        public async Task<IActionResult> DeleteConversation([FromBody] DeleteConversationRequest request)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var status = await _conversationService.DeleteConversationAsync(request.ConversationId, userId);
+
+                return status switch
+                {
+                    DeleteConversationEnum.Success => Ok(new { message = status.GetMessage() }),
+                    DeleteConversationEnum.ConversationNotFound => NotFound(new { message = status.GetMessage() }),
+                    DeleteConversationEnum.UserNotInConversation => Forbid(),
+                    _ => StatusCode(500, new { message = status.GetMessage() })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPut]
+        [Route("changeNickname")]
+        public async Task<IActionResult> ChangeNickname([FromBody] ChangeNicknameRequest request)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var status = await _conversationService.ChangeNicknameAsync(
+                    request.ConversationId,
+                    userId,
+                    request.TargetUserId,
+                    request.NewNickname
+                );
+
+                return status switch
+                {
+                    ChangeNicknameEnum.Success => Ok(new { message = status.GetMessage() }),
+                    ChangeNicknameEnum.ConversationNotFound => NotFound(new { message = status.GetMessage() }),
+                    ChangeNicknameEnum.UserNotInConversation => BadRequest(new { message = status.GetMessage() }),
+                    _ => StatusCode(500, new { message = status.GetMessage() })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPut]
+        [Route("changeConversationName")]
+        public async Task<IActionResult> ChangeConversationName([FromBody] ChangeConversationNameRequest request)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var status = await _conversationService.ChangeConversationNameAsync(
+                    request.ConversationId,
+                    userId,
+                    request.NewConversationName
+                );
+
+                return status switch
+                {
+                    ChangeConversationNameEnum.Success => Ok(new { message = status.GetMessage() }),
+                    ChangeConversationNameEnum.ConversationNotFound => NotFound(new { message = status.GetMessage() }),
+                    ChangeConversationNameEnum.UserNotInConversation => Forbid(),
+                    ChangeConversationNameEnum.NotGroupConversation => BadRequest(new { message = status.GetMessage() }),
+                    _ => StatusCode(500, new { message = status.GetMessage() })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
         // Bỏ rồi
         [Authorize]
         [HttpPost]
