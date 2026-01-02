@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class InitialMigrations : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -32,7 +32,10 @@ namespace DataAccess.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
                     FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AvatarUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Gender = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -58,8 +61,9 @@ namespace DataAccess.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
-                    Type = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ConversationName = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -73,38 +77,12 @@ namespace DataAccess.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
                     IsPublic = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Group", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Notification",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
-                    NoficationType = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notification", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Reaction",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IconSymbol = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Reaction", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -219,7 +197,8 @@ namespace DataAccess.Migrations
                 {
                     SenderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ReceiverId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FriendRequestStatus = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    FriendRequestStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -239,12 +218,58 @@ namespace DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notification",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
+                    NotificationType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MergeKey = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    NavigateUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Unread = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReceiverId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notification", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notification_AspNetUsers_ReceiverId",
+                        column: x => x.ReceiverId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SearchingHistory",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NavigateUrl = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SearchingHistory", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SearchingHistory_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserRelation",
                 columns: table => new
                 {
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RelatedUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RelationType = table.Column<int>(type: "int", nullable: false),
+                    RelationType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -273,7 +298,7 @@ namespace DataAccess.Migrations
                     ConversationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     JoinedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     NickName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RoleName = table.Column<int>(type: "int", nullable: false),
+                    RoleName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DraftMessage = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -304,17 +329,11 @@ namespace DataAccess.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ConversationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SenderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReceiverId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    RepliedMessageId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Message", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Message_AspNetUsers_ReceiverId",
-                        column: x => x.ReceiverId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Message_AspNetUsers_SenderId",
                         column: x => x.SenderId,
@@ -327,6 +346,11 @@ namespace DataAccess.Migrations
                         principalTable: "Conversation",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Message_Message_RepliedMessageId",
+                        column: x => x.RepliedMessageId,
+                        principalTable: "Message",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -336,7 +360,7 @@ namespace DataAccess.Migrations
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     JoinedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RoleName = table.Column<int>(type: "int", nullable: false)
+                    RoleName = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -365,8 +389,9 @@ namespace DataAccess.Migrations
                     TotalComment = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    PostPrivacy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -375,7 +400,8 @@ namespace DataAccess.Migrations
                         name: "FK_Post_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Post_Group_GroupId",
                         column: x => x.GroupId,
@@ -384,70 +410,13 @@ namespace DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SearchingHistory",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SearchedUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SearchingHistory", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SearchingHistory_AspNetUsers_SearchedUserId",
-                        column: x => x.SearchedUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SearchingHistory_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SearchingHistory_Group_GroupId",
-                        column: x => x.GroupId,
-                        principalTable: "Group",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "NotificationUser",
-                columns: table => new
-                {
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    NotificationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IsRead = table.Column<int>(type: "int", nullable: false),
-                    IsMuted = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_NotificationUser", x => new { x.UserId, x.NotificationId });
-                    table.ForeignKey(
-                        name: "FK_NotificationUser_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_NotificationUser_Notification_NotificationId",
-                        column: x => x.NotificationId,
-                        principalTable: "Notification",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "MessageAttachment",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
                     MessageId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FileUrl = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    FileUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FileType = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -466,7 +435,9 @@ namespace DataAccess.Migrations
                 {
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MessageId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReactionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Reaction = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -483,12 +454,6 @@ namespace DataAccess.Migrations
                         principalTable: "Message",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_MessageReactionUser_Reaction_ReactionId",
-                        column: x => x.ReactionId,
-                        principalTable: "Reaction",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -497,9 +462,12 @@ namespace DataAccess.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RepliedCommentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    PostId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TotalLiked = table.Column<int>(type: "int", nullable: false),
+                    PostId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RepliedCommentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -508,7 +476,8 @@ namespace DataAccess.Migrations
                         name: "FK_Comment_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Comment_Comment_RepliedCommentId",
                         column: x => x.RepliedCommentId,
@@ -518,7 +487,8 @@ namespace DataAccess.Migrations
                         name: "FK_Comment_Post_PostId",
                         column: x => x.PostId,
                         principalTable: "Post",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -546,7 +516,9 @@ namespace DataAccess.Migrations
                 {
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PostId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReactionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Reaction = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -561,12 +533,6 @@ namespace DataAccess.Migrations
                         name: "FK_PostReactionUser_Post_PostId",
                         column: x => x.PostId,
                         principalTable: "Post",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PostReactionUser_Reaction_ReactionId",
-                        column: x => x.ReactionId,
-                        principalTable: "Reaction",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -596,7 +562,9 @@ namespace DataAccess.Migrations
                 {
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CommentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReactionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Reaction = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -611,12 +579,6 @@ namespace DataAccess.Migrations
                         name: "FK_CommentReactionUser_Comment_CommentId",
                         column: x => x.CommentId,
                         principalTable: "Comment",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CommentReactionUser_Reaction_ReactionId",
-                        column: x => x.ReactionId,
-                        principalTable: "Reaction",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -686,11 +648,6 @@ namespace DataAccess.Migrations
                 column: "CommentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CommentReactionUser_ReactionId",
-                table: "CommentReactionUser",
-                column: "ReactionId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ConversationUser_ConversationId",
                 table: "ConversationUser",
                 column: "ConversationId");
@@ -711,9 +668,9 @@ namespace DataAccess.Migrations
                 column: "ConversationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Message_ReceiverId",
+                name: "IX_Message_RepliedMessageId",
                 table: "Message",
-                column: "ReceiverId");
+                column: "RepliedMessageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Message_SenderId",
@@ -731,14 +688,16 @@ namespace DataAccess.Migrations
                 column: "MessageId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MessageReactionUser_ReactionId",
-                table: "MessageReactionUser",
-                column: "ReactionId");
+                name: "IX_Notification_MergeKey",
+                table: "Notification",
+                column: "MergeKey",
+                unique: true,
+                filter: "[MergeKey] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_NotificationUser_NotificationId",
-                table: "NotificationUser",
-                column: "NotificationId");
+                name: "IX_Notification_ReceiverId",
+                table: "Notification",
+                column: "ReceiverId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Post_GroupId",
@@ -759,21 +718,6 @@ namespace DataAccess.Migrations
                 name: "IX_PostReactionUser_PostId",
                 table: "PostReactionUser",
                 column: "PostId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PostReactionUser_ReactionId",
-                table: "PostReactionUser",
-                column: "ReactionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SearchingHistory_GroupId",
-                table: "SearchingHistory",
-                column: "GroupId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SearchingHistory_SearchedUserId",
-                table: "SearchingHistory",
-                column: "SearchedUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SearchingHistory_UserId",
@@ -826,7 +770,7 @@ namespace DataAccess.Migrations
                 name: "MessageReactionUser");
 
             migrationBuilder.DropTable(
-                name: "NotificationUser");
+                name: "Notification");
 
             migrationBuilder.DropTable(
                 name: "PostImage");
@@ -848,12 +792,6 @@ namespace DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "Message");
-
-            migrationBuilder.DropTable(
-                name: "Notification");
-
-            migrationBuilder.DropTable(
-                name: "Reaction");
 
             migrationBuilder.DropTable(
                 name: "Post");

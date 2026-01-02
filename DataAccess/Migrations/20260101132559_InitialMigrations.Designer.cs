@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(SocialNetworkDbContext))]
-    [Migration("20251012095733_ChangePropertiesUser")]
-    partial class ChangePropertiesUser
+    [Migration("20260101132559_InitialMigrations")]
+    partial class InitialMigrations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -36,13 +36,22 @@ namespace DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("PostId")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PostId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("RepliedCommentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<int>("TotalLiked")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -85,14 +94,19 @@ namespace DataAccess.Migrations
                     b.Property<Guid>("CommentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ReactionId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reaction")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("UserId", "CommentId");
 
                     b.HasIndex("CommentId");
-
-                    b.HasIndex("ReactionId");
 
                     b.ToTable("CommentReactionUser");
                 });
@@ -103,6 +117,9 @@ namespace DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWID()");
+
+                    b.Property<string>("ConversationName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -152,6 +169,9 @@ namespace DataAccess.Migrations
                     b.Property<Guid>("ReceiverId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("FriendRequestStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -171,6 +191,10 @@ namespace DataAccess.Migrations
                         .HasDefaultValueSql("NEWID()");
 
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -225,7 +249,7 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("ReceiverId")
+                    b.Property<Guid?>("RepliedMessageId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("SenderId")
@@ -242,7 +266,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("ConversationId");
 
-                    b.HasIndex("ReceiverId");
+                    b.HasIndex("RepliedMessageId");
 
                     b.HasIndex("SenderId");
 
@@ -255,6 +279,10 @@ namespace DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWID()");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FileUrl")
                         .IsRequired()
@@ -278,14 +306,19 @@ namespace DataAccess.Migrations
                     b.Property<Guid>("MessageId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ReactionId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reaction")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("UserId", "MessageId");
 
                     b.HasIndex("MessageId");
-
-                    b.HasIndex("ReactionId");
 
                     b.ToTable("MessageReactionUser");
                 });
@@ -297,41 +330,41 @@ namespace DataAccess.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWID()");
 
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("NoficationType")
+                    b.Property<string>("Data")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("MergeKey")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("NavigateUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NotificationType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ReceiverId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Unread")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("MergeKey")
+                        .IsUnique()
+                        .HasFilter("[MergeKey] IS NOT NULL");
+
+                    b.HasIndex("ReceiverId");
+
                     b.ToTable("Notification");
-                });
-
-            modelBuilder.Entity("Domain.Entities.NotificationUser", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("NotificationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("IsMuted")
-                        .HasColumnType("int");
-
-                    b.Property<int>("IsRead")
-                        .HasColumnType("int");
-
-                    b.HasKey("UserId", "NotificationId");
-
-                    b.HasIndex("NotificationId");
-
-                    b.ToTable("NotificationUser");
                 });
 
             modelBuilder.Entity("Domain.Entities.Post", b =>
@@ -351,6 +384,10 @@ namespace DataAccess.Migrations
                     b.Property<Guid?>("GroupId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("PostPrivacy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("TotalComment")
                         .HasColumnType("int");
 
@@ -360,7 +397,7 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -401,36 +438,21 @@ namespace DataAccess.Migrations
                     b.Property<Guid>("PostId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ReactionId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reaction")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("UserId", "PostId");
 
                     b.HasIndex("PostId");
 
-                    b.HasIndex("ReactionId");
-
                     b.ToTable("PostReactionUser");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Reaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWID()");
-
-                    b.Property<string>("IconSymbol")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Reaction");
                 });
 
             modelBuilder.Entity("Domain.Entities.Role", b =>
@@ -472,20 +494,16 @@ namespace DataAccess.Migrations
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("GroupId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("SearchedUserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("NavigateUrl")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("SearchedUserId");
 
                     b.HasIndex("UserId");
 
@@ -592,8 +610,9 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("RelationType")
-                        .HasColumnType("int");
+                    b.Property<string>("RelationType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -710,19 +729,27 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("Domain.Entities.Comment", b =>
                 {
-                    b.HasOne("Domain.Entities.Post", null)
+                    b.HasOne("Domain.Entities.Post", "Post")
                         .WithMany("Comments")
-                        .HasForeignKey("PostId");
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Domain.Entities.Comment", "ParentComment")
-                        .WithMany()
+                        .WithMany("Replies")
                         .HasForeignKey("RepliedCommentId");
 
-                    b.HasOne("Domain.Entities.User", null)
+                    b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Comments")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("ParentComment");
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.CommentImage", b =>
@@ -738,15 +765,9 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("Domain.Entities.CommentReactionUser", b =>
                 {
-                    b.HasOne("Domain.Entities.Comment", "Post")
-                        .WithMany()
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Reaction", "Reaction")
+                    b.HasOne("Domain.Entities.Comment", "Comment")
                         .WithMany("CommentReactionUsers")
-                        .HasForeignKey("ReactionId")
+                        .HasForeignKey("CommentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -756,9 +777,7 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Post");
-
-                    b.Navigation("Reaction");
+                    b.Navigation("Comment");
 
                     b.Navigation("User");
                 });
@@ -828,11 +847,9 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.User", "Receiver")
-                        .WithMany("MessageReceive")
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.HasOne("Domain.Entities.Message", "RepliedMessage")
+                        .WithMany()
+                        .HasForeignKey("RepliedMessageId");
 
                     b.HasOne("Domain.Entities.User", "Sender")
                         .WithMany("MessageSent")
@@ -842,7 +859,7 @@ namespace DataAccess.Migrations
 
                     b.Navigation("Conversation");
 
-                    b.Navigation("Receiver");
+                    b.Navigation("RepliedMessage");
 
                     b.Navigation("Sender");
                 });
@@ -866,12 +883,6 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Reaction", "Reaction")
-                        .WithMany("MessageReactionUsers")
-                        .HasForeignKey("ReactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -880,39 +891,35 @@ namespace DataAccess.Migrations
 
                     b.Navigation("Message");
 
-                    b.Navigation("Reaction");
-
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.NotificationUser", b =>
+            modelBuilder.Entity("Domain.Entities.Notification", b =>
                 {
-                    b.HasOne("Domain.Entities.Notification", "Notification")
-                        .WithMany("NotificationUsers")
-                        .HasForeignKey("NotificationId")
+                    b.HasOne("Domain.Entities.User", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("NotificationUsers")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Notification");
-
-                    b.Navigation("User");
+                    b.Navigation("Receiver");
                 });
 
             modelBuilder.Entity("Domain.Entities.Post", b =>
                 {
-                    b.HasOne("Domain.Entities.Group", null)
+                    b.HasOne("Domain.Entities.Group", "Group")
                         .WithMany("Posts")
                         .HasForeignKey("GroupId");
 
-                    b.HasOne("Domain.Entities.User", null)
+                    b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Posts")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.PostImage", b =>
@@ -934,12 +941,6 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Reaction", "Reaction")
-                        .WithMany("PostReactionUsers")
-                        .HasForeignKey("ReactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -948,30 +949,15 @@ namespace DataAccess.Migrations
 
                     b.Navigation("Post");
 
-                    b.Navigation("Reaction");
-
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.SearchingHistory", b =>
                 {
-                    b.HasOne("Domain.Entities.Group", "Group")
-                        .WithMany()
-                        .HasForeignKey("GroupId");
-
-                    b.HasOne("Domain.Entities.User", "SearchedUser")
-                        .WithMany("Searched")
-                        .HasForeignKey("SearchedUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany("SearchingHistories")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Group");
-
-                    b.Navigation("SearchedUser");
 
                     b.Navigation("User");
                 });
@@ -1049,6 +1035,10 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("Domain.Entities.Comment", b =>
                 {
                     b.Navigation("CommentImage");
+
+                    b.Navigation("CommentReactionUsers");
+
+                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("Domain.Entities.Conversation", b =>
@@ -1072,25 +1062,11 @@ namespace DataAccess.Migrations
                     b.Navigation("MessageReactionUsers");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Notification", b =>
-                {
-                    b.Navigation("NotificationUsers");
-                });
-
             modelBuilder.Entity("Domain.Entities.Post", b =>
                 {
                     b.Navigation("Comments");
 
                     b.Navigation("PostImages");
-
-                    b.Navigation("PostReactionUsers");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Reaction", b =>
-                {
-                    b.Navigation("CommentReactionUsers");
-
-                    b.Navigation("MessageReactionUsers");
 
                     b.Navigation("PostReactionUsers");
                 });
@@ -1103,11 +1079,7 @@ namespace DataAccess.Migrations
 
                     b.Navigation("GroupUsers");
 
-                    b.Navigation("MessageReceive");
-
                     b.Navigation("MessageSent");
-
-                    b.Navigation("NotificationUsers");
 
                     b.Navigation("Posts");
 
@@ -1116,8 +1088,6 @@ namespace DataAccess.Migrations
                     b.Navigation("RelatedTo");
 
                     b.Navigation("Relations");
-
-                    b.Navigation("Searched");
 
                     b.Navigation("SearchingHistories");
 
