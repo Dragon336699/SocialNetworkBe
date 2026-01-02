@@ -20,7 +20,7 @@ public class CassandraContext : IDisposable
         if (_initialized) return;
 
         _cluster = Cluster.Builder()
-            .AddContactPoint("127.0.0.1")
+            .AddContactPoint("cassandra")
             .WithPort(9042)
             .Build();
 
