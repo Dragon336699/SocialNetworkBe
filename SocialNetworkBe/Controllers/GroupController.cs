@@ -527,5 +527,134 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new KickMemberResponse { Message = ex.Message, Success = false });
             }
         }
+
+        [Authorize]
+        [HttpPost("{groupId}/invite-member")]
+        public async Task<IActionResult> InviteMember(Guid groupId, [FromBody] InviteMemberRequest request)
+        {
+            try
+            {
+                var inviterId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, result) = await _groupService.InviteMemberAsync(groupId, request.TargetUserId, inviterId);
+
+                return status switch
+                {
+                    InviteMemberEnum.Success => Ok(new InviteMemberResponse { Message = status.GetMessage() }),
+                    InviteMemberEnum.GroupNotFound => NotFound(new InviteMemberResponse { Message = status.GetMessage() }),
+                    InviteMemberEnum.InviterNotMember => BadRequest(new InviteMemberResponse { Message = status.GetMessage() }),
+                    InviteMemberEnum.TargetUserNotFound => NotFound(new InviteMemberResponse { Message = status.GetMessage() }),
+                    InviteMemberEnum.AlreadyMember => BadRequest(new InviteMemberResponse { Message = status.GetMessage() }),
+                    InviteMemberEnum.AlreadyInvited => BadRequest(new InviteMemberResponse { Message = status.GetMessage() }),
+                    InviteMemberEnum.CannotInviteSelf => BadRequest(new InviteMemberResponse { Message = status.GetMessage() }),
+                    InviteMemberEnum.Failed => StatusCode(500, new InviteMemberResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new InviteMemberResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new InviteMemberResponse { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("{groupId}/accept-invite")]
+        public async Task<IActionResult> AcceptGroupInvite(Guid groupId)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, groupDto) = await _groupService.AcceptGroupInviteAsync(groupId, userId);
+
+                return status switch
+                {
+                    AcceptGroupInviteEnum.Success => Ok(new AcceptGroupInviteResponse
+                    {
+                        Message = status.GetMessage(),
+                        Group = groupDto
+                    }),
+                    AcceptGroupInviteEnum.GroupNotFound => NotFound(new AcceptGroupInviteResponse { Message = status.GetMessage() }),
+                    AcceptGroupInviteEnum.InvitationNotFound => NotFound(new AcceptGroupInviteResponse { Message = status.GetMessage() }),
+                    AcceptGroupInviteEnum.AlreadyMember => BadRequest(new AcceptGroupInviteResponse { Message = status.GetMessage() }),
+                    AcceptGroupInviteEnum.Failed => StatusCode(500, new AcceptGroupInviteResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new AcceptGroupInviteResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new AcceptGroupInviteResponse { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("{groupId}/reject-invite")]
+        public async Task<IActionResult> RejectGroupInvite(Guid groupId)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, result) = await _groupService.RejectGroupInviteAsync(groupId, userId);
+
+                return status switch
+                {
+                    RejectGroupInviteEnum.Success => Ok(new RejectGroupInviteResponse { Message = status.GetMessage() }),
+                    RejectGroupInviteEnum.GroupNotFound => NotFound(new RejectGroupInviteResponse { Message = status.GetMessage() }),
+                    RejectGroupInviteEnum.InvitationNotFound => NotFound(new RejectGroupInviteResponse { Message = status.GetMessage() }),
+                    RejectGroupInviteEnum.Failed => StatusCode(500, new RejectGroupInviteResponse { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new RejectGroupInviteResponse { Message = "Unknown error occurred" })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new RejectGroupInviteResponse { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpGet("my-invitations")]
+        public async Task<IActionResult> GetMyGroupInvitations([FromQuery] int skip = 0, [FromQuery] int take = 10)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, invitations) = await _groupService.GetMyGroupInvitationsAsync(userId, skip, take);
+
+                return status switch
+                {
+                    GetMyGroupInvitationsEnum.Success => Ok(new GetMyGroupInvitationsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Invitations = invitations,
+                        TotalCount = invitations?.Count ?? 0
+                    }),
+                    GetMyGroupInvitationsEnum.NoInvitationsFound => Ok(new GetMyGroupInvitationsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Invitations = new List<GroupInvitationDto>(),
+                        TotalCount = 0
+                    }),
+                    GetMyGroupInvitationsEnum.Failed => StatusCode(500, new GetMyGroupInvitationsResponse
+                    {
+                        Message = status.GetMessage(),
+                        Invitations = null,
+                        TotalCount = 0
+                    }),
+                    _ => StatusCode(500, new GetMyGroupInvitationsResponse
+                    {
+                        Message = "Unknown error occurred",
+                        Invitations = null,
+                        TotalCount = 0
+                    })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new GetMyGroupInvitationsResponse
+                {
+                    Message = ex.Message,
+                    Invitations = null,
+                    TotalCount = 0
+                });
+            }
+        }
     }
 }

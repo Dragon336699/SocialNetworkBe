@@ -9,5 +9,6 @@ namespace Domain.Interfaces.RepositoryInterfaces
 {
     public interface IMessageAttachmentRepository : IGenericRepository<MessageAttachment>
     {
+        Task<List<MessageAttachment>?> GetImageAttachmentsByConversationId(Guid conversationId, int skip, int take);
     }
 }

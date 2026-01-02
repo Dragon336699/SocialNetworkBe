@@ -263,5 +263,19 @@ namespace SocialNetworkBe.Services.MessageService
                 throw;
             }
         }
+
+        public async Task<List<MessageAttachment>?> GetImageAttachmentsByConversationId(Guid conversationId, int skip, int take)
+        {
+            try
+            {
+                var attachments = await _unitOfWork.MessageAttachmentRepository.GetImageAttachmentsByConversationId(conversationId, skip, take);
+                return attachments;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting image attachments");
+                throw;
+            }
+        }
     }
 }

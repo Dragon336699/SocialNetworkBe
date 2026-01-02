@@ -4,6 +4,8 @@ using Domain.Contracts.Responses.Group;
 using Domain.Entities;
 using Domain.Enum.Group.Functions;
 using Domain.Enum.Group.Types;
+using Domain.Enum.Notification.Types;
+using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 
@@ -15,17 +17,20 @@ namespace SocialNetworkBe.Services.GroupServices
         private readonly ILogger<GroupService> _logger;
         private readonly IMapper _mapper;
         private readonly IUploadService _uploadService;
+        private readonly IServiceProvider _serviceProvider;
 
         public GroupService(
             IUnitOfWork unitOfWork,
             ILogger<GroupService> logger,
             IMapper mapper,
-            IUploadService uploadService)
+            IUploadService uploadService,
+            IServiceProvider serviceProvider)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _mapper = mapper;
             _uploadService = uploadService;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<(CreateGroupEnum, Guid?)> CreateGroupAsync(CreateGroupRequest request, Guid userId)
@@ -154,7 +159,7 @@ namespace SocialNetworkBe.Services.GroupServices
 
                 if (group.IsPublic == 0)
                 {
-                    var isMember = group.GroupUsers?.Any(gu => gu.UserId == userId && gu.RoleName != GroupRole.Pending) ?? false;
+                    var isMember = group.GroupUsers?.Any(gu => gu.UserId == userId && gu.RoleName != GroupRole.Pending && gu.RoleName != GroupRole.Inviting) ?? false;
                     if (!isMember)
                     {
                         return (GetGroupByIdEnum.Unauthorized, null);
@@ -873,6 +878,266 @@ namespace SocialNetworkBe.Services.GroupServices
             {
                 _logger.LogError(ex, "Error when kicking user {TargetUserId} from group {GroupId}", targetUserId, groupId);
                 return (KickMemberEnum.Failed, false);
+            }
+        }
+
+        public async Task<(InviteMemberEnum, bool)> InviteMemberAsync(Guid groupId, Guid targetUserId, Guid inviterId)
+        {
+            try
+            {
+                if (inviterId == targetUserId)
+                {
+                    return (InviteMemberEnum.CannotInviteSelf, false);
+                }
+
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (InviteMemberEnum.GroupNotFound, false);
+                }
+
+                var inviterMembership = group.GroupUsers?.FirstOrDefault(
+                    gu => gu.UserId == inviterId &&
+                          gu.RoleName != GroupRole.Pending &&
+                          gu.RoleName != GroupRole.Inviting
+                );
+
+                if (inviterMembership == null)
+                {
+                    return (InviteMemberEnum.InviterNotMember, false);
+                }
+
+                var targetUser = await _unitOfWork.UserRepository.GetByIdAsync(targetUserId);
+                if (targetUser == null)
+                {
+                    return (InviteMemberEnum.TargetUserNotFound, false);
+                }
+
+                var existingMembership = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == targetUserId);
+
+                if (existingMembership != null)
+                {
+                    if (existingMembership.RoleName != GroupRole.Inviting &&
+                        existingMembership.RoleName != GroupRole.Pending)
+                    {
+                        return (InviteMemberEnum.AlreadyMember, false);
+                    }
+
+                    if (existingMembership.RoleName == GroupRole.Inviting)
+                    {
+                        return (InviteMemberEnum.AlreadyInvited, false);
+                    }
+                }
+
+                var invitation = new GroupUser
+                {
+                    UserId = targetUserId,
+                    GroupId = groupId,
+                    RoleName = GroupRole.Inviting,
+                    JoinedAt = DateTime.UtcNow
+                };
+
+                _unitOfWork.GroupUserRepository.Add(invitation);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    try
+                    {                    
+                        var inviter = await _unitOfWork.UserRepository.GetByIdAsync(inviterId);
+                        if (inviter != null)
+                        {
+                            using (var scope = _serviceProvider.CreateScope())
+                            {
+                                var notificationDataBuilder = scope.ServiceProvider.GetRequiredService<INotificationDataBuilder>();
+                                var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+                                var notificationData = await notificationDataBuilder.BuilderDataForGroupInvite(
+                                    group,
+                                    inviter,
+                                    targetUser
+                                );
+
+                                if (notificationData != null)
+                                {
+                                    await notificationService.ProcessAndSendNotiForGroupInvite(
+                                        NotificationType.GroupInvite,
+                                        notificationData,
+                                        $"/groups/{groupId}",
+                                        targetUserId,
+                                        groupId
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error sending group invite notification");
+                    }
+
+                    return (InviteMemberEnum.Success, true);
+                }
+
+                return (InviteMemberEnum.Failed, false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when inviting user {TargetUserId} to group {GroupId}",
+                    targetUserId, groupId);
+                return (InviteMemberEnum.Failed, false);
+            }
+        }
+
+        public async Task<(AcceptGroupInviteEnum, GroupDto?)> AcceptGroupInviteAsync(Guid groupId, Guid userId)
+        {
+            try
+            {
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (AcceptGroupInviteEnum.GroupNotFound, null);
+                }
+
+                var invitation = group.GroupUsers?.FirstOrDefault(
+                    gu => gu.UserId == userId && gu.RoleName == GroupRole.Inviting
+                );
+
+                if (invitation == null)
+                {
+                    var existingMember = group.GroupUsers?.FirstOrDefault(
+                        gu => gu.UserId == userId &&
+                              gu.RoleName != GroupRole.Inviting &&
+                              gu.RoleName != GroupRole.Pending
+                    );
+
+                    if (existingMember != null)
+                    {
+                        return (AcceptGroupInviteEnum.AlreadyMember, null);
+                    }
+
+                    return (AcceptGroupInviteEnum.InvitationNotFound, null);
+                }
+
+                invitation.RoleName = GroupRole.User;
+                invitation.JoinedAt = DateTime.UtcNow;
+
+                _unitOfWork.GroupUserRepository.Update(invitation);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    var updatedGroup = await _unitOfWork.GroupRepository.GetGroupWithFullDetailsByIdAsync(groupId);
+                    var groupDto = _mapper.Map<GroupDto>(updatedGroup);
+
+                    return (AcceptGroupInviteEnum.Success, groupDto);
+                }
+
+                return (AcceptGroupInviteEnum.Failed, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when user {UserId} accepting invite to group {GroupId}",
+                    userId, groupId);
+                return (AcceptGroupInviteEnum.Failed, null);
+            }
+        }
+
+        public async Task<(RejectGroupInviteEnum, bool)> RejectGroupInviteAsync(Guid groupId, Guid userId)
+        {
+            try
+            {
+                var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+                if (group == null)
+                {
+                    return (RejectGroupInviteEnum.GroupNotFound, false);
+                }
+
+                var invitation = await _unitOfWork.GroupUserRepository.FindFirstAsync(
+                    gu => gu.GroupId == groupId &&
+                          gu.UserId == userId &&
+                          gu.RoleName == GroupRole.Inviting
+                );
+
+                if (invitation == null)
+                {
+                    return (RejectGroupInviteEnum.InvitationNotFound, false);
+                }
+
+                _unitOfWork.GroupUserRepository.Remove(invitation);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    return (RejectGroupInviteEnum.Success, true);
+                }
+
+                return (RejectGroupInviteEnum.Failed, false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when user {UserId} rejecting invite to group {GroupId}",
+                    userId, groupId);
+                return (RejectGroupInviteEnum.Failed, false);
+            }
+        }
+
+        public async Task<(GetMyGroupInvitationsEnum, List<GroupInvitationDto>?)> GetMyGroupInvitationsAsync(
+            Guid userId,
+            int skip = 0,
+            int take = 10)
+        {
+            try
+            {
+                var invitations = await _unitOfWork.GroupUserRepository.FindAsyncWithIncludes(
+                    gu => gu.UserId == userId && gu.RoleName == GroupRole.Inviting,
+                    gu => gu.Group,
+                    gu => gu.Group.GroupUsers
+                );
+
+                if (invitations == null || !invitations.Any())
+                {
+                    return (GetMyGroupInvitationsEnum.NoInvitationsFound, null);
+                }
+
+                var invitationDtos = new List<GroupInvitationDto>();
+
+                foreach (var invitation in invitations.OrderByDescending(i => i.JoinedAt).Skip(skip).Take(take))
+                {
+                    if (invitation.Group == null) continue;
+
+                    var dto = new GroupInvitationDto
+                    {
+                        GroupId = invitation.GroupId,
+                        GroupName = invitation.Group.Name,
+                        GroupDescription = invitation.Group.Description,
+                        GroupImageUrl = invitation.Group.ImageUrl,
+                        IsPublic = invitation.Group.IsPublic == 1,
+                        MemberCount = invitation.Group.GroupUsers?.Count(gu =>
+                            gu.RoleName != GroupRole.Pending &&
+                            gu.RoleName != GroupRole.Inviting) ?? 0,
+                        InvitedAt = invitation.JoinedAt
+                    };
+
+                    invitationDtos.Add(dto);
+                }
+
+                return (GetMyGroupInvitationsEnum.Success, invitationDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when getting group invitations for user {UserId}", userId);
+                return (GetMyGroupInvitationsEnum.Failed, null);
             }
         }
     }

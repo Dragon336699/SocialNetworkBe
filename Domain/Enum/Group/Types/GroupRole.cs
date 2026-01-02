@@ -11,6 +11,7 @@ namespace Domain.Enum.Group.Types
         SuperAdministrator,
         Administrator,
         User,
-        Pending
+        Pending,
+        Inviting
     }
 }
