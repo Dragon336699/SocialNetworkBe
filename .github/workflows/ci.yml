@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
 
     steps: 
@@ -22,3 +22,31 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build --no-restore --configuration Release
+  cd:
+    needs: ci
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: long1409
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build & Push image
+        run: |
+          docker build -t long1409/socialnetwork-dotnet:latest .
+          docker push long1409/socialnetwork-dotnet:latest
+      
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 72.62.78.5
+          username: root
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            cd projects
+            docker compose pull backend-dotnet
+            docker compose up -d backend-dotnet
