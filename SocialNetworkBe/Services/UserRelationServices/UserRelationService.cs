@@ -165,7 +165,7 @@ namespace SocialNetworkBe.Services.UserRelationServices
             {
                 List<MutualFriendIdsResponse> mutualFriendIds = _unitOfWork.UserRelationRepository.GetListIdsMutualFriends(userId);
                 List<MutualFriendReponse> mutualFriendList = new List<MutualFriendReponse>();
-                SuggestUserDataDto? suggestUserData = await _client.GetFromJsonAsync<SuggestUserDataDto>($"/friend/recommend?user_id={userId}");
+                SuggestUserDataDto? suggestUserData = await _client.GetFromJsonAsync<SuggestUserDataDto>($"ai/friend/recommend?user_id={userId}");
                 if ( suggestUserData != null )
                 {
                     foreach (var userRes in suggestUserData.recommendations)
