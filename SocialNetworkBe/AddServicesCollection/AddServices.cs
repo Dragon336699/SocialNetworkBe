@@ -72,7 +72,7 @@ namespace Domain.AddServicesCollection
 
             services.AddHttpClient("SuggestFriend", client =>
             {
-                client.BaseAddress = new Uri("http://localhost:8000");
+                client.BaseAddress = new Uri("https://fricon.online");
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
         }
