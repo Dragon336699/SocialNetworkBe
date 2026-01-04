@@ -100,5 +100,22 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpPost]
+        [Route("getImageAttachments")]
+        public async Task<IActionResult> GetImageAttachments([FromBody] GetImageAttachmentsRequest request)
+        {
+            try
+            {
+                var attachments = await _messageService.GetImageAttachmentsByConversationId(request.ConversationId, request.Skip, request.Take);
+                if (attachments == null) return BadRequest(new { message = "Failed to get image attachments" });
+                return Ok(new { data = attachments, message = "Get image attachments successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }
