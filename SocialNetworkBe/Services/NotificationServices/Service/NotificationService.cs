@@ -294,6 +294,11 @@ namespace SocialNetworkBe.Services.NotificationService
                         content.Append($"your {noti.Data.DiObject.Name}");
                         break;
                     }
+                case (NotificationObjectType.GroupInvite):
+                    {
+                        content.Append($"{noti.Data.DiObject.Name}");
+                        break;
+                    }
             }
             if (noti.Data.Preposition != null)
             {
@@ -334,6 +339,45 @@ namespace SocialNetworkBe.Services.NotificationService
                 Highlights = highlightOffsets
             };
             return notiDto;
+        }
+
+        public async Task ProcessAndSendNotiForGroupInvite(NotificationType type, NotificationData data, string navigateUrl, Guid receiverId, Guid groupId)
+        {
+            try
+            {
+                var existingNoti = await _unitOfWork.NotificationRepository.FindFirstAsync(
+                    n => n.ReceiverId == receiverId &&
+                         n.NotificationType == NotificationType.GroupInvite &&
+                         n.NavigateUrl.Contains(groupId.ToString())
+                );
+              
+                if (existingNoti != null)
+                {
+                    _unitOfWork.NotificationRepository.Remove(existingNoti);
+                    await _unitOfWork.CompleteAsync();
+                }
+                Notification newNoti = new Notification
+                {
+                    NotificationType = type,
+                    Data = data,
+                    NavigateUrl = navigateUrl,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    ReceiverId = receiverId
+                };
+
+                NotificationDto notiDto = await CreateNotificationDto(newNoti, receiverId);
+                notiDto.Unread = true;
+
+                await _realtimeService.SendPrivateNotification(notiDto, receiverId);
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while sending notification for group invite");
+                throw;
+            }
         }
     }
 }

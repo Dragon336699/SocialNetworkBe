@@ -151,5 +151,44 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
 
             return notidData;
         }
+
+        public async Task<NotificationData?> BuilderDataForGroupInvite(Group group, User inviter, User invitee)
+        {
+            List<NotificationObject> subjects = new List<NotificationObject>();
+
+            NotificationObject subject = new NotificationObject
+            {
+                Id = inviter.Id,
+                Name = inviter.LastName + " " + inviter.FirstName,
+                Type = NotificationObjectType.Actor,
+            };
+
+            subjects.Add(subject);
+
+            NotificationObject diObject = new NotificationObject
+            {
+                Type = NotificationObjectType.GroupInvite,
+                Name = "to join"
+            };
+
+            NotificationObject inObject = new NotificationObject
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Type = NotificationObjectType.Group
+            };
+
+            NotificationData notidData = new NotificationData
+            {
+                Subjects = subjects,
+                SubjectCount = subjects.Count,
+                Verb = Verb.Invited,
+                DiObject = diObject,
+                InObject = inObject
+            };
+
+            return notidData;
+        }
+
     }
 }

@@ -27,6 +27,10 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<(PromoteToAdminEnum, GroupUserDto?)> PromoteToAdminAsync(Guid groupId, Guid targetUserId, Guid currentUserId);
         Task<(DemoteAdminEnum, GroupUserDto?)> DemoteAdminAsync(Guid groupId, Guid targetUserId, Guid currentUserId);
         Task<(KickMemberEnum, bool)> KickMemberAsync(Guid groupId, Guid targetUserId, Guid currentUserId);
+        Task<(InviteMemberEnum, bool)> InviteMemberAsync(Guid groupId, Guid targetUserId, Guid inviterId);
+        Task<(AcceptGroupInviteEnum, GroupDto?)> AcceptGroupInviteAsync(Guid groupId, Guid userId);
+        Task<(RejectGroupInviteEnum, bool)> RejectGroupInviteAsync(Guid groupId, Guid userId);
+        Task<(GetMyGroupInvitationsEnum, List<GroupInvitationDto>?)> GetMyGroupInvitationsAsync(Guid userId, int skip = 0, int take = 10);
     }
 
 }
