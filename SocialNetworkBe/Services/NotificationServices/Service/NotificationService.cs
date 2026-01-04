@@ -350,8 +350,7 @@ namespace SocialNetworkBe.Services.NotificationService
                          n.NotificationType == NotificationType.GroupInvite &&
                          n.NavigateUrl.Contains(groupId.ToString())
                 );
-
-                // Nếu đã tồn tại thì không tạo mới
+              
                 if (existingNoti != null)
                 {
                     _unitOfWork.NotificationRepository.Remove(existingNoti);
