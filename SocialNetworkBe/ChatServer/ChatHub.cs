@@ -38,6 +38,12 @@ namespace SocialNetworkBe.ChatServer
             try
             {
                 var userIdentifier = Context.UserIdentifier;
+                _logger.LogInformation(
+                    "UserIdentifier={UserIdentifier}, ConnectionId={ConnectionId}",
+                    Context.UserIdentifier,
+                    Context.ConnectionId
+                );
+
                 if (!Guid.TryParse(Context.UserIdentifier, out Guid userId))
                     return;
                 UserDto? user = await _userService.UpdateUserStatus(userId, UserStatus.Online);
@@ -57,7 +63,8 @@ namespace SocialNetworkBe.ChatServer
                 }
                 // Chạy song song thay vì đợi add từng cái
                 await Task.WhenAll(tasks);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occured when connect to server!");
             }
@@ -76,7 +83,8 @@ namespace SocialNetworkBe.ChatServer
                 var connectionIdContext = Context.ConnectionId;
                 await _userConnectionManager.RemoveConnectionAsync(userIdentifier, connectionIdContext);
                 await base.OnDisconnectedAsync(exception);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occured when disconnect to server!");
             }
