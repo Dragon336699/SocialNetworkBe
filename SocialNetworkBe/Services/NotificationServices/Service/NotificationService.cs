@@ -299,6 +299,11 @@ namespace SocialNetworkBe.Services.NotificationService
                         content.Append($"{noti.Data.DiObject.Name}");
                         break;
                     }
+                case (NotificationObjectType.GroupJoinRequest):
+                    {
+                        content.Append($"{noti.Data.DiObject.Name}");
+                        break;
+                    }
             }
             if (noti.Data.Preposition != null)
             {
@@ -376,6 +381,38 @@ namespace SocialNetworkBe.Services.NotificationService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while sending notification for group invite");
+                throw;
+            }
+        }
+
+        public async Task ProcessAndSendNotiForGroupJoinRequest(NotificationType type, NotificationData data, string navigateUrl, List<Guid> adminIds, Guid groupId)
+        {
+            try
+            {
+                foreach (var adminId in adminIds)
+                {
+                    Notification newNoti = new Notification
+                    {
+                        NotificationType = type,
+                        Data = data,
+                        NavigateUrl = navigateUrl,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        ReceiverId = adminId
+                    };
+
+                    NotificationDto notiDto = await CreateNotificationDto(newNoti, adminId);
+                    notiDto.Unread = true;
+
+                    await _realtimeService.SendPrivateNotification(notiDto, adminId);
+                    _unitOfWork.NotificationRepository.Add(newNoti);
+                }
+                
+                _unitOfWork.Complete();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while sending notification for group join request");
                 throw;
             }
         }

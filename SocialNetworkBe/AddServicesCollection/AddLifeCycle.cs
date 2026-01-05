@@ -15,7 +15,7 @@ using SocialNetworkBe.Services.EmailServices;
 using SocialNetworkBe.Services.FriendRequestServices;
 using SocialNetworkBe.Services.MessageService;
 using SocialNetworkBe.Services.NotificationService;
-using SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder;
+using SocialNetworkBe.Services.NotificationServices.NotificationBuilder;
 using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.PostReactionServices;
 using SocialNetworkBe.Services.PostServices;

@@ -4,7 +4,7 @@ using Domain.Enum.Notification.Types;
 using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 
-namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
+namespace SocialNetworkBe.Services.NotificationServices.NotificationBuilder
 {
     public class NotificationDataBuilder : INotificationDataBuilder
     {
@@ -190,5 +190,42 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
             return notidData;
         }
 
+        public NotificationData BuilderDataForGroupJoinRequest(Group group, User requester)
+        {
+            List<NotificationObject> subjects = new List<NotificationObject>();
+
+            NotificationObject subject = new NotificationObject
+            {
+                Id = requester.Id,
+                Name = requester.LastName + " " + requester.FirstName,
+                Type = NotificationObjectType.Actor,
+            };
+
+            subjects.Add(subject);
+
+            NotificationObject diObject = new NotificationObject
+            {
+                Type = NotificationObjectType.GroupJoinRequest,
+                Name = "to join"
+            };
+
+            NotificationObject inObject = new NotificationObject
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Type = NotificationObjectType.Group
+            };
+
+            NotificationData notidData = new NotificationData
+            {
+                Subjects = subjects,
+                SubjectCount = subjects.Count,
+                Verb = Verb.Requested,
+                DiObject = diObject,
+                InObject = inObject
+            };
+
+            return notidData;
+        }
     }
 }

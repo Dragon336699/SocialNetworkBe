@@ -10,6 +10,7 @@ namespace Domain.Enum.Post.Types
     {
         Public,
         Friends,
-        Private
+        Private,
+        PendingApproval
     }
 }

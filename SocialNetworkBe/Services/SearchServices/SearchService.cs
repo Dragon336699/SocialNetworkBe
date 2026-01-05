@@ -8,6 +8,7 @@ using Domain.Entities;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 using Domain.Enum.Search.Types;
+using Domain.Enum.Post.Types;
 
 namespace SocialNetworkBe.Services.SearchServices
 {
@@ -73,8 +74,7 @@ namespace SocialNetworkBe.Services.SearchServices
             try
             {
                 var contentTrimmed = request.Content.Trim();
-
-                // Remove existing history with same content
+               
                 var existingHistory = await _unitOfWork.SearchingHistoryRepository
                     .FindFirstAsync(sh => sh.UserId == userId && sh.Content == contentTrimmed);
 
@@ -187,9 +187,12 @@ namespace SocialNetworkBe.Services.SearchServices
         }
 
         private async Task<List<PostDto>?> SearchPostsAsync(string keywordNormalized, int skip, int take)
-        {
+        {           
             var postsByContent = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
-                p => p.Content.ToLower().Contains(keywordNormalized),
+                p => p.Content.ToLower().Contains(keywordNormalized) &&
+                     p.PostPrivacy != PostPrivacy.PendingApproval &&
+                     p.PostPrivacy != PostPrivacy.Private &&
+                     (p.GroupId == null || p.Group.IsPublic == 1),
                 p => p.User,
                 p => p.PostImages,
                 p => p.Group
@@ -208,10 +211,11 @@ namespace SocialNetworkBe.Services.SearchServices
             var matchedUsers = await _unitOfWork.UserRepository.SearchUsers(keywordNormalized);
             if (matchedUsers != null && matchedUsers.Any())
             {
-                var userIds = matchedUsers.Select(u => u.Id).ToList();
-
+                var userIds = matchedUsers.Select(u => u.Id).ToList();               
                 var postsByUsers = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
-                    p => userIds.Contains(p.UserId) && p.PostPrivacy == Domain.Enum.Post.Types.PostPrivacy.Public,
+                    p => userIds.Contains(p.UserId) && 
+                         p.PostPrivacy == PostPrivacy.Public &&
+                         (p.GroupId == null || p.Group.IsPublic == 1),
                     p => p.User,
                     p => p.PostImages,
                     p => p.Group

@@ -306,14 +306,18 @@ namespace SocialNetworkBe.Services.GroupServices
         {
             try
             {
-                var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+                
+                var group = groups?.FirstOrDefault();
                 if (group == null)
                 {
                     return (JoinGroupEnum.GroupNotFound, false);
                 }
 
-                var existingMember = await _unitOfWork.GroupUserRepository
-                    .FindFirstAsync(gu => gu.GroupId == groupId && gu.UserId == userId);
+                var existingMember = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == userId);
 
                 if (existingMember != null)
                 {
@@ -336,7 +340,42 @@ namespace SocialNetworkBe.Services.GroupServices
                 var result = await _unitOfWork.CompleteAsync();
 
                 if (result > 0)
-                {
+                {                  
+                    try
+                    {
+                        var requester = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+                        if (requester != null)
+                        {                           
+                            var adminIds = group.GroupUsers?
+                                .Where(gu => gu.RoleName == GroupRole.Administrator || gu.RoleName == GroupRole.SuperAdministrator)
+                                .Select(gu => gu.UserId)
+                                .ToList() ?? new List<Guid>();
+
+                            if (adminIds.Any())
+                            {
+                                using (var scope = _serviceProvider.CreateScope())
+                                {
+                                    var notificationDataBuilder = scope.ServiceProvider.GetRequiredService<INotificationDataBuilder>();
+                                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+                                    var notificationData = notificationDataBuilder.BuilderDataForGroupJoinRequest(group, requester);
+
+                                    await notificationService.ProcessAndSendNotiForGroupJoinRequest(
+                                        NotificationType.GroupJoinRequest,
+                                        notificationData,
+                                        $"/groups/{groupId}",
+                                        adminIds,
+                                        groupId
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error sending group join request notification");
+                    }
+
                     return (JoinGroupEnum.JoinRequestSent, true);
                 }
 
