@@ -43,7 +43,7 @@ namespace SocialNetworkBe.ChatServer
                     Context.UserIdentifier,
                     Context.ConnectionId
                 );
-
+                Console.WriteLine("🔥🔥🔥 HUB CONNECTED 🔥🔥🔥");
                 if (!Guid.TryParse(Context.UserIdentifier, out Guid userId))
                     return;
                 UserDto? user = await _userService.UpdateUserStatus(userId, UserStatus.Online);
