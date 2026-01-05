@@ -57,56 +57,58 @@ namespace DataAccess.Repositories
             }
         }
 
-        public async Task<(List<FriendRequest> Items, int TotalCount)> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize)
+        public async Task<(List<FriendRequest> Items, int TotalCount)> GetSentFriendRequestsAsync(Guid senderId, int skip, int take, string? keySearch)
         {
-            try
+            var query = _context.FriendRequest
+                .Include(fr => fr.Receiver)
+                .Where(fr => fr.SenderId == senderId && fr.FriendRequestStatus == FriendRequestStatus.Pending.ToString());
+
+            if (!string.IsNullOrWhiteSpace(keySearch))
             {
-                var query = _context.FriendRequest
-                    .Include(fr => fr.Receiver)
-                    .Where(fr => fr.SenderId == senderId &&
-                                 fr.FriendRequestStatus == FriendRequestStatus.Pending.ToString());
-
-                var totalCount = await query.CountAsync();
-
-                 query = query.OrderByDescending(fr => fr.CreatedAt);
-                //query = query.OrderByDescending(fr => fr.Id);
-
-                var items = await query
-                    .Skip((pageIndex - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                return (items, totalCount);
+                keySearch = keySearch.ToLower();
+                query = query.Where(fr =>
+                    fr.Receiver.UserName.ToLower().Contains(keySearch) ||
+                    fr.Receiver.FirstName.ToLower().Contains(keySearch) ||
+                    ((fr.Receiver.LastName + " " + fr.Receiver.FirstName).ToLower().Contains(keySearch)) ||
+                    fr.Receiver.LastName.ToLower().Contains(keySearch));
+                    //fr.Receiver.Email.ToLower().Contains(keySearch));
             }
-            catch (Exception)
-            {
-                return (new List<FriendRequest>(), 0);
-            }
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(fr => fr.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            return (items, totalCount);
         }
 
-        public async Task<(List<FriendRequest> Items, int TotalCount)> GetReceivedFriendRequestsAsync(Guid receiverId, int pageIndex, int pageSize)
+        public async Task<(List<FriendRequest> Items, int TotalCount)> GetReceivedFriendRequestsAsync(Guid receiverId, int skip, int take, string? keySearch)
         {
-            try
+            var query = _context.FriendRequest
+                .Include(fr => fr.Sender)
+                .Where(fr => fr.ReceiverId == receiverId && fr.FriendRequestStatus == FriendRequestStatus.Pending.ToString());
+
+            if (!string.IsNullOrWhiteSpace(keySearch))
             {
-                var query = _context.FriendRequest
-                    .Include(fr => fr.Sender)
-                    .Where(fr => fr.ReceiverId == receiverId &&
-                                 fr.FriendRequestStatus == FriendRequestStatus.Pending.ToString());
-
-                var totalCount = await query.CountAsync();
-                 query = query.OrderByDescending(fr => fr.CreatedAt);
-
-                var items = await query
-                    .Skip((pageIndex - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                return (items, totalCount);
+                keySearch = keySearch.ToLower();
+                query = query.Where(fr =>
+                    fr.Sender.UserName.ToLower().Contains(keySearch) ||
+                    fr.Sender.FirstName.ToLower().Contains(keySearch) ||
+                    ((fr.Sender.LastName + " " + fr.Sender.FirstName).ToLower().Contains(keySearch)) ||
+                    fr.Sender.LastName.ToLower().Contains(keySearch));
+                    //fr.Sender.Email.ToLower().Contains(keySearch));
             }
-            catch (Exception)
-            {
-                return (new List<FriendRequest>(), 0);
-            }
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(fr => fr.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            return (items, totalCount);
         }
     }
 }

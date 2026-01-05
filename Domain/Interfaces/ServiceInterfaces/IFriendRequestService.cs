@@ -15,10 +15,10 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<(SendFriendRequestEnum, FriendRequestDto?)> SendFriendRequestAsync(SendFriendRequestRequest request, Guid senderId);
         Task<(RespondFriendRequestEnum, FriendRequestDto?)> ApproveFriendRequestAsync(RespondFriendRequestRequest request, Guid receiverId);
         Task<RespondFriendRequestEnum> DeclineFriendRequestAsync(RespondFriendRequestRequest request, Guid receiverId);
-        Task<List<FriendRequestDto>> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize);
+        Task<(List<FriendRequestDto> Items, int TotalCount)> GetSentFriendRequestsAsync(Guid senderId, int skip, int take, string? keySearch);
+        Task<(List<FriendRequestDto> Items, int TotalCount)> GetReceivedFriendRequestsAsync(Guid receiverId, int skip, int take, string? keySearch);
 
         Task<CancelFriendRequestEnum> CancelFriendRequestAsync(CancelFriendRequestRequest request, Guid senderId);
-        Task<List<FriendRequestDto>> GetReceivedFriendRequestsAsync(Guid receiverId, int pageIndex, int pageSize);
 
     }
 }

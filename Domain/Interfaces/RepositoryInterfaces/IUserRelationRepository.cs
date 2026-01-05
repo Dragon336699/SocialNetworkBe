@@ -12,7 +12,7 @@ namespace Domain.Interfaces.RepositoryInterfaces
 
         Task<(List<User> Users, int TotalCount)> GetFollowingAsync(Guid userId, int skip, int take);
 
-        Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take);
+        Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take, string? keySearch);
         Task<List<User>> GetFullFriends(Guid userId);
         Task<UserRelation?> GetExistingRelationAsync(Guid userId, Guid relatedUserId);
         List<MutualFriendIdsResponse> GetListIdsMutualFriends(Guid userId);

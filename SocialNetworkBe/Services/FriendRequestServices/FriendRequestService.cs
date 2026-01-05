@@ -148,27 +148,30 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 }
 
                 _unitOfWork.FriendRequestRepository.Remove(friendRequest);
+                await UpsertFriendRelation(friendRequest.SenderId, friendRequest.ReceiverId);
 
-                var userRelation1 = new UserRelation
-                {
-                    UserId = friendRequest.SenderId,
-                    RelatedUserId = friendRequest.ReceiverId,
-                    RelationType = UserRelationType.Friend,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                await UpsertFriendRelation(friendRequest.ReceiverId, friendRequest.SenderId);
 
-                var userRelation2 = new UserRelation
-                {
-                    UserId = friendRequest.ReceiverId,
-                    RelatedUserId = friendRequest.SenderId,
-                    RelationType = UserRelationType.Friend,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                //var userRelation1 = new UserRelation
+                //{
+                //    UserId = friendRequest.SenderId,
+                //    RelatedUserId = friendRequest.ReceiverId,
+                //    RelationType = UserRelationType.Friend,
+                //    CreatedAt = DateTime.UtcNow,
+                //    UpdatedAt = DateTime.UtcNow
+                //};
 
-                _unitOfWork.UserRelationRepository.Add(userRelation1);
-                _unitOfWork.UserRelationRepository.Add(userRelation2);
+                //var userRelation2 = new UserRelation
+                //{
+                //    UserId = friendRequest.ReceiverId,
+                //    RelatedUserId = friendRequest.SenderId,
+                //    RelationType = UserRelationType.Friend,
+                //    CreatedAt = DateTime.UtcNow,
+                //    UpdatedAt = DateTime.UtcNow
+                //};
+
+                //_unitOfWork.UserRelationRepository.Add(userRelation1);
+                //_unitOfWork.UserRelationRepository.Add(userRelation2);
 
                 var result = await _unitOfWork.CompleteAsync();
 
@@ -218,6 +221,34 @@ namespace SocialNetworkBe.Services.FriendRequestServices
             }
         }
 
+        private async Task UpsertFriendRelation(Guid userId, Guid relatedUserId)
+        {
+            // Tìm kiếm quan hệ hiện tại giữa 2 user
+            var existingRelation = await _unitOfWork.UserRelationRepository
+                .GetRelationAsync(userId, relatedUserId, UserRelationType.Following); // Giả sử bạn có hàm này trong Repo
+
+            if (existingRelation != null)
+            {
+                // Nếu đã có quan hệ (ví dụ: Follow), chuyển trạng thái thành Friend
+                existingRelation.RelationType = UserRelationType.Friend;
+                existingRelation.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.UserRelationRepository.Update(existingRelation);
+            }
+            else
+            {
+                // Nếu chưa có bất kỳ quan hệ nào, tạo mới Friend
+                var newRelation = new UserRelation
+                {
+                    UserId = userId,
+                    RelatedUserId = relatedUserId,
+                    RelationType = UserRelationType.Friend,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _unitOfWork.UserRelationRepository.Add(newRelation);
+            }
+        }
+
         public async Task<RespondFriendRequestEnum> DeclineFriendRequestAsync(RespondFriendRequestRequest request, Guid receiverId)
         {
             try
@@ -241,18 +272,15 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 return (RespondFriendRequestEnum.RespondFriendRequestFailed);
             }
         }
-        public async Task<List<FriendRequestDto>> GetSentFriendRequestsAsync(Guid senderId, int pageIndex, int pageSize)
+        public async Task<(List<FriendRequestDto> Items, int TotalCount)> GetSentFriendRequestsAsync(Guid senderId, int skip, int take, string? keySearch)
         {
-            if (pageIndex < 1) pageIndex = 1;
-            if (pageSize < 1) pageSize = 10;
+            var (friendRequests, totalCount) = await _unitOfWork.FriendRequestRepository.GetSentFriendRequestsAsync(senderId, skip, take, keySearch);
 
-            var (friendRequests, totalCount) = await _unitOfWork.FriendRequestRepository.GetSentFriendRequestsAsync(senderId, pageIndex, pageSize);
-
-            var requestDtos = friendRequests.Select(fr => new FriendRequestDto
+            var dtos = friendRequests.Select(fr => new FriendRequestDto
             {
                 SenderId = fr.SenderId,
-                CreatedAt = fr.CreatedAt,
                 ReceiverId = fr.ReceiverId,
+                CreatedAt = fr.CreatedAt,
                 Status = Enum.Parse<FriendRequestStatus>(fr.FriendRequestStatus),
                 Receiver = fr.Receiver == null ? null : new UserDto
                 {
@@ -263,10 +291,11 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                     FirstName = fr.Receiver.FirstName,
                     LastName = fr.Receiver.LastName,
                     AvatarUrl = fr.Receiver.AvatarUrl
-                }
+                },
+                Sender = null
             }).ToList();
 
-            return requestDtos;
+            return (dtos, totalCount);
         }
 
         public async Task<CancelFriendRequestEnum> CancelFriendRequestAsync(CancelFriendRequestRequest request, Guid senderId)
@@ -301,20 +330,16 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 return CancelFriendRequestEnum.Failed;
             }
         }
-        public async Task<List<FriendRequestDto>> GetReceivedFriendRequestsAsync(Guid receiverId, int pageIndex, int pageSize)
+        public async Task<(List<FriendRequestDto> Items, int TotalCount)> GetReceivedFriendRequestsAsync(Guid receiverId, int skip, int take, string? keySearch)
         {
-            if (pageIndex < 1) pageIndex = 1;
-            if (pageSize < 1) pageSize = 10;
+            var (friendRequests, totalCount) = await _unitOfWork.FriendRequestRepository.GetReceivedFriendRequestsAsync(receiverId, skip, take, keySearch);
 
-            var (friendRequests, totalCount) = await _unitOfWork.FriendRequestRepository.GetReceivedFriendRequestsAsync(receiverId, pageIndex, pageSize);
-
-            var requestDtos = friendRequests.Select(fr => new FriendRequestDto
+            var dtos = friendRequests.Select(fr => new FriendRequestDto
             {
                 SenderId = fr.SenderId,
                 ReceiverId = fr.ReceiverId,
                 Status = Enum.Parse<FriendRequestStatus>(fr.FriendRequestStatus),
                 CreatedAt = fr.CreatedAt,
-
                 Sender = fr.Sender == null ? null : new UserDto
                 {
                     Id = fr.Sender.Id,
@@ -328,7 +353,7 @@ namespace SocialNetworkBe.Services.FriendRequestServices
                 Receiver = null
             }).ToList();
 
-            return requestDtos;
+            return (dtos, totalCount);
         }
 
     }
