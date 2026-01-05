@@ -33,7 +33,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(options => options
-    .WithOrigins("http://fricon.online:3000")
+    .WithOrigins("https://fricon.online")
     .AllowAnyHeader()
     .AllowAnyMethod()
     .AllowCredentials()
