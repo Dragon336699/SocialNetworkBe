@@ -67,6 +67,7 @@ namespace SocialNetworkBe.Services.NotificationService
                 }
                 else
                 {
+                    noti.UpdatedAt = DateTime.Now;
                     
                     if (noti.Data.Subjects.Any(s => s.Id == data.Subjects[0].Id))
                     {
@@ -82,13 +83,14 @@ namespace SocialNetworkBe.Services.NotificationService
                     }
                 }
 
+                if (notiNull) _unitOfWork.NotificationRepository.Add(noti);
+                else _unitOfWork.NotificationRepository.Update(noti);
+                _unitOfWork.Complete();
+
                 NotificationDto notiDto = await CreateNotificationDto(noti, receiverId);
                 notiDto.Unread = true;
 
                 await _realtimeService.SendPrivateNotification(notiDto, receiverId);
-                if (notiNull) _unitOfWork.NotificationRepository.Add(noti);
-                else _unitOfWork.NotificationRepository.Update(noti);
-                _unitOfWork.Complete();
             }
             catch (Exception ex)
             {

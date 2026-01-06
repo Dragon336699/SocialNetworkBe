@@ -31,6 +31,8 @@ using SocialNetworkBe.Services.SearchServices;
 using SocialNetworkBe.Services.UserRelationServices;
 using DataAccess.Repositories.NoSQL;
 using SocialNetworkBe.Services.InteractionServices;
+using DataAccess.Cassandra;
+using DataAccess.Cassandra.Schemas;
 
 namespace SocialNetworkBe.AddServicesCollection
 {
@@ -88,7 +90,16 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<INotificationDataBuilder, NotificationDataBuilder>();
 
             services.AddSingleton<IUserIdProvider, CustomerUserIdProvider>();
+
             services.AddSingleton<CassandraContext>();
+            services.AddSingleton<ICassandraSchema, UserFeedSeenTable>();
+            services.AddSingleton<ICassandraSchema, UserFeedUnseenTable>();
+            services.AddSingleton<ICassandraSchema, UserInteractionCounterTable>();
+            services.AddSingleton<ICassandraSchema, UserInteractionMetaTable>();
+            services.AddSingleton<CassandraInitializer>();
+
+            services.AddHostedService<CassandraHostedService>();
+
             services.AddSingleton<IUserConnectionManager, UserConnectionManager>();
             services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
         }

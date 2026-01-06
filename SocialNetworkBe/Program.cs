@@ -1,4 +1,5 @@
-﻿using DataAccess.DbContext;
+﻿using DataAccess.Cassandra;
+using DataAccess.DbContext;
 using Domain.AddServicesCollection;
 using Microsoft.EntityFrameworkCore;
 using SocialNetworkBe.AddServicesCollection;
@@ -37,6 +38,12 @@ app.UseCors(options => options
     .AllowAnyMethod()
     .AllowCredentials()
 );
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SocialNetworkDbContext>();
+    db.Database.Migrate();
+}
 
 app.UseHttpsRedirection();
 
