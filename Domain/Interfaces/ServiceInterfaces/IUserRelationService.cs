@@ -18,7 +18,7 @@ namespace Domain.Interfaces.ServiceInterfaces
 
         Task<List<UserDto>> GetFollowersAsync(Guid userId, int skip, int take);
         Task<List<UserDto>> GetFollowingAsync(Guid userId, int skip, int take);
-        Task<List<UserDto>> GetFriendsAsync(Guid userId, int skip, int take);
+        Task<(List<UserDto> Items, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take, string? keySearch);
         Task<List<UserDto>> GetFullFriends(Guid userId);
         Task<List<MutualFriendReponse>> GetMutualFriends(Guid userId);
     }
