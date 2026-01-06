@@ -418,7 +418,7 @@ namespace SocialNetworkBe.Services.GroupServices
                     gu => gu.UserId == targetUserId && gu.RoleName == GroupRole.Pending);
 
                 if (joinRequest == null)
-                {                 
+                {                
                     var existingMember = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == targetUserId);
                     if (existingMember != null && existingMember.RoleName != GroupRole.Pending)
                     {
@@ -434,7 +434,30 @@ namespace SocialNetworkBe.Services.GroupServices
                 var result = await _unitOfWork.CompleteAsync();
 
                 if (result > 0)
-                {
+                {              
+                    try
+                    {
+                        using (var scope = _serviceProvider.CreateScope())
+                        {
+                            var notificationDataBuilder = scope.ServiceProvider.GetRequiredService<INotificationDataBuilder>();
+                            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+                            var notificationData = notificationDataBuilder.BuilderDataForGroupJoinRequestAccepted(group);
+
+                            await notificationService.ProcessAndSendNotiForGroupJoinRequestAccepted(
+                                NotificationType.GroupJoinRequestAccepted,
+                                notificationData,
+                                $"/groups/{groupId}",
+                                targetUserId,
+                                groupId
+                            );
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error sending group join request accepted notification");
+                    }
+
                     var updatedGroupUser = await _unitOfWork.GroupUserRepository.FindFirstAsyncWithIncludes(
                         gu => gu.GroupId == groupId && gu.UserId == targetUserId,
                         gu => gu.User
@@ -642,7 +665,9 @@ namespace SocialNetworkBe.Services.GroupServices
             try
             {
                 var groupUsers = await _unitOfWork.GroupUserRepository.FindAsync(
-                    gu => gu.UserId == userId
+                    gu => gu.UserId == userId && 
+                          gu.RoleName != GroupRole.Pending && 
+                          gu.RoleName != GroupRole.Inviting
                 );
 
                 if (groupUsers == null || !groupUsers.Any())
@@ -1007,7 +1032,7 @@ namespace SocialNetworkBe.Services.GroupServices
                                     await notificationService.ProcessAndSendNotiForGroupInvite(
                                         NotificationType.GroupInvite,
                                         notificationData,
-                                        $"/groups/{groupId}",
+                                        $"/group/{groupId}",
                                         targetUserId,
                                         groupId
                                     );

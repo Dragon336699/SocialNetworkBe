@@ -16,5 +16,6 @@ namespace Domain.Interfaces.BuilderInterfaces
         NotificationData BuilderDataForFriendRequest(User actor);
         NotificationData BuilderDataForAcceptFriendRequest(User actor);
         NotificationData BuilderDataForGroupJoinRequest(Group group, User requester);
+        NotificationData BuilderDataForGroupJoinRequestAccepted(Group group);
     }
 }

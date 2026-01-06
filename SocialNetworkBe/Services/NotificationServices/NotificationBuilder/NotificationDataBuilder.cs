@@ -227,5 +227,35 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationBuilder
 
             return notidData;
         }
+
+        public NotificationData BuilderDataForGroupJoinRequestAccepted(Group group)
+        {
+            List<NotificationObject> subjects = new List<NotificationObject>();
+
+            NotificationObject subject = new NotificationObject
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Type = NotificationObjectType.Group,
+            };
+
+            subjects.Add(subject);
+
+            NotificationObject diObject = new NotificationObject
+            {
+                Type = NotificationObjectType.GroupJoinRequestAccepted,
+                Name = "your request to join"
+            };
+
+            NotificationData notidData = new NotificationData
+            {
+                Subjects = subjects,
+                SubjectCount = subjects.Count,
+                Verb = Verb.Accepted,
+                DiObject = diObject,
+            };
+
+            return notidData;
+        }
     }
 }

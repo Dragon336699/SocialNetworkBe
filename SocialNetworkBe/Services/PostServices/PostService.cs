@@ -678,8 +678,7 @@ namespace SocialNetworkBe.Services.PostServices
                 {
                     return (RejectPostEnum.GroupNotFound, false);
                 }
-                
-                // Check if current user is admin or super admin of the group
+                               
                 var groupUser = await _unitOfWork.GroupUserRepository.FindFirstAsync(
                     gu => gu.GroupId == post.GroupId.Value && gu.UserId == currentUserId
                 );
@@ -690,8 +689,6 @@ namespace SocialNetworkBe.Services.PostServices
                 {
                     return (RejectPostEnum.Unauthorized, false);
                 }
-                
-                // Reject the post - remove it
                 _unitOfWork.PostRepository.Remove(post);
                 var result = await _unitOfWork.CompleteAsync();
                 

@@ -14,6 +14,7 @@ namespace Domain.Enum.Notification.Types
         AddFriendRequest,
         AcceptFriendRequest,
         GroupInvite,
-        GroupJoinRequest
+        GroupJoinRequest,
+        GroupJoinRequestAccepted
     }
 }

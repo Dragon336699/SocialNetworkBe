@@ -161,7 +161,16 @@ namespace SocialNetworkBe.Services.NotificationService
 
                 foreach (var noti in notis)
                 {
-                    NotificationDto notiDto = await CreateNotificationDto(noti, userId);
+                    NotificationDto notiDto;
+                    // Xử lý riêng cho GroupJoinRequestAccepted vì subject là Group, không phải User
+                    if (noti.NotificationType == NotificationType.GroupJoinRequestAccepted)
+                    {
+                        notiDto = await CreateNotificationDtoForGroupAccepted(noti, userId);
+                    }
+                    else
+                    {
+                        notiDto = await CreateNotificationDto(noti, userId);
+                    }
                     notiDtos.Add(notiDto);
                 }
 
@@ -415,6 +424,75 @@ namespace SocialNetworkBe.Services.NotificationService
                 _logger.LogError(ex, "Error occurred while sending notification for group join request");
                 throw;
             }
+        }
+
+        public async Task ProcessAndSendNotiForGroupJoinRequestAccepted(NotificationType type, NotificationData data, string navigateUrl, Guid receiverId, Guid groupId)
+        {
+            try
+            {
+                Notification newNoti = new Notification
+                {
+                    NotificationType = type,
+                    Data = data,
+                    NavigateUrl = navigateUrl,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    ReceiverId = receiverId
+                };
+
+                NotificationDto notiDto = await CreateNotificationDtoForGroupAccepted(newNoti, receiverId);
+                notiDto.Unread = true;
+
+                await _realtimeService.SendPrivateNotification(notiDto, receiverId);
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while sending notification for group join request accepted");
+                throw;
+            }
+        }
+
+        private async Task<NotificationDto> CreateNotificationDtoForGroupAccepted(Notification noti, Guid userId)
+        {
+            List<HighlightOffset> highlightOffsets = new List<HighlightOffset>();
+            StringBuilder content = new StringBuilder();
+            List<string> imageUrls = new List<string>();
+
+            // Subject là Group
+            var groupName = noti.Data.Subjects[0].Name ?? "Group";
+            
+            // Lấy ảnh group từ database
+            var group = await _unitOfWork.GroupRepository.GetByIdAsync(noti.Data.Subjects[0].Id ?? Guid.Empty);
+            if (group != null)
+            {
+                imageUrls.Add(group.ImageUrl);
+            }
+
+            HighlightOffset offset = new HighlightOffset
+            {
+                Offset = 0,
+                Length = groupName.Length,
+            };
+            highlightOffsets.Add(offset);
+
+            // "Group Name accepted your request to join"
+            content.Append($"{groupName} {noti.Data.Verb.ToString().ToLower()} {noti.Data.DiObject.Name}");
+
+            NotificationDto notiDto = new NotificationDto
+            {
+                Id = noti.Id,
+                Content = content.ToString().Trim(),
+                ImageUrls = imageUrls,
+                Unread = noti.Unread,
+                CreatedAt = noti.CreatedAt.ToLocalTime(),
+                UpdatedAt = noti.UpdatedAt.ToLocalTime(),
+                ReceiverId = noti.ReceiverId,
+                NavigateUrl = noti.NavigateUrl,
+                Highlights = highlightOffsets
+            };
+            return notiDto;
         }
     }
 }
