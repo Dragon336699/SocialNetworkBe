@@ -110,6 +110,12 @@ namespace DataAccess.Repositories
                     c.NewestMessage = newest;
                 }
             }
+
+            // Sắp xếp conversations theo tin nhắn mới nhất
+            conversations = conversations
+                .OrderByDescending(c => c.NewestMessage?.CreatedAt ?? DateTime.MinValue)
+                .ToList();
+
             return conversations;
         }
 

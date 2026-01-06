@@ -67,7 +67,7 @@ namespace SocialNetworkBe.Services.NotificationService
                 }
                 else
                 {
-                    noti.UpdatedAt = DateTime.Now;
+                    noti.UpdatedAt = DateTime.UtcNow;
                     
                     if (noti.Data.Subjects.Any(s => s.Id == data.Subjects[0].Id))
                     {
@@ -113,12 +113,14 @@ namespace SocialNetworkBe.Services.NotificationService
                     UpdatedAt = DateTime.UtcNow,
                     ReceiverId = receiverId
                 };
+                
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+
                 NotificationDto notiDto = await CreateNotificationDto(newNoti, receiverId);
                 notiDto.Unread = true;
 
                 await _realtimeService.SendPrivateNotification(notiDto, receiverId);
-                _unitOfWork.NotificationRepository.Add(newNoti);
-                _unitOfWork.Complete();
             }
             catch (Exception ex)
             {
@@ -140,12 +142,14 @@ namespace SocialNetworkBe.Services.NotificationService
                     UpdatedAt = DateTime.UtcNow,
                     ReceiverId = receiverId
                 };
+                
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+
                 NotificationDto notiDto = await CreateNotificationDto(newNoti, receiverId);
                 notiDto.Unread = true;
 
                 await _realtimeService.SendPrivateNotification(notiDto, receiverId);
-                _unitOfWork.NotificationRepository.Add(newNoti);
-                _unitOfWork.Complete();
             } catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occured while sending notification for friend request");
@@ -372,6 +376,7 @@ namespace SocialNetworkBe.Services.NotificationService
                     _unitOfWork.NotificationRepository.Remove(existingNoti);
                     await _unitOfWork.CompleteAsync();
                 }
+                
                 Notification newNoti = new Notification
                 {
                     NotificationType = type,
@@ -382,12 +387,13 @@ namespace SocialNetworkBe.Services.NotificationService
                     ReceiverId = receiverId
                 };
 
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+
                 NotificationDto notiDto = await CreateNotificationDto(newNoti, receiverId);
                 notiDto.Unread = true;
 
                 await _realtimeService.SendPrivateNotification(notiDto, receiverId);
-                _unitOfWork.NotificationRepository.Add(newNoti);
-                _unitOfWork.Complete();
             }
             catch (Exception ex)
             {
@@ -400,6 +406,8 @@ namespace SocialNetworkBe.Services.NotificationService
         {
             try
             {
+                var notifications = new List<Notification>();
+                
                 foreach (var adminId in adminIds)
                 {
                     Notification newNoti = new Notification
@@ -412,14 +420,19 @@ namespace SocialNetworkBe.Services.NotificationService
                         ReceiverId = adminId
                     };
 
-                    NotificationDto notiDto = await CreateNotificationDto(newNoti, adminId);
-                    notiDto.Unread = true;
-
-                    await _realtimeService.SendPrivateNotification(notiDto, adminId);
                     _unitOfWork.NotificationRepository.Add(newNoti);
+                    notifications.Add(newNoti);
                 }
                 
                 _unitOfWork.Complete();
+
+                foreach (var noti in notifications)
+                {
+                    NotificationDto notiDto = await CreateNotificationDto(noti, noti.ReceiverId);
+                    notiDto.Unread = true;
+
+                    await _realtimeService.SendPrivateNotification(notiDto, noti.ReceiverId);
+                }
             }
             catch (Exception ex)
             {
@@ -442,12 +455,13 @@ namespace SocialNetworkBe.Services.NotificationService
                     ReceiverId = receiverId
                 };
 
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+
                 NotificationDto notiDto = await CreateNotificationDtoForGroupAccepted(newNoti, receiverId);
                 notiDto.Unread = true;
 
                 await _realtimeService.SendPrivateNotification(notiDto, receiverId);
-                _unitOfWork.NotificationRepository.Add(newNoti);
-                _unitOfWork.Complete();
             }
             catch (Exception ex)
             {

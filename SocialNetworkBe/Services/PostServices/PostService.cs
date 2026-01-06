@@ -261,8 +261,7 @@ namespace SocialNetworkBe.Services.PostServices
                 {
                     post.PostPrivacy = request.PostPrivacy.Value;
                 }
-
-                // Xử lý xóa hình ảnh
+              
                 if (request.RemoveAllImages && post.PostImages != null)
                 {                 
                     post.PostImages.Clear();
