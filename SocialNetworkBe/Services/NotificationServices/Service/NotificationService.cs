@@ -233,28 +233,34 @@ namespace SocialNetworkBe.Services.NotificationService
             StringBuilder content = new StringBuilder();
             List<string> imageUrls = new List<string>();
             UserDto? user1 = await _userService.GetUserInfoByUserId(noti.Data.Subjects[0].Id.ToString());
-            imageUrls.Add(user1.AvatarUrl);
+            if (user1 != null)
+            {
+                imageUrls.Add(user1.AvatarUrl);
+            }
             string prObjectName = "";
             string diObjectName = "";
 
             HighlightOffset offset = new HighlightOffset
             {
                 Offset = 0,
-                Length = (user1.LastName + " " + user1.FirstName).Trim().Length,
+                Length = user1 == null ? noti.Data.Subjects[0].SnapshotText.Trim().Length : (user1.LastName + " " + user1.FirstName).Trim().Length,
             };
             highlightOffsets.Add(offset);
             if (noti.Data.SubjectCount > 1)
             {
                 UserDto? user2 = await _userService.GetUserInfoByUserId(noti.Data.Subjects[1].Id.ToString());
-                imageUrls.Add(user2.AvatarUrl);
-                var name1 = $"{user1.LastName} {user1.FirstName}".Trim();
-                var name2 = $"{user2.LastName} {user2.FirstName}".Trim();
+                if (user2 != null)
+                {
+                    imageUrls.Add(user2.AvatarUrl);
+                }
+                var name1 = user1 == null ? noti.Data.Subjects[0].SnapshotText : $"{user1.LastName} {user1.FirstName}".Trim();
+                var name2 = user2 == null ? noti.Data.Subjects[1].SnapshotText : $"{user2.LastName} {user2.FirstName}".Trim();
                 content.Append($"{name1}, {name2}");
 
                 offset = new HighlightOffset
                 {
                     Offset = offset.Length + 2,
-                    Length = (user2.LastName + " " + user2.FirstName).Trim().Length
+                    Length = user2 == null ? noti.Data.Subjects[1].SnapshotText.Trim().Length : (user2.LastName + " " + user2.FirstName).Trim().Length
                 };
 
                 highlightOffsets.Add(offset);
@@ -266,7 +272,7 @@ namespace SocialNetworkBe.Services.NotificationService
             }
             else
             {
-                content.Append($"{user1.LastName} {user1.FirstName} ");
+                content.Append(user1 == null ? noti.Data.Subjects[0].SnapshotText + " " : $"{user1.LastName} {user1.FirstName} ");
             }
 
             content.Append($"{noti.Data.Verb.ToString().ToLower()} {noti.Data.InObject?.Type.ToString().ToLower()} ");
@@ -275,6 +281,10 @@ namespace SocialNetworkBe.Services.NotificationService
                 case (NotificationObjectType.Post):
                     {
                         var (state, post) = await postService.GetPostByIdAsync(noti.Data.DiObject.Id.Value, userId);
+                        if (post == null)
+                        {
+                            diObjectName = noti.Data.DiObject.SnapshotText ?? "";
+                        }
                         diObjectName = post.Content.Length > 30 ? post.Content.Substring(0, 30) + "..." : post.Content;
                         content.Append($"your {noti.Data.DiObject.Type.ToString().ToLower()} \"{diObjectName}\" ");
                         break;
@@ -282,6 +292,10 @@ namespace SocialNetworkBe.Services.NotificationService
                 case (NotificationObjectType.Comment):
                     {
                         var (state, comment) = await commentService.GetCommentById(noti.Data.DiObject.Id.Value);
+                        if (comment == null)
+                        {
+                            diObjectName = noti.Data.DiObject.SnapshotText ?? "";
+                        }
                         diObjectName = comment.Content.Length > 30 ? comment.Content.Substring(0, 30) + "..." : comment.Content;
                         content.Append($"\"{diObjectName}\" ");
                         break;

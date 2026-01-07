@@ -51,17 +51,31 @@ namespace DataAccess.Repositories
             return (items, totalCount);
         }
 
-        public async Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take)
+        public async Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take, string? keySearch)
         {
             var query = _context.UserRelation
-                .Where(ur => (ur.UserId == userId) && ur.RelationType == UserRelationType.Friend)
-                .Include(ur => ur.User)
-                .Include(ur => ur.RelatedUser)
-                .AsSplitQuery()
-                .Select(ur => ur.UserId == userId ? ur.RelatedUser : ur.User);
+               .Where(ur => ur.UserId == userId && ur.RelationType == UserRelationType.Friend)
+               .Select(ur => ur.RelatedUser);   
+
+            if (!string.IsNullOrWhiteSpace(keySearch))
+            {
+                var ks = keySearch.ToLower();
+                query = query.Where(u =>
+                    (u.UserName != null && u.UserName.ToLower().Contains(ks)) ||
+                    (u.FirstName != null && u.FirstName.ToLower().Contains(ks)) ||
+                    ((u.LastName + " " + u.FirstName).ToLower().Contains(ks)) ||
+                    (u.LastName != null && u.LastName.ToLower().Contains(ks))
+                );
+            }
 
             var totalCount = await query.CountAsync();
-            var items = await query.Skip(skip).Take(take).ToListAsync();
+
+            var items = await query
+                .OrderBy(u => u.FirstName)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
             return (items, totalCount);
         }
 

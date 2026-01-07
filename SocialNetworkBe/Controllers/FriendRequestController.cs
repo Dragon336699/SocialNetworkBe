@@ -110,18 +110,22 @@ namespace SocialNetworkBe.Controllers
 
         [Authorize]
         [HttpGet("sent")]
-        public async Task<IActionResult> GetSentFriendRequests([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetSentFriendRequests(
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 100,
+            [FromQuery] string? keySearch = null)
         {
             try
             {
                 var senderId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-                var result = await _friendRequestService.GetSentFriendRequestsAsync(senderId, pageIndex, pageSize);
+                var (items, totalCount) = await _friendRequestService.GetSentFriendRequestsAsync(senderId, skip, take, keySearch);
 
                 return Ok(new
                 {
                     Message = "Get sent friend requests successfully.",
-                    Data = result
+                    Data = items,
+                    TotalCount = totalCount
                 });
             }
             catch (Exception ex)
@@ -154,17 +158,22 @@ namespace SocialNetworkBe.Controllers
         }
         [Authorize]
         [HttpGet("received")]
-        public async Task<IActionResult> GetReceivedFriendRequests([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetReceivedFriendRequests(
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 100,
+            [FromQuery] string? keySearch = null)
         {
             try
             {
                 var receiverId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var result = await _friendRequestService.GetReceivedFriendRequestsAsync(receiverId, pageIndex, pageSize);
+
+                var (items, totalCount) = await _friendRequestService.GetReceivedFriendRequestsAsync(receiverId, skip, take, keySearch);
 
                 return Ok(new
                 {
                     Message = "Get received friend requests successfully.",
-                    Data = result
+                    Data = items,
+                    TotalCount = totalCount
                 });
             }
             catch (Exception ex)

@@ -133,7 +133,8 @@ namespace SocialNetworkBe.Controllers
         public async Task<IActionResult> GetFriends(
             [FromQuery] Guid? userId,
             [FromQuery] int skip = 0,
-            [FromQuery] int take = 20)
+            [FromQuery] int take = 100,
+            [FromQuery] string? keySearch = null)
         {
             try
             {
@@ -143,13 +144,14 @@ namespace SocialNetworkBe.Controllers
 
                 var targetUserId = userId ?? currentUserId;
 
-                var result = await _userRelationService
-                    .GetFriendsAsync(targetUserId, skip, take);
+                var (items, totalCount) = await _userRelationService
+                    .GetFriendsAsync(targetUserId, skip, take, keySearch);
 
                 return Ok(new
                 {
                     Message = "Get friends list successfully",
-                    Data = result
+                    Data = items,
+                    TotalCount = totalCount
                 });
             }
             catch (Exception ex)

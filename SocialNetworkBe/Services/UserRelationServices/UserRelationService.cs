@@ -145,11 +145,21 @@ namespace SocialNetworkBe.Services.UserRelationServices
             return MapToUserDtos(users);
         }
 
-        public async Task<List<UserDto>> GetFriendsAsync(Guid userId, int skip, int take)
+        public async Task<(List<UserDto> Items, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take, string? keySearch)
         {
-            var (users, totalCount) = await _unitOfWork.UserRelationRepository.GetFriendsAsync(userId, skip, take);
-            var userDtos = MapToUserDtos(users);
-            return userDtos;
+            try
+            {
+                var (users, totalCount) = await _unitOfWork.UserRelationRepository.GetFriendsAsync(userId, skip, take, keySearch);
+
+                var userDtos = MapToUserDtos(users);
+
+                return (userDtos, totalCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting friends");
+                throw;
+            }
         }
 
         public async Task<List<UserDto>> GetFullFriends(Guid userId)

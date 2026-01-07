@@ -27,6 +27,7 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
                 Id = actor.Id,
                 Name = actor.LastName + " " + actor.FirstName,
                 Type = NotificationObjectType.Actor,
+                SnapshotText = actor.LastName + " " + actor.FirstName
             };
 
             subjects.Add(subject);
@@ -35,6 +36,7 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
             {
                 Id = post.Id,
                 Type = NotificationObjectType.Post,
+                SnapshotText = post.Content.Length > 30 ? post.Content.Substring(0, 30) + "..." : post.Content
             };
 
             NotificationData notidData = new NotificationData
@@ -47,7 +49,8 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
                 {
                     Id = group.Id,
                     Name = group.Name,
-                    Type = NotificationObjectType.Group
+                    Type = NotificationObjectType.Group,
+                    SnapshotText= group.Name,
                 } : null
             };
 
@@ -63,6 +66,7 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
                 Id = actor.Id,
                 Name = actor.LastName + " " + actor.FirstName,
                 Type = NotificationObjectType.Actor,
+                SnapshotText = actor.LastName + " " + actor.FirstName
             };
 
             subjects.Add(subject);
@@ -70,13 +74,15 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
             NotificationObject diObject = new NotificationObject
             {
                 Id = comment.Id,
-                Type = NotificationObjectType.Comment
+                Type = NotificationObjectType.Comment,
+                SnapshotText = comment.Content.Length > 30 ? comment.Content.Substring(0, 20) + "..." : comment.Content
             };
 
             NotificationObject prObject = new NotificationObject
             {
                 Id = post.Id,
-                Type = NotificationObjectType.Post
+                Type = NotificationObjectType.Post,
+                SnapshotText = post.Content.Length > 30 ? post.Content.Substring(0, 30) + "..." : post.Content
             };
 
             NotificationData notidData = new NotificationData
@@ -101,6 +107,7 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
                 Id = actor.Id,
                 Name = actor.LastName + " " + actor.FirstName,
                 Type = NotificationObjectType.Actor,
+                SnapshotText = actor.LastName + " " + actor.FirstName
             };
 
             subjects.Add(subject);
@@ -131,6 +138,7 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
                 Id = actor.Id,
                 Name = actor.LastName + " " + actor.FirstName,
                 Type = NotificationObjectType.Actor,
+                SnapshotText = actor.LastName + " " + actor.FirstName
             };
 
             subjects.Add(subject);
@@ -161,6 +169,7 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
                 Id = inviter.Id,
                 Name = inviter.LastName + " " + inviter.FirstName,
                 Type = NotificationObjectType.Actor,
+                SnapshotText = inviter.LastName + " " + inviter.FirstName
             };
 
             subjects.Add(subject);
@@ -175,7 +184,8 @@ namespace SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder
             {
                 Id = group.Id,
                 Name = group.Name,
-                Type = NotificationObjectType.Group
+                Type = NotificationObjectType.Group,
+                SnapshotText = group.Name
             };
 
             NotificationData notidData = new NotificationData
