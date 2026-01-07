@@ -10,7 +10,7 @@ namespace Domain.Enum.Group.Functions
     {
         Success,
         GroupNotFound,
-        Unauthorized,
+        Unauthorized,      
         Failed
     }
 
@@ -22,7 +22,7 @@ namespace Domain.Enum.Group.Functions
             {
                 GetGroupByIdEnum.Success => "Group retrieved successfully.",
                 GetGroupByIdEnum.GroupNotFound => "Group not found.",
-                GetGroupByIdEnum.Unauthorized => "You are not authorized to view this group.",
+                GetGroupByIdEnum.Unauthorized => "You are not authorized to view this group.",          
                 GetGroupByIdEnum.Failed => "Failed to retrieve group.",
                 _ => "Unknown error."
             };
