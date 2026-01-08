@@ -164,7 +164,13 @@ namespace SocialNetworkBe.Services.GroupServices
                 if (group == null)
                 {
                     return (GetGroupByIdEnum.GroupNotFound, null);
-                }        
+                }
+
+                var userMembership = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == userId);
+                if (userMembership != null && userMembership.RoleName == GroupRole.Banned)
+                {
+                    return (GetGroupByIdEnum.UserBanned, null);
+                }
 
                 if (group.IsPublic == 0)
                 {

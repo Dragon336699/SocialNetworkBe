@@ -50,7 +50,7 @@ namespace SocialNetworkBe.Services.ConversationUserServices
                         UserId = userId,
                         JoinedAt = DateTime.UtcNow,
                         RoleName = ConversationRole.User,
-                        NickName = userInfo.UserName,
+                        NickName = userInfo.LastName + " " + userInfo.FirstName,
                         DraftMessage = null
                     };
 
