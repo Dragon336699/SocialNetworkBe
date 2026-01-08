@@ -368,6 +368,7 @@ namespace SocialNetworkBe.Services.PostServices
         public async Task<PostDto?> AddUpdateDeleteReactionPost(ReactionPostRequest request, Guid userId)
         {
             var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
+            var interactionService = _serviceProvider.GetRequiredService<IInteractionService>();
             try
             {
                 // Tìm reaction hiện có của user cho post
@@ -408,6 +409,7 @@ namespace SocialNetworkBe.Services.PostServices
                         string navigateUrl = $"/post/{post.Id}";
                         await notificationService.ProcessAndSendNotiForReactPost(NotificationType.LikePost, notiData, navigateUrl, mergeKey, owner.Id);                             
                     }
+                    interactionService.InteractionPost(userId, post.Id, "like");
                 }
                 else if (postReactionUser.Reaction == request.Reaction)
                 {                 

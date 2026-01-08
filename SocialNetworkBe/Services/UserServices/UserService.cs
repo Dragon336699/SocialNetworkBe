@@ -13,6 +13,7 @@ using Domain.Interfaces.UnitOfWorkInterface;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.EntityFrameworkCore;
 using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.TokenServices;
 using SocialNetworkBe.Services.UploadService;
@@ -384,7 +385,8 @@ namespace SocialNetworkBe.Services.UserServices
                 _unitOfWork.Complete();
                 UserDto? userDto = _mapper.Map<UserDto>(user);
                 return userDto;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while updating users status");
                 throw;
@@ -486,6 +488,21 @@ namespace SocialNetworkBe.Services.UserServices
             {
                 _logger.LogError(ex, "Error updating user info for {UserId}", userId);
                 return (UpdateUserInfoEnum.UpdateFailed);
+            }
+        }
+
+        public async Task<List<Guid>> GetActiveUsers()
+        {
+            try
+            {
+                var userIds = await _userManager.Users.Where(u => u.Status == UserStatus.Online).Select(u => u.Id).ToListAsync();
+                return userIds;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting active user");
+                throw;
             }
         }
     }

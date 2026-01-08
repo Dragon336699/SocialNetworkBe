@@ -39,11 +39,11 @@ app.UseCors(options => options
     .AllowCredentials()
 );
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<SocialNetworkDbContext>();
-    db.Database.Migrate();
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//    var db = scope.ServiceProvider.GetRequiredService<SocialNetworkDbContext>();
+//    db.Database.Migrate();
+//}
 
 app.UseHttpsRedirection();
 

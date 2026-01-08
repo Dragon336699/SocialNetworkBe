@@ -8,6 +8,7 @@ using Domain.Enum.Notification.Types;
 using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
+using SocialNetworkBe.Services.InteractionServices;
 
 namespace SocialNetworkBe.Services.CommentServices
 {
@@ -44,6 +45,7 @@ namespace SocialNetworkBe.Services.CommentServices
             {
                 var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
                 var feedService = _serviceProvider.GetRequiredService<IFeedService>();
+                var interactionService = _serviceProvider.GetRequiredService<IInteractionService>();
 
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
                 if (user == null)
@@ -144,6 +146,9 @@ namespace SocialNetworkBe.Services.CommentServices
                     {
                         await feedService.FeedForPost(post.Id, post.UserId);
                     }
+
+                    // Insert interaction
+                    interactionService.InteractionPost(userId, post.Id, "comment");
                     return (CreateCommentEnum.CreateCommentSuccess, comment.Id);
                 }
 

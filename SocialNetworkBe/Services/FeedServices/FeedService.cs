@@ -16,12 +16,14 @@ namespace SocialNetworkBe.Services.FeedServices
         private readonly IPostService _postService;
         private readonly IUserRelationService _userRelationService;
         private readonly ILogger<FeedService> _logger;
-        public FeedService(IUnitOfWork unitOfWork, IPostService postService, IUserRelationService userRelationService, ILogger<FeedService> logger)
+        private readonly IInteractionService _interactionService;
+        public FeedService(IUnitOfWork unitOfWork, IPostService postService, IUserRelationService userRelationService, ILogger<FeedService> logger, IInteractionService interactionService)
         {
             _unitOfWokrk = unitOfWork;
             _logger = logger;
             _postService = postService;
             _userRelationService = userRelationService;
+            _interactionService = interactionService;
         }
 
         public async Task FeedForPost(Guid postId, Guid authorId)
@@ -55,7 +57,6 @@ namespace SocialNetworkBe.Services.FeedServices
                     {
                         FeedDto feedTemp = new FeedDto
                         {
-                            FeedId = feed.FeedId,
                             CreatedAt = feed.CreatedAt,
                             Post = post
                         };
@@ -76,6 +77,11 @@ namespace SocialNetworkBe.Services.FeedServices
         {
             try
             {
+                foreach (var post in request)
+                {
+                    _interactionService.InteractionPost(userId, post.PostId, "view");
+                }
+
                 _unitOfWokrk.FeedRepository.SeenFeed(request, userId);
             }
             catch (Exception ex)

@@ -6,18 +6,16 @@ USE fricon;
 CREATE TABLE IF NOT EXISTS user_feed_seen (
   user_id UUID,
   post_id UUID,
-  feed_id UUID,
   seen_at TIMESTAMP,
-  PRIMARY KEY ((user_id), feed_id)
+  PRIMARY KEY ((user_id), post_id)
 );
 
 CREATE TABLE IF NOT EXISTS user_feed_unseen (
   user_id UUID,
   post_id UUID,
   created_at TIMESTAMP,
-  feed_id UUID,
-  PRIMARY KEY ((user_id), created_at, feed_id)
-)  WITH CLUSTERING ORDER BY (created_at DESC, feed_id ASC);
+  PRIMARY KEY ((user_id), created_at)
+)  WITH CLUSTERING ORDER BY (created_at DESC);
 
 CREATE TABLE user_interaction_counter (
   user_id UUID,

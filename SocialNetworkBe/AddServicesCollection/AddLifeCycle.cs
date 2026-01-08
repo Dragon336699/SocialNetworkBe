@@ -1,5 +1,8 @@
 ﻿using DataAccess.AutoMapper;
+using DataAccess.Cassandra;
+using DataAccess.Cassandra.Schemas;
 using DataAccess.Repositories;
+using DataAccess.Repositories.NoSQL;
 using DataAccess.UnitOfWork;
 using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ChatInterfaces;
@@ -12,7 +15,10 @@ using SocialNetworkBe.Services.CommentServices;
 using SocialNetworkBe.Services.ConversationServices;
 using SocialNetworkBe.Services.ConversationUserServices;
 using SocialNetworkBe.Services.EmailServices;
+using SocialNetworkBe.Services.FeedServices;
 using SocialNetworkBe.Services.FriendRequestServices;
+using SocialNetworkBe.Services.GroupServices;
+using SocialNetworkBe.Services.InteractionServices;
 using SocialNetworkBe.Services.MessageService;
 using SocialNetworkBe.Services.NotificationService;
 using SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder;
@@ -20,19 +26,12 @@ using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.PostReactionServices;
 using SocialNetworkBe.Services.PostServices;
 using SocialNetworkBe.Services.RealtimeServices;
+using SocialNetworkBe.Services.SearchServices;
 using SocialNetworkBe.Services.TokenServices;
 using SocialNetworkBe.Services.UploadService;
-using SocialNetworkBe.Services.UserServices;
-using SocialNetworkBe.Services.GroupServices;
-using SocialNetworkBe.SignalR;
-using DataAccess.DbContext;
-using SocialNetworkBe.Services.FeedServices;
-using SocialNetworkBe.Services.SearchServices;
 using SocialNetworkBe.Services.UserRelationServices;
-using DataAccess.Repositories.NoSQL;
-using SocialNetworkBe.Services.InteractionServices;
-using DataAccess.Cassandra;
-using DataAccess.Cassandra.Schemas;
+using SocialNetworkBe.Services.UserServices;
+using SocialNetworkBe.SignalR;
 
 namespace SocialNetworkBe.AddServicesCollection
 {
@@ -55,7 +54,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<IUserRelationRepository, UserRelationRepository>();
             services.AddTransient<IMessageAttachmentRepository, MessageAttachmentRepository>();
             services.AddTransient<IConversationRepository, ConversationRepository>();
-            services.AddTransient<IPostRepository, PostRepository>(); 
+            services.AddTransient<IPostRepository, PostRepository>();
             services.AddTransient<ICommentRepository, CommentRepository>();
             services.AddTransient<ICommentReactionUserRepository, CommentReactionUserRepository>();
             services.AddTransient<IGroupRepository, GroupRepository>();
@@ -65,7 +64,7 @@ namespace SocialNetworkBe.AddServicesCollection
             services.AddTransient<IInteractionRepository, InteractionRepository>();
 
             services.AddTransient<IConversationUserService, ConversationUserService>();
-            services.AddTransient<IConversationService, ConversationService>();        
+            services.AddTransient<IConversationService, ConversationService>();
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IFriendRequestService, FriendRequestService>();
             services.AddScoped<IUserRelationService, UserRelationService>();
