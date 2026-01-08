@@ -36,7 +36,7 @@ namespace SocialNetworkBe.Services.ScheduleServices
             await Parallel.ForEachAsync(activeUsers, new ParallelOptions { MaxDegreeOfParallelism = 20 },
                 async (userId, ct) =>
                 {
-                    var response = await _client.PostAsync($"/ai/postSuggest?user_id={userId}", null, ct);
+                    var response = await _client.PostAsync($"ai/postSuggest?user_id={userId}", null, ct);
                     response.EnsureSuccessStatusCode();
                 });
         }

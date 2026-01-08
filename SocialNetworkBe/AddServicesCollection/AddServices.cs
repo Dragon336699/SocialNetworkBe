@@ -78,7 +78,7 @@ namespace Domain.AddServicesCollection
 
             services.AddHttpClient("FeedPostSuggest", client =>
             {
-                client.BaseAddress = new Uri("http://localhost:8000");
+                client.BaseAddress = new Uri("https://fricon.online/");
             });
 
             services.AddHostedService<FeedScheduleService>();
