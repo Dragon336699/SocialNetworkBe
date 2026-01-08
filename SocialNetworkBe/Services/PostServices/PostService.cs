@@ -149,12 +149,16 @@ namespace SocialNetworkBe.Services.PostServices
             }
         }
 
-        public async Task<(GetAllPostsEnum, List<PostDto>?)> GetAllPostsAsync(int skip = 0, int take = 10)
+        public async Task<(GetAllPostsEnum, List<PostDto>?)> GetAllPostsAsync(Guid currentUserId, int skip = 0, int take = 10)
         {
             try
-            {              
+            {
+                var blockedUserIds = await GetBlockedUserIdsAsync(currentUserId);
+
                 var posts = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
-                    p => p.PostPrivacy != PostPrivacy.PendingApproval && p.GroupId == null,
+                    p => p.PostPrivacy != PostPrivacy.PendingApproval &&
+                         p.GroupId == null &&
+                         !blockedUserIds.Contains(p.UserId),
                     p => p.User,
                     p => p.PostImages
                 );
@@ -478,6 +482,12 @@ namespace SocialNetworkBe.Services.PostServices
         {
             try
             {
+                var blockedUserIds = await GetBlockedUserIdsAsync(currentUserId);
+                if (blockedUserIds.Contains(targetUserId))
+                {
+                    return (GetPostsByUserEnum.NoPostsFound, null);
+                }
+
                 IEnumerable<Post> posts;
                 
                 if (targetUserId == currentUserId)
@@ -793,6 +803,39 @@ namespace SocialNetworkBe.Services.PostServices
             {
                 _logger.LogError(ex, "Error when cancelling pending post {PostId}", postId);
                 return (CancelPendingPostEnum.Failed, false);
+            }
+        }
+
+        private async Task<List<Guid>> GetBlockedUserIdsAsync(Guid userId)
+        {
+            try
+            {          
+                var blockedByMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.UserId == userId && ur.RelationType == Domain.Enum.User.Types.UserRelationType.Blocked
+                );
+             
+                var blockedMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.RelatedUserId == userId && ur.RelationType == Domain.Enum.User.Types.UserRelationType.Blocked
+                );
+
+                var blockedIds = new List<Guid>();
+
+                if (blockedByMe != null && blockedByMe.Any())
+                {
+                    blockedIds.AddRange(blockedByMe.Select(ur => ur.RelatedUserId));
+                }
+
+                if (blockedMe != null && blockedMe.Any())
+                {
+                    blockedIds.AddRange(blockedMe.Select(ur => ur.UserId));
+                }
+
+                return blockedIds.Distinct().ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting blocked users for user {UserId}", userId);
+                return new List<Guid>();
             }
         }
     }

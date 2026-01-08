@@ -358,12 +358,27 @@ namespace SocialNetworkBe.Services.UserServices
                 throw;
             }
         }
-        public async Task<IEnumerable<UserDto>?> SearchUser(string keyword)
+        public async Task<IEnumerable<UserDto>?> SearchUser(string keyword, string currentUserId)
         {
             try
             {
                 string keywordNomalized = keyword.Trim().ToLower();
                 IEnumerable<User>? users = await _unitOfWork.UserRepository.SearchUsers(keyword);
+                if (users == null || !users.Any())
+                {
+                    return null;
+                }
+             
+                var currentUserGuid = Guid.Parse(currentUserId);
+                var blockedUserIds = await GetBlockedUserIdsAsync(currentUserGuid);
+                if (blockedUserIds.Any())
+                {
+                    users = users.Where(u => !blockedUserIds.Contains(u.Id) && u.Id != currentUserGuid).ToList();
+                }
+                else
+                {                  
+                    users = users.Where(u => u.Id != currentUserGuid).ToList();
+                }
                 IEnumerable<UserDto>? usersDto = _mapper.Map<IEnumerable<UserDto>>(users);
                 return usersDto;
             }
@@ -486,6 +501,39 @@ namespace SocialNetworkBe.Services.UserServices
             {
                 _logger.LogError(ex, "Error updating user info for {UserId}", userId);
                 return (UpdateUserInfoEnum.UpdateFailed);
+            }
+        }
+
+        private async Task<List<Guid>> GetBlockedUserIdsAsync(Guid userId)
+        {
+            try
+            {               
+                var blockedByMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.UserId == userId && ur.RelationType == UserRelationType.Blocked
+                );
+             
+                var blockedMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.RelatedUserId == userId && ur.RelationType == UserRelationType.Blocked
+                );
+
+                var blockedIds = new List<Guid>();
+
+                if (blockedByMe != null && blockedByMe.Any())
+                {
+                    blockedIds.AddRange(blockedByMe.Select(ur => ur.RelatedUserId));
+                }
+
+                if (blockedMe != null && blockedMe.Any())
+                {
+                    blockedIds.AddRange(blockedMe.Select(ur => ur.UserId));
+                }
+
+                return blockedIds.Distinct().ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting blocked users for user {UserId}", userId);
+                return new List<Guid>();
             }
         }
     }

@@ -111,5 +111,21 @@ namespace DataAccess.Repositories
                 .FirstOrDefaultAsync(x => x.UserId == userId && x.RelatedUserId == relatedUserId);
         }
 
+        public async Task<(List<UserRelation> Relations, int TotalCount)> GetBlockedUsersAsync(Guid userId, int skip, int take)
+        {
+            var query = _context.UserRelation
+                .Where(ur => ur.UserId == userId && ur.RelationType == UserRelationType.Blocked)
+                .Include(ur => ur.RelatedUser)
+                .OrderByDescending(ur => ur.CreatedAt);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
     }
 }

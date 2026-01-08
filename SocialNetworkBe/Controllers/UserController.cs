@@ -289,7 +289,8 @@ namespace SocialNetworkBe.Controllers
         {
             try
             {
-                var users = await _userService.SearchUser(keyword);
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var users = await _userService.SearchUser(keyword, userId);
                 if (users == null) return BadRequest(new { message = "Users Not Found" });
                 return Ok(new { data = users, message = "Search users successful" });
             }

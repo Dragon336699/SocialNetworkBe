@@ -5,6 +5,7 @@ using Domain.Contracts.Responses.Notification;
 using Domain.Entities;
 using Domain.Enum.Comment.Functions;
 using Domain.Enum.Notification.Types;
+using Domain.Enum.User.Types;
 using Domain.Interfaces.BuilderInterfaces;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
@@ -153,7 +154,7 @@ namespace SocialNetworkBe.Services.CommentServices
             }
         }
 
-        public async Task<(GetCommentsEnum, List<CommentDto>?)> GetCommentsByPostIdAsync(Guid postId, int skip = 0, int take = 10)
+        public async Task<(GetCommentsEnum, List<CommentDto>?)> GetCommentsByPostIdAsync(Guid postId, Guid currentUserId, int skip = 0, int take = 10)
         {
             try
             {
@@ -168,6 +169,23 @@ namespace SocialNetworkBe.Services.CommentServices
                 if (comments == null || !comments.Any())
                 {
                     return (GetCommentsEnum.NoCommentsFound, null);
+                }
+
+                var blockedUserIds = await GetBlockedUserIdsAsync(currentUserId);
+
+                if (blockedUserIds.Any())
+                {
+                    comments = comments.Where(c => !blockedUserIds.Contains(c.UserId)).ToList();
+                 
+                    foreach (var comment in comments)
+                    {
+                        if (comment.Replies != null && comment.Replies.Any())
+                        {
+                            comment.Replies = comment.Replies
+                                .Where(r => !blockedUserIds.Contains(r.UserId))
+                                .ToList();
+                        }
+                    }
                 }
 
                 var commentDtos = _mapper.Map<List<CommentDto>>(comments);
@@ -396,6 +414,39 @@ namespace SocialNetworkBe.Services.CommentServices
             {
                 _logger.LogError(ex, "Error while reacting to comment {CommentId}", request.CommentId);
                 return null;
+            }
+        }
+
+        private async Task<List<Guid>> GetBlockedUserIdsAsync(Guid userId)
+        {
+            try
+            {               
+                var blockedByMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.UserId == userId && ur.RelationType == UserRelationType.Blocked
+                );
+
+                var blockedMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.RelatedUserId == userId && ur.RelationType == UserRelationType.Blocked
+                );
+
+                var blockedIds = new List<Guid>();
+
+                if (blockedByMe != null && blockedByMe.Any())
+                {
+                    blockedIds.AddRange(blockedByMe.Select(ur => ur.RelatedUserId));
+                }
+
+                if (blockedMe != null && blockedMe.Any())
+                {
+                    blockedIds.AddRange(blockedMe.Select(ur => ur.UserId));
+                }
+
+                return blockedIds.Distinct().ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting blocked users for user {UserId}", userId);
+                return new List<Guid>();
             }
         }
     }

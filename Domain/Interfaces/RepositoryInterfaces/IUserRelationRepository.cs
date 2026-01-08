@@ -15,6 +15,7 @@ namespace Domain.Interfaces.RepositoryInterfaces
         Task<(List<User> Users, int TotalCount)> GetFriendsAsync(Guid userId, int skip, int take);
         Task<List<User>> GetFullFriends(Guid userId);
         Task<UserRelation?> GetExistingRelationAsync(Guid userId, Guid relatedUserId);
-        List<MutualFriendIdsResponse> GetListIdsMutualFriends(Guid userId);
+        List<MutualFriendIdsResponse> GetListIdsMutualFriends(Guid userId);      
+        Task<(List<UserRelation> Relations, int TotalCount)> GetBlockedUsersAsync(Guid userId, int skip, int take);
     }
 }
