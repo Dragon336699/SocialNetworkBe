@@ -12,7 +12,8 @@ namespace Domain.Enum.Group.Functions
         AlreadyMember,
         AlreadyRequested,
         JoinRequestSent,
-        JoinGroupFailed
+        JoinGroupFailed,
+        UserBanned
     }
 
     public static class JoinGroupEnumMessage
@@ -26,6 +27,7 @@ namespace Domain.Enum.Group.Functions
                 JoinGroupEnum.AlreadyRequested => "You have already sent a join request to this group.",
                 JoinGroupEnum.JoinRequestSent => "Join request sent successfully. Waiting for approval.",
                 JoinGroupEnum.JoinGroupFailed => "Failed to join group.",
+                JoinGroupEnum.UserBanned => "You are banned from this group and cannot request to join.",
                 _ => "Unknown error."
             };
         }

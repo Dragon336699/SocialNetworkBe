@@ -21,7 +21,7 @@ using SocialNetworkBe.Services.GroupServices;
 using SocialNetworkBe.Services.InteractionServices;
 using SocialNetworkBe.Services.MessageService;
 using SocialNetworkBe.Services.NotificationService;
-using SocialNetworkBe.Services.NotificationServices.NotificationDataBuilder;
+using SocialNetworkBe.Services.NotificationServices.NotificationBuilder;
 using SocialNetworkBe.Services.OTPServices;
 using SocialNetworkBe.Services.PostReactionServices;
 using SocialNetworkBe.Services.PostServices;

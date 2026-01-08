@@ -10,6 +10,7 @@ namespace Domain.Enum.Notification.Types
         Sent,
         Accepted,
         Invited,
-        Replied
+        Replied,
+        Requested
     }
 }

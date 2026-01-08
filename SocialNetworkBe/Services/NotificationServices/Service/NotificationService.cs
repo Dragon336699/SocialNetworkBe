@@ -67,7 +67,7 @@ namespace SocialNetworkBe.Services.NotificationService
                 }
                 else
                 {
-                    noti.UpdatedAt = DateTime.Now;
+                    noti.UpdatedAt = DateTime.UtcNow;
                     
                     if (noti.Data.Subjects.Any(s => s.Id == data.Subjects[0].Id))
                     {
@@ -113,12 +113,14 @@ namespace SocialNetworkBe.Services.NotificationService
                     UpdatedAt = DateTime.UtcNow,
                     ReceiverId = receiverId
                 };
+                
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+
                 NotificationDto notiDto = await CreateNotificationDto(newNoti, receiverId);
                 notiDto.Unread = true;
 
                 await _realtimeService.SendPrivateNotification(notiDto, receiverId);
-                _unitOfWork.NotificationRepository.Add(newNoti);
-                _unitOfWork.Complete();
             }
             catch (Exception ex)
             {
@@ -140,12 +142,14 @@ namespace SocialNetworkBe.Services.NotificationService
                     UpdatedAt = DateTime.UtcNow,
                     ReceiverId = receiverId
                 };
+                
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+
                 NotificationDto notiDto = await CreateNotificationDto(newNoti, receiverId);
                 notiDto.Unread = true;
 
                 await _realtimeService.SendPrivateNotification(notiDto, receiverId);
-                _unitOfWork.NotificationRepository.Add(newNoti);
-                _unitOfWork.Complete();
             } catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occured while sending notification for friend request");
@@ -163,7 +167,16 @@ namespace SocialNetworkBe.Services.NotificationService
 
                 foreach (var noti in notis)
                 {
-                    NotificationDto notiDto = await CreateNotificationDto(noti, userId);
+                    NotificationDto notiDto;
+                    // Xử lý riêng cho GroupJoinRequestAccepted vì subject là Group, không phải User
+                    if (noti.NotificationType == NotificationType.GroupJoinRequestAccepted)
+                    {
+                        notiDto = await CreateNotificationDtoForGroupAccepted(noti, userId);
+                    }
+                    else
+                    {
+                        notiDto = await CreateNotificationDto(noti, userId);
+                    }
                     notiDtos.Add(notiDto);
                 }
 
@@ -315,6 +328,11 @@ namespace SocialNetworkBe.Services.NotificationService
                         content.Append($"{noti.Data.DiObject.Name}");
                         break;
                     }
+                case (NotificationObjectType.GroupJoinRequest):
+                    {
+                        content.Append($"{noti.Data.DiObject.Name}");
+                        break;
+                    }
             }
             if (noti.Data.Preposition != null)
             {
@@ -372,6 +390,7 @@ namespace SocialNetworkBe.Services.NotificationService
                     _unitOfWork.NotificationRepository.Remove(existingNoti);
                     await _unitOfWork.CompleteAsync();
                 }
+                
                 Notification newNoti = new Notification
                 {
                     NotificationType = type,
@@ -382,18 +401,128 @@ namespace SocialNetworkBe.Services.NotificationService
                     ReceiverId = receiverId
                 };
 
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+
                 NotificationDto notiDto = await CreateNotificationDto(newNoti, receiverId);
                 notiDto.Unread = true;
 
                 await _realtimeService.SendPrivateNotification(notiDto, receiverId);
-                _unitOfWork.NotificationRepository.Add(newNoti);
-                _unitOfWork.Complete();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while sending notification for group invite");
                 throw;
             }
+        }
+
+        public async Task ProcessAndSendNotiForGroupJoinRequest(NotificationType type, NotificationData data, string navigateUrl, List<Guid> adminIds, Guid groupId)
+        {
+            try
+            {
+                var notifications = new List<Notification>();
+                
+                foreach (var adminId in adminIds)
+                {
+                    Notification newNoti = new Notification
+                    {
+                        NotificationType = type,
+                        Data = data,
+                        NavigateUrl = navigateUrl,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        ReceiverId = adminId
+                    };
+
+                    _unitOfWork.NotificationRepository.Add(newNoti);
+                    notifications.Add(newNoti);
+                }
+                
+                _unitOfWork.Complete();
+
+                foreach (var noti in notifications)
+                {
+                    NotificationDto notiDto = await CreateNotificationDto(noti, noti.ReceiverId);
+                    notiDto.Unread = true;
+
+                    await _realtimeService.SendPrivateNotification(notiDto, noti.ReceiverId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while sending notification for group join request");
+                throw;
+            }
+        }
+
+        public async Task ProcessAndSendNotiForGroupJoinRequestAccepted(NotificationType type, NotificationData data, string navigateUrl, Guid receiverId, Guid groupId)
+        {
+            try
+            {
+                Notification newNoti = new Notification
+                {
+                    NotificationType = type,
+                    Data = data,
+                    NavigateUrl = navigateUrl,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    ReceiverId = receiverId
+                };
+
+                _unitOfWork.NotificationRepository.Add(newNoti);
+                _unitOfWork.Complete();
+
+                NotificationDto notiDto = await CreateNotificationDtoForGroupAccepted(newNoti, receiverId);
+                notiDto.Unread = true;
+
+                await _realtimeService.SendPrivateNotification(notiDto, receiverId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while sending notification for group join request accepted");
+                throw;
+            }
+        }
+
+        private async Task<NotificationDto> CreateNotificationDtoForGroupAccepted(Notification noti, Guid userId)
+        {
+            List<HighlightOffset> highlightOffsets = new List<HighlightOffset>();
+            StringBuilder content = new StringBuilder();
+            List<string> imageUrls = new List<string>();
+
+            // Subject là Group
+            var groupName = noti.Data.Subjects[0].Name ?? "Group";
+            
+            // Lấy ảnh group từ database
+            var group = await _unitOfWork.GroupRepository.GetByIdAsync(noti.Data.Subjects[0].Id ?? Guid.Empty);
+            if (group != null)
+            {
+                imageUrls.Add(group.ImageUrl);
+            }
+
+            HighlightOffset offset = new HighlightOffset
+            {
+                Offset = 0,
+                Length = groupName.Length,
+            };
+            highlightOffsets.Add(offset);
+
+            // "Group Name accepted your request to join"
+            content.Append($"{groupName} {noti.Data.Verb.ToString().ToLower()} {noti.Data.DiObject.Name}");
+
+            NotificationDto notiDto = new NotificationDto
+            {
+                Id = noti.Id,
+                Content = content.ToString().Trim(),
+                ImageUrls = imageUrls,
+                Unread = noti.Unread,
+                CreatedAt = noti.CreatedAt.ToLocalTime(),
+                UpdatedAt = noti.UpdatedAt.ToLocalTime(),
+                ReceiverId = noti.ReceiverId,
+                NavigateUrl = noti.NavigateUrl,
+                Highlights = highlightOffsets
+            };
+            return notiDto;
         }
     }
 }

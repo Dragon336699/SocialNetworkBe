@@ -15,6 +15,7 @@ namespace Domain.Enum.Group.Functions
         AlreadyMember,
         AlreadyInvited,
         CannotInviteSelf,
+        UserBanned,
         Failed
     }
 
@@ -31,6 +32,7 @@ namespace Domain.Enum.Group.Functions
                 InviteMemberEnum.AlreadyMember => "User is already a member.",
                 InviteMemberEnum.AlreadyInvited => "User has already been invited.",
                 InviteMemberEnum.CannotInviteSelf => "You cannot invite yourself.",
+                InviteMemberEnum.UserBanned => "Cannot invite banned user.",
                 InviteMemberEnum.Failed => "Failed to send invitation.",
                 _ => "Unknown error."
             };

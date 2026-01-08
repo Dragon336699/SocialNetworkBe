@@ -63,8 +63,7 @@ namespace SocialNetworkBe.Services.CommentServices
                 {
                     return (CreateCommentEnum.InvalidContent, null);
                 }
-
-                // Kiểm tra parent comment nếu là reply
+             
                 if (request.RepliedCommentId.HasValue)
                 {
                     var parentComment = await _unitOfWork.CommentRepository.GetByIdAsync(request.RepliedCommentId.Value);
@@ -73,8 +72,7 @@ namespace SocialNetworkBe.Services.CommentServices
                         return (CreateCommentEnum.ParentCommentNotFound, null);
                     }
                 }
-
-                // Upload images 
+              
                 List<string>? imageUrls = null;
                 if (request.Images != null && request.Images.Any())
                 {
@@ -132,11 +130,10 @@ namespace SocialNetworkBe.Services.CommentServices
 
                 var result = await _unitOfWork.CompleteAsync();
                 if (result > 0)
-                {
-                    // Noti
+                {                 
                     NotificationData? notiData = _notificationDataBuilder.BuilderDataForComment(post, comment, user);
                     string mergeKey = NotificationType.CommentPost.ToString() + "_" + comment.Id.ToString() + "_" + user.Id.ToString();
-                    string navigateUrl = $"/comment/{comment.Id}";
+                    string navigateUrl = $"/post/{post.Id}";
                     await notificationService.ProcessAndSendNotiForCommentPost(NotificationType.CommentPost, notiData, navigateUrl, mergeKey, post.UserId);
 
                     // Refeed post
