@@ -26,5 +26,6 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<UserDto?> UpdateUserStatus(Guid userId, UserStatus status);
         Task<(UpdateAvatarEnum, string?)> UpdateAvatarAsync(UpdateAvatarRequest request, string userId);
         Task<UpdateUserInfoEnum> UpdateUserInfoAsync(UpdateUserInfoRequest request, string userId);
+        Task<List<Guid>> GetActiveUsers();
     }
 }

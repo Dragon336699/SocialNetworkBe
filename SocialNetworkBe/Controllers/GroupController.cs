@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts.Requests.Group;
 using Domain.Contracts.Responses.Group;
+using Domain.Entities;
 using Domain.Enum.Group.Functions;
 using Domain.Interfaces.ServiceInterfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -57,34 +58,15 @@ namespace SocialNetworkBe.Controllers
         {
             try
             {
-                var (status, groups) = await _groupService.GetAllGroupsAsync(skip, take);
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, groups) = await _groupService.GetAllGroupsAsync(userId, skip, take);
 
                 return status switch
                 {
-                    GetAllGroupsEnum.Success => Ok(new GetAllGroupsResponse
-                    {
-                        Message = status.GetMessage(),
-                        Groups = groups,
-                        TotalCount = groups?.Count ?? 0
-                    }),
-                    GetAllGroupsEnum.NoGroupsFound => Ok(new GetAllGroupsResponse
-                    {
-                        Message = status.GetMessage(),
-                        Groups = new List<GroupDto>(),
-                        TotalCount = 0
-                    }),
-                    GetAllGroupsEnum.Failed => StatusCode(500, new GetAllGroupsResponse
-                    {
-                        Message = status.GetMessage(),
-                        Groups = null,
-                        TotalCount = 0
-                    }),
-                    _ => StatusCode(500, new GetAllGroupsResponse
-                    {
-                        Message = "Unknown error occurred",
-                        Groups = null,
-                        TotalCount = 0
-                    })
+                    GetAllGroupsEnum.Success => Ok(new GetAllGroupsResponse { Message = status.GetMessage(), Groups = groups, TotalCount = groups?.Count ?? 0 }),
+                    GetAllGroupsEnum.NoGroupsFound => Ok(new GetAllGroupsResponse { Message = status.GetMessage(), Groups = new List<GroupDto>(), TotalCount = 0 }),
+                    GetAllGroupsEnum.Failed => StatusCode(500, new GetAllGroupsResponse { Message = status.GetMessage(), Groups = null, TotalCount = 0 }),
+                    _ => StatusCode(500, new GetAllGroupsResponse { Message = "Unknown error occurred", Groups = null, TotalCount = 0 })
                 };
             }
             catch (Exception ex)
@@ -115,7 +97,7 @@ namespace SocialNetworkBe.Controllers
                         Group = groupDto
                     }),
                     GetGroupByIdEnum.GroupNotFound => NotFound(new GetGroupByIdResponse { Message = status.GetMessage() }),
-                    GetGroupByIdEnum.Unauthorized => StatusCode(403, new GetGroupByIdResponse { Message = status.GetMessage() }),
+                    GetGroupByIdEnum.Unauthorized => StatusCode(403, new GetGroupByIdResponse { Message = status.GetMessage() }),              
                     GetGroupByIdEnum.Failed => StatusCode(500, new GetGroupByIdResponse { Message = status.GetMessage() }),
                     _ => StatusCode(500, new GetGroupByIdResponse { Message = "Unknown error occurred" })
                 };
@@ -197,6 +179,7 @@ namespace SocialNetworkBe.Controllers
                     JoinGroupEnum.GroupNotFound => NotFound(new JoinGroupResponse { Message = status.GetMessage() }),
                     JoinGroupEnum.AlreadyMember => BadRequest(new JoinGroupResponse { Message = status.GetMessage() }),
                     JoinGroupEnum.AlreadyRequested => BadRequest(new JoinGroupResponse { Message = status.GetMessage() }),
+                    JoinGroupEnum.UserBanned => StatusCode(403, new JoinGroupResponse { Message = status.GetMessage() }),
                     JoinGroupEnum.JoinRequestSent => Ok(new JoinGroupResponse { Message = status.GetMessage() }),
                     JoinGroupEnum.JoinGroupFailed => StatusCode(500, new JoinGroupResponse { Message = status.GetMessage() }),
                     _ => StatusCode(500, new JoinGroupResponse { Message = "Unknown error occurred" })
@@ -652,6 +635,93 @@ namespace SocialNetworkBe.Controllers
                 {
                     Message = ex.Message,
                     Invitations = null,
+                    TotalCount = 0
+                });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("{groupId}/ban-member")]
+        public async Task<IActionResult> BanMember(Guid groupId, [FromBody] BanMemberRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, result) = await _groupService.BanMemberAsync(groupId, request.TargetUserId, currentUserId);
+
+                return status switch
+                {
+                    BanMemberEnum.Success => Ok(new BanMemberResponse { Message = status.GetMessage(), Success = true }),
+                    BanMemberEnum.GroupNotFound => NotFound(new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    BanMemberEnum.UserNotFound => NotFound(new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    BanMemberEnum.TargetUserNotMember => BadRequest(new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    BanMemberEnum.Unauthorized => StatusCode(403, new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    BanMemberEnum.CannotBanSelf => BadRequest(new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    BanMemberEnum.CannotBanSuperAdmin => BadRequest(new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    BanMemberEnum.CannotBanAdmin => BadRequest(new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    BanMemberEnum.AdminCannotBanAdmin => StatusCode(403, new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    BanMemberEnum.AlreadyBanned => BadRequest(new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    BanMemberEnum.Failed => StatusCode(500, new BanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    _ => StatusCode(500, new BanMemberResponse { Message = "Unknown error occurred", Success = false })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new BanMemberResponse { Message = ex.Message, Success = false });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("{groupId}/unban-member")]
+        public async Task<IActionResult> UnbanMember(Guid groupId, [FromBody] UnbanMemberRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, result) = await _groupService.UnbanMemberAsync(groupId, request.TargetUserId, currentUserId);
+
+                return status switch
+                {
+                    UnbanMemberEnum.Success => Ok(new UnbanMemberResponse { Message = status.GetMessage(), Success = true }),
+                    UnbanMemberEnum.GroupNotFound => NotFound(new UnbanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    UnbanMemberEnum.UserNotFound => NotFound(new UnbanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    UnbanMemberEnum.UserNotBanned => BadRequest(new UnbanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    UnbanMemberEnum.Unauthorized => StatusCode(403, new UnbanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    UnbanMemberEnum.Failed => StatusCode(500, new UnbanMemberResponse { Message = status.GetMessage(), Success = false }),
+                    _ => StatusCode(500, new UnbanMemberResponse { Message = "Unknown error occurred", Success = false })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new UnbanMemberResponse { Message = ex.Message, Success = false });
+            }
+        }
+
+        [Authorize]
+        [HttpGet("{groupId}/banned-members")]
+        public async Task<IActionResult> GetBannedMembers(Guid groupId, [FromQuery] int skip = 0, [FromQuery] int take = 10)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, bannedMembers) = await _groupService.GetBannedMembersAsync(groupId, currentUserId, skip, take);
+
+                return status switch
+                {
+                    GetBannedMembersEnum.Success => Ok(new GetBannedMembersResponse { Message = status.GetMessage(), BannedMembers = bannedMembers, TotalCount = bannedMembers?.Count ?? 0 }),
+                    GetBannedMembersEnum.GroupNotFound => NotFound(new GetBannedMembersResponse { Message = status.GetMessage(), BannedMembers = null, TotalCount = 0 }),
+                    GetBannedMembersEnum.Unauthorized => StatusCode(403, new GetBannedMembersResponse { Message = status.GetMessage(), BannedMembers = null, TotalCount = 0 }),
+                    GetBannedMembersEnum.NoBannedMembers => Ok(new GetBannedMembersResponse { Message = status.GetMessage(), BannedMembers = new List<GroupUserDto>(), TotalCount = 0 }),
+                    GetBannedMembersEnum.Failed => StatusCode(500, new GetBannedMembersResponse { Message = status.GetMessage(), BannedMembers = null, TotalCount = 0 }),
+                    _ => StatusCode(500, new GetBannedMembersResponse { Message = "Unknown error occurred", BannedMembers = null, TotalCount = 0 })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new GetBannedMembersResponse
+                {
+                    Message = ex.Message,
+                    BannedMembers = null,
                     TotalCount = 0
                 });
             }

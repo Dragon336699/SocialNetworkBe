@@ -50,5 +50,18 @@ namespace SocialNetworkBe.Services.InteractionServices
                 throw;
             }
         }
+
+        public void InteractionPost(Guid userId, Guid postId, string action)
+        {
+            try
+            {
+                _interactionRepository.InteractionPost(userId, postId, action);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("An error occur while interaction post with user {userId} {action} post {postId}", userId, action, postId);
+                throw;
+            }
+        }
     }
 }

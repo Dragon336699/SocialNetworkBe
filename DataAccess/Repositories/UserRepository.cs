@@ -15,8 +15,7 @@ namespace DataAccess.Repositories
         public async Task<IEnumerable<User>?> SearchUsers(string keywordNomarlized)
         {
             IEnumerable<User>? users = await _context.Users
-                .Where(u => u.Email.ToLower().Contains(keywordNomarlized)
-                        || u.UserName.ToLower().Contains(keywordNomarlized)
+                .Where(u => u.UserName.ToLower().Contains(keywordNomarlized)
                         || u.FirstName.ToLower().Contains(keywordNomarlized)
                         || u.LastName.ToLower().Contains(keywordNomarlized))
                 .AsNoTracking()

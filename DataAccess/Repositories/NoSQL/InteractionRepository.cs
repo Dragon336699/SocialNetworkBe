@@ -46,5 +46,20 @@ namespace DataAccess.Repositories.NoSQL
             _context.Session.Execute(boundCounter);
             _context.Session.Execute(boundMeta);
         }
+
+        public void InteractionPost(Guid userId, Guid postId, string action)
+        {
+            var userPostInteractionQuery = "INSERT INTO user_post_interaction (user_id, post_id, action, created_at) VALUES (?, ?, ?, ?)";
+            var postUserInteractionQuery = "INSERT INTO post_user_interaction (post_id, user_id, action, created_at) VALUES (?, ?, ?, ?)";
+
+            var preparedUserPost = _context.Session.Prepare(userPostInteractionQuery);
+            var preparedPostUser = _context.Session.Prepare(postUserInteractionQuery);
+
+            var boundUserPost = preparedUserPost.Bind(userId, postId, action, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            var boundPostUser = preparedPostUser.Bind(postId, userId, action, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
+            _context.Session.Execute(boundUserPost);
+            _context.Session.Execute(boundPostUser);
+        }
     }
 }

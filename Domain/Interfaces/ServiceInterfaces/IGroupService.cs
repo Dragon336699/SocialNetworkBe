@@ -12,7 +12,7 @@ namespace Domain.Interfaces.ServiceInterfaces
     public interface IGroupService
     {
         Task<(CreateGroupEnum, Guid?)> CreateGroupAsync(CreateGroupRequest request, Guid userId);
-        Task<(GetAllGroupsEnum, List<GroupDto>?)> GetAllGroupsAsync(int skip = 0, int take = 10);
+        Task<(GetAllGroupsEnum, List<GroupDto>?)> GetAllGroupsAsync(Guid userId, int skip = 0, int take = 10);
         Task<(GetGroupByIdEnum, GroupDto?)> GetGroupByIdAsync(Guid groupId, Guid userId);
         Task<(UpdateGroupEnum, GroupDto?)> UpdateGroupAsync(Guid groupId, UpdateGroupRequest request, Guid userId);
         Task<(DeleteGroupEnum, bool)> DeleteGroupAsync(Guid groupId, Guid userId);
@@ -31,6 +31,9 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<(AcceptGroupInviteEnum, GroupDto?)> AcceptGroupInviteAsync(Guid groupId, Guid userId);
         Task<(RejectGroupInviteEnum, bool)> RejectGroupInviteAsync(Guid groupId, Guid userId);
         Task<(GetMyGroupInvitationsEnum, List<GroupInvitationDto>?)> GetMyGroupInvitationsAsync(Guid userId, int skip = 0, int take = 10);
+        Task<(BanMemberEnum, bool)> BanMemberAsync(Guid groupId, Guid targetUserId, Guid currentUserId);
+        Task<(UnbanMemberEnum, bool)> UnbanMemberAsync(Guid groupId, Guid targetUserId, Guid currentUserId);
+        Task<(GetBannedMembersEnum, List<GroupUserDto>?)> GetBannedMembersAsync(Guid groupId, Guid currentUserId, int skip = 0, int take = 10);
     }
 
 }

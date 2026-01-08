@@ -5,6 +5,7 @@ using DataAccess.AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using SocialNetworkBe.Services.ScheduleServices;
 
 namespace Domain.AddServicesCollection
 {
@@ -73,8 +74,14 @@ namespace Domain.AddServicesCollection
             services.AddHttpClient("SuggestFriend", client =>
             {
                 client.BaseAddress = new Uri("https://fricon.online/");
-                client.Timeout = TimeSpan.FromSeconds(10);
             });
+
+            services.AddHttpClient("FeedPostSuggest", client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:8000");
+            });
+
+            services.AddHostedService<FeedScheduleService>();
         }
     }
 }

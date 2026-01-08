@@ -5,9 +5,11 @@ using Domain.Contracts.Responses.Post;
 using Domain.Contracts.Responses.Search;
 using Domain.Contracts.Responses.User;
 using Domain.Entities;
+using Domain.Enum.Group.Types;
+using Domain.Enum.Post.Types;
+using Domain.Enum.Search.Types;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
-using Domain.Enum.Search.Types;
 
 namespace SocialNetworkBe.Services.SearchServices
 {
@@ -39,20 +41,20 @@ namespace SocialNetworkBe.Services.SearchServices
                         break;
 
                     case SearchType.Groups:
-                        result.Groups = await SearchGroupsAsync(keywordNormalized, request.Skip, request.Take);
+                        result.Groups = await SearchGroupsAsync(keywordNormalized, userId, request.Skip, request.Take);
                         result.TotalGroupsCount = result.Groups?.Count ?? 0;
                         break;
 
                     case SearchType.Posts:
-                        result.Posts = await SearchPostsAsync(keywordNormalized, request.Skip, request.Take);
+                        result.Posts = await SearchPostsAsync(keywordNormalized, userId, request.Skip, request.Take);
                         result.TotalPostsCount = result.Posts?.Count ?? 0;
                         break;
 
                     case SearchType.All:
                     default:
                         result.Users = await SearchUsersAsync(keywordNormalized, 0, 5);
-                        result.Groups = await SearchGroupsAsync(keywordNormalized, 0, 5);
-                        result.Posts = await SearchPostsAsync(keywordNormalized, 0, 5);
+                        result.Groups = await SearchGroupsAsync(keywordNormalized, userId, 0, 5);
+                        result.Posts = await SearchPostsAsync(keywordNormalized, userId, 0, 5);
                         result.TotalUsersCount = result.Users?.Count ?? 0;
                         result.TotalGroupsCount = result.Groups?.Count ?? 0;
                         result.TotalPostsCount = result.Posts?.Count ?? 0;
@@ -73,8 +75,7 @@ namespace SocialNetworkBe.Services.SearchServices
             try
             {
                 var contentTrimmed = request.Content.Trim();
-
-                // Remove existing history with same content
+               
                 var existingHistory = await _unitOfWork.SearchingHistoryRepository
                     .FindFirstAsync(sh => sh.UserId == userId && sh.Content == contentTrimmed);
 
@@ -177,19 +178,31 @@ namespace SocialNetworkBe.Services.SearchServices
             return _mapper.Map<List<UserDto>>(paginatedUsers);
         }
 
-        private async Task<List<GroupDto>?> SearchGroupsAsync(string keywordNormalized, int skip, int take)
+        private async Task<List<GroupDto>?> SearchGroupsAsync(string keywordNormalized, Guid userId, int skip, int take)
         {
             var groups = await _unitOfWork.GroupRepository.SearchGroups(keywordNormalized);
             if (groups == null || !groups.Any()) return null;
 
-            var paginatedGroups = groups.Skip(skip).Take(take).ToList();
+            var filteredGroups = groups.Where(g =>
+                !g.GroupUsers.Any(gu => gu.UserId == userId && gu.RoleName == GroupRole.Banned)
+            ).ToList();
+
+            if (!filteredGroups.Any()) return null;
+
+            var paginatedGroups = filteredGroups.Skip(skip).Take(take).ToList();
             return _mapper.Map<List<GroupDto>>(paginatedGroups);
         }
 
-        private async Task<List<PostDto>?> SearchPostsAsync(string keywordNormalized, int skip, int take)
+        private async Task<List<PostDto>?> SearchPostsAsync(string keywordNormalized, Guid userId, int skip, int take)
         {
+            var bannedGroupIds = await GetBannedGroupIdsAsync(userId);
+
             var postsByContent = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
-                p => p.Content.ToLower().Contains(keywordNormalized),
+                p => p.Content.ToLower().Contains(keywordNormalized) &&
+                     p.PostPrivacy != PostPrivacy.PendingApproval &&
+                     p.PostPrivacy != PostPrivacy.Private &&
+                     (p.GroupId == null || p.Group.IsPublic == 1) &&
+                     (!p.GroupId.HasValue || !bannedGroupIds.Contains(p.GroupId.Value)) ,
                 p => p.User,
                 p => p.PostImages,
                 p => p.Group
@@ -208,10 +221,12 @@ namespace SocialNetworkBe.Services.SearchServices
             var matchedUsers = await _unitOfWork.UserRepository.SearchUsers(keywordNormalized);
             if (matchedUsers != null && matchedUsers.Any())
             {
-                var userIds = matchedUsers.Select(u => u.Id).ToList();
-
+                var userIds = matchedUsers.Select(u => u.Id).ToList();               
                 var postsByUsers = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
-                    p => userIds.Contains(p.UserId) && p.PostPrivacy == Domain.Enum.Post.Types.PostPrivacy.Public,
+                    p => userIds.Contains(p.UserId) && 
+                         p.PostPrivacy == PostPrivacy.Public &&
+                         (p.GroupId == null || p.Group.IsPublic == 1) &&
+                         (!p.GroupId.HasValue || !bannedGroupIds.Contains(p.GroupId.Value)),
                     p => p.User,
                     p => p.PostImages,
                     p => p.Group
@@ -228,6 +243,28 @@ namespace SocialNetworkBe.Services.SearchServices
                 }
             }
             return null;
+        }
+
+        private async Task<List<Guid>> GetBannedGroupIdsAsync(Guid userId)
+        {
+            try
+            {
+                var bannedGroupUsers = await _unitOfWork.GroupUserRepository.FindAsync(
+                    gu => gu.UserId == userId && gu.RoleName == GroupRole.Banned
+                );
+
+                if (bannedGroupUsers == null || !bannedGroupUsers.Any())
+                {
+                    return new List<Guid>();
+                }
+
+                return bannedGroupUsers.Select(gu => gu.GroupId).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting banned groups for user {UserId}", userId);
+                return new List<Guid>();
+            }
         }
     }
 }

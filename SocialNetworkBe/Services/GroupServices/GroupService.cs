@@ -120,7 +120,7 @@ namespace SocialNetworkBe.Services.GroupServices
             }
         }
 
-        public async Task<(GetAllGroupsEnum, List<GroupDto>?)> GetAllGroupsAsync(int skip = 0, int take = 10)
+        public async Task<(GetAllGroupsEnum, List<GroupDto>?)> GetAllGroupsAsync(Guid userId, int skip = 0, int take = 10)
         {
             try
             {
@@ -135,7 +135,16 @@ namespace SocialNetworkBe.Services.GroupServices
                     return (GetAllGroupsEnum.NoGroupsFound, null);
                 }
 
-                var groupDtos = _mapper.Map<List<GroupDto>>(groups);
+                var filteredGroups = groups.Where(g =>
+                    !g.GroupUsers.Any(gu => gu.UserId == userId && gu.RoleName == GroupRole.Banned)
+                ).ToList();
+
+                if (!filteredGroups.Any())
+                {
+                    return (GetAllGroupsEnum.NoGroupsFound, null);
+                }
+
+                var groupDtos = _mapper.Map<List<GroupDto>>(filteredGroups);
 
                 return (GetAllGroupsEnum.Success, groupDtos);
             }
@@ -155,11 +164,14 @@ namespace SocialNetworkBe.Services.GroupServices
                 if (group == null)
                 {
                     return (GetGroupByIdEnum.GroupNotFound, null);
-                }
+                }        
 
                 if (group.IsPublic == 0)
                 {
-                    var isMember = group.GroupUsers?.Any(gu => gu.UserId == userId && gu.RoleName != GroupRole.Pending && gu.RoleName != GroupRole.Inviting) ?? false;
+                    var isMember = group.GroupUsers?.Any(gu => gu.UserId == userId && 
+                        gu.RoleName != GroupRole.Pending && 
+                        gu.RoleName != GroupRole.Inviting &&
+                        gu.RoleName != GroupRole.Banned) ?? false;
                     if (!isMember)
                     {
                         return (GetGroupByIdEnum.Unauthorized, null);
@@ -306,17 +318,25 @@ namespace SocialNetworkBe.Services.GroupServices
         {
             try
             {
-                var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+                
+                var group = groups?.FirstOrDefault();
                 if (group == null)
                 {
                     return (JoinGroupEnum.GroupNotFound, false);
                 }
 
-                var existingMember = await _unitOfWork.GroupUserRepository
-                    .FindFirstAsync(gu => gu.GroupId == groupId && gu.UserId == userId);
+                var existingMember = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == userId);
 
                 if (existingMember != null)
                 {
+                    if (existingMember.RoleName == GroupRole.Banned)
+                    {
+                        return (JoinGroupEnum.UserBanned, false);
+                    }
                     if (existingMember.RoleName == GroupRole.Pending)
                     {
                         return (JoinGroupEnum.AlreadyRequested, false);
@@ -336,7 +356,42 @@ namespace SocialNetworkBe.Services.GroupServices
                 var result = await _unitOfWork.CompleteAsync();
 
                 if (result > 0)
-                {
+                {                  
+                    try
+                    {
+                        var requester = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+                        if (requester != null)
+                        {                           
+                            var adminIds = group.GroupUsers?
+                                .Where(gu => gu.RoleName == GroupRole.Administrator || gu.RoleName == GroupRole.SuperAdministrator)
+                                .Select(gu => gu.UserId)
+                                .ToList() ?? new List<Guid>();
+
+                            if (adminIds.Any())
+                            {
+                                using (var scope = _serviceProvider.CreateScope())
+                                {
+                                    var notificationDataBuilder = scope.ServiceProvider.GetRequiredService<INotificationDataBuilder>();
+                                    var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+                                    var notificationData = notificationDataBuilder.BuilderDataForGroupJoinRequest(group, requester);
+
+                                    await notificationService.ProcessAndSendNotiForGroupJoinRequest(
+                                        NotificationType.GroupJoinRequest,
+                                        notificationData,
+                                        $"/groups/{groupId}",
+                                        adminIds,
+                                        groupId
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error sending group join request notification");
+                    }
+
                     return (JoinGroupEnum.JoinRequestSent, true);
                 }
 
@@ -379,7 +434,7 @@ namespace SocialNetworkBe.Services.GroupServices
                     gu => gu.UserId == targetUserId && gu.RoleName == GroupRole.Pending);
 
                 if (joinRequest == null)
-                {                 
+                {                
                     var existingMember = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == targetUserId);
                     if (existingMember != null && existingMember.RoleName != GroupRole.Pending)
                     {
@@ -395,7 +450,30 @@ namespace SocialNetworkBe.Services.GroupServices
                 var result = await _unitOfWork.CompleteAsync();
 
                 if (result > 0)
-                {
+                {              
+                    try
+                    {
+                        using (var scope = _serviceProvider.CreateScope())
+                        {
+                            var notificationDataBuilder = scope.ServiceProvider.GetRequiredService<INotificationDataBuilder>();
+                            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+                            var notificationData = notificationDataBuilder.BuilderDataForGroupJoinRequestAccepted(group);
+
+                            await notificationService.ProcessAndSendNotiForGroupJoinRequestAccepted(
+                                NotificationType.GroupJoinRequestAccepted,
+                                notificationData,
+                                $"/groups/{groupId}",
+                                targetUserId,
+                                groupId
+                            );
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error sending group join request accepted notification");
+                    }
+
                     var updatedGroupUser = await _unitOfWork.GroupUserRepository.FindFirstAsyncWithIncludes(
                         gu => gu.GroupId == groupId && gu.UserId == targetUserId,
                         gu => gu.User
@@ -522,7 +600,7 @@ namespace SocialNetworkBe.Services.GroupServices
                 {
                     return (GetPendingJoinRequestsEnum.GroupNotFound, null);
                 }
-               
+              
                 var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
                 if (currentUserRole == null ||
                     (currentUserRole.RoleName != GroupRole.SuperAdministrator &&
@@ -603,7 +681,10 @@ namespace SocialNetworkBe.Services.GroupServices
             try
             {
                 var groupUsers = await _unitOfWork.GroupUserRepository.FindAsync(
-                    gu => gu.UserId == userId
+                    gu => gu.UserId == userId && 
+                          gu.RoleName != GroupRole.Pending && 
+                          gu.RoleName != GroupRole.Inviting &&
+                          gu.RoleName != GroupRole.Banned
                 );
 
                 if (groupUsers == null || !groupUsers.Any())
@@ -904,7 +985,8 @@ namespace SocialNetworkBe.Services.GroupServices
                 var inviterMembership = group.GroupUsers?.FirstOrDefault(
                     gu => gu.UserId == inviterId &&
                           gu.RoleName != GroupRole.Pending &&
-                          gu.RoleName != GroupRole.Inviting
+                          gu.RoleName != GroupRole.Inviting &&
+                          gu.RoleName != GroupRole.Banned
                 );
 
                 if (inviterMembership == null)
@@ -922,6 +1004,11 @@ namespace SocialNetworkBe.Services.GroupServices
 
                 if (existingMembership != null)
                 {
+                    if (existingMembership.RoleName == GroupRole.Banned)
+                    {
+                        return (InviteMemberEnum.UserBanned, false);
+                    }
+
                     if (existingMembership.RoleName != GroupRole.Inviting &&
                         existingMembership.RoleName != GroupRole.Pending)
                     {
@@ -968,7 +1055,7 @@ namespace SocialNetworkBe.Services.GroupServices
                                     await notificationService.ProcessAndSendNotiForGroupInvite(
                                         NotificationType.GroupInvite,
                                         notificationData,
-                                        $"/groups/{groupId}",
+                                        $"/group/{groupId}",
                                         targetUserId,
                                         groupId
                                     );
@@ -1125,7 +1212,8 @@ namespace SocialNetworkBe.Services.GroupServices
                         IsPublic = invitation.Group.IsPublic == 1,
                         MemberCount = invitation.Group.GroupUsers?.Count(gu =>
                             gu.RoleName != GroupRole.Pending &&
-                            gu.RoleName != GroupRole.Inviting) ?? 0,
+                            gu.RoleName != GroupRole.Inviting &&
+                            gu.RoleName != GroupRole.Banned) ?? 0,
                         InvitedAt = invitation.JoinedAt
                     };
 
@@ -1140,5 +1228,183 @@ namespace SocialNetworkBe.Services.GroupServices
                 return (GetMyGroupInvitationsEnum.Failed, null);
             }
         }
+
+        public async Task<(BanMemberEnum, bool)> BanMemberAsync(Guid groupId, Guid targetUserId, Guid currentUserId)
+        {
+            try
+            {
+                if (currentUserId == targetUserId)
+                {
+                    return (BanMemberEnum.CannotBanSelf, false);
+                }
+
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (BanMemberEnum.GroupNotFound, false);
+                }
+
+                var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
+                if (currentUserRole == null)
+                {
+                    return (BanMemberEnum.Unauthorized, false);
+                }
+
+                if (currentUserRole.RoleName != GroupRole.SuperAdministrator &&
+                    currentUserRole.RoleName != GroupRole.Administrator)
+                {
+                    return (BanMemberEnum.Unauthorized, false);
+                }
+
+                var targetGroupUser = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == targetUserId);
+                if (targetGroupUser == null)
+                {
+                    return (BanMemberEnum.TargetUserNotMember, false);
+                }
+
+                if (targetGroupUser.RoleName == GroupRole.Banned)
+                {
+                    return (BanMemberEnum.AlreadyBanned, false);
+                }
+
+                if (targetGroupUser.RoleName == GroupRole.SuperAdministrator)
+                {
+                    return (BanMemberEnum.CannotBanSuperAdmin, false);
+                }
+
+                if (currentUserRole.RoleName == GroupRole.Administrator &&
+                    targetGroupUser.RoleName == GroupRole.Administrator)
+                {
+                    return (BanMemberEnum.AdminCannotBanAdmin, false);
+                }
+
+                targetGroupUser.RoleName = GroupRole.Banned;
+
+                _unitOfWork.GroupUserRepository.Update(targetGroupUser);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    return (BanMemberEnum.Success, true);
+                }
+
+                return (BanMemberEnum.Failed, false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when banning user {TargetUserId} from group {GroupId}", targetUserId, groupId);
+                return (BanMemberEnum.Failed, false);
+            }
+        }
+
+        public async Task<(UnbanMemberEnum, bool)> UnbanMemberAsync(Guid groupId, Guid targetUserId, Guid currentUserId)
+        {
+            try
+            {
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (UnbanMemberEnum.GroupNotFound, false);
+                }
+
+                var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
+                if (currentUserRole == null ||
+                    (currentUserRole.RoleName != GroupRole.SuperAdministrator &&
+                     currentUserRole.RoleName != GroupRole.Administrator))
+                {
+                    return (UnbanMemberEnum.Unauthorized, false);
+                }
+
+                var targetGroupUser = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == targetUserId);
+                if (targetGroupUser == null)
+                {
+                    return (UnbanMemberEnum.UserNotFound, false);
+                }
+
+                if (targetGroupUser.RoleName != GroupRole.Banned)
+                {
+                    return (UnbanMemberEnum.UserNotBanned, false);
+                }
+
+                _unitOfWork.GroupUserRepository.Remove(targetGroupUser);
+                var result = await _unitOfWork.CompleteAsync();
+
+                if (result > 0)
+                {
+                    return (UnbanMemberEnum.Success, true);
+                }
+
+                return (UnbanMemberEnum.Failed, false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when unbanning user {TargetUserId} from group {GroupId}", targetUserId, groupId);
+                return (UnbanMemberEnum.Failed, false);
+            }
+        }
+
+        public async Task<(GetBannedMembersEnum, List<GroupUserDto>?)> GetBannedMembersAsync(
+            Guid groupId,
+            Guid currentUserId,
+            int skip = 0,
+            int take = 10)
+        {
+            try
+            {
+                var groups = await _unitOfWork.GroupRepository.FindAsyncWithIncludes(
+                    g => g.Id == groupId,
+                    g => g.GroupUsers
+                );
+
+                var group = groups?.FirstOrDefault();
+                if (group == null)
+                {
+                    return (GetBannedMembersEnum.GroupNotFound, null);
+                }
+
+                var currentUserRole = group.GroupUsers?.FirstOrDefault(gu => gu.UserId == currentUserId);
+                if (currentUserRole == null ||
+                    (currentUserRole.RoleName != GroupRole.SuperAdministrator &&
+                     currentUserRole.RoleName != GroupRole.Administrator))
+                {
+                    return (GetBannedMembersEnum.Unauthorized, null);
+                }
+
+                var bannedMembers = await _unitOfWork.GroupUserRepository.FindAsyncWithIncludes(
+                    gu => gu.GroupId == groupId && gu.RoleName == GroupRole.Banned,
+                    gu => gu.User
+                );
+
+                if (bannedMembers == null || !bannedMembers.Any())
+                {
+                    return (GetBannedMembersEnum.NoBannedMembers, null);
+                }
+
+                var paginatedMembers = bannedMembers
+                    .OrderByDescending(gu => gu.JoinedAt)
+                    .Skip(skip)
+                    .Take(take)
+                    .ToList();
+
+                var groupUserDtos = _mapper.Map<List<GroupUserDto>>(paginatedMembers);
+
+                return (GetBannedMembersEnum.Success, groupUserDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error when getting banned members for group {GroupId}", groupId);
+                return (GetBannedMembersEnum.Failed, null);
+            }
+        }
     }
-}
+} 

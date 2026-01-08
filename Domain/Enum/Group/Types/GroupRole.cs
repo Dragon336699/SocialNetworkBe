@@ -12,6 +12,7 @@ namespace Domain.Enum.Group.Types
         Administrator,
         User,
         Pending,
-        Inviting
+        Inviting,
+        Banned
     }
 }

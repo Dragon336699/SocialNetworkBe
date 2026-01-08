@@ -19,13 +19,13 @@ namespace DataAccess.Repositories
         {
             _ = Task.Run(async () =>
             {
-                var query = "INSERT INTO user_feed_unseen (user_id, created_at, feed_id, post_id) VALUES (?, ?, ?, ?)";
+                var query = "INSERT INTO user_feed_unseen (user_id, created_at, post_id) VALUES (?, ?, ?)";
                 var prepared = await _context.Session.PrepareAsync(query);
 
                 foreach (var id in userIds)
                 {
                     var createdAtDt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    var bound = prepared.Bind(id, createdAtDt, Guid.NewGuid(), postId);
+                    var bound = prepared.Bind(id, createdAtDt, postId);
                     await _context.Session.ExecuteAsync(bound);
                 }
             });
@@ -50,7 +50,6 @@ namespace DataAccess.Repositories
                     UserId = row.GetValue<Guid>("user_id"),
                     CreatedAt = unixTime,
                     PostId = row.GetValue<Guid>("post_id"),
-                    FeedId = row.GetValue<Guid>("feed_id"),
                 };
             }).ToList();
 
@@ -59,8 +58,8 @@ namespace DataAccess.Repositories
 
         public void SeenFeed(List<SeenFeedRequest> request, Guid userId)
         {
-            var deleteCommand = "DELETE FROM user_feed_unseen WHERE user_id = ? AND feed_id = ? AND created_at = ?";
-            var query = "INSERT INTO user_feed_seen (user_id, post_id, feed_id, seen_at) VALUES (?, ?, ?, ?)";
+            var deleteCommand = "DELETE FROM user_feed_unseen WHERE user_id = ? AND post_id = ? AND created_at = ?";
+            var query = "INSERT INTO user_feed_seen (user_id, post_id, seen_at) VALUES (?, ?, ?)";
             var deletePrepared = _context.Session.Prepare(deleteCommand);
             var prepared = _context.Session.Prepare(query);
             var batch = new BatchStatement();
@@ -71,8 +70,8 @@ namespace DataAccess.Repositories
                 var createdAtDt = DateTimeOffset.FromUnixTimeMilliseconds(feed.CreatedAt).UtcDateTime;
                 var seenAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-                batch.Add(deletePrepared.Bind(userId, feed.FeedId, createdAtDt));
-                batch.Add(prepared.Bind(userId, feed.PostId, feed.FeedId, seenAt));
+                batch.Add(deletePrepared.Bind(userId, feed.PostId, createdAtDt));
+                batch.Add(prepared.Bind(userId, feed.PostId, seenAt));
             }
             _context.Session.Execute(batch);
         }

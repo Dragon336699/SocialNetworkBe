@@ -2,16 +2,17 @@
 
 namespace DataAccess.Cassandra.Schemas
 {
-    public class UserFeedSeenTable : ICassandraSchema
+    public class PostUserInteractionTable : ICassandraSchema
     {
         public async Task CreateAsync(ISession session)
         {
             await session.ExecuteAsync(new SimpleStatement(
-                @"CREATE TABLE IF NOT EXISTS user_feed_seen (
-                 user_id UUID,
+                @"CREATE TABLE IF NOT EXISTS post_user_interaction (
                 post_id UUID,
-                seen_at TIMESTAMP,
-                PRIMARY KEY ((user_id), post_id)
+                user_id UUID,
+                action TEXT,
+                created_at TIMESTAMP,
+                PRIMARY KEY ((post_id), user_id, action)
                 );"
              ));
         }
