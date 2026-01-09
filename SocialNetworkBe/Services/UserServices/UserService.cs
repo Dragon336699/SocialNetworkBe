@@ -369,7 +369,7 @@ namespace SocialNetworkBe.Services.UserServices
                 {
                     return null;
                 }
-             
+
                 var currentUserGuid = Guid.Parse(currentUserId);
                 var blockedUserIds = await GetBlockedUserIdsAsync(currentUserGuid);
                 if (blockedUserIds.Any())
@@ -377,7 +377,7 @@ namespace SocialNetworkBe.Services.UserServices
                     users = users.Where(u => !blockedUserIds.Contains(u.Id) && u.Id != currentUserGuid).ToList();
                 }
                 else
-                {                  
+                {
                     users = users.Where(u => u.Id != currentUserGuid).ToList();
                 }
                 IEnumerable<UserDto>? usersDto = _mapper.Map<IEnumerable<UserDto>>(users);
@@ -509,11 +509,11 @@ namespace SocialNetworkBe.Services.UserServices
         private async Task<List<Guid>> GetBlockedUserIdsAsync(Guid userId)
         {
             try
-            {               
+            {
                 var blockedByMe = await _unitOfWork.UserRelationRepository.FindAsync(
                     ur => ur.UserId == userId && ur.RelationType == UserRelationType.Blocked
                 );
-             
+
                 var blockedMe = await _unitOfWork.UserRelationRepository.FindAsync(
                     ur => ur.RelatedUserId == userId && ur.RelationType == UserRelationType.Blocked
                 );
@@ -536,6 +536,8 @@ namespace SocialNetworkBe.Services.UserServices
             {
                 _logger.LogError(ex, "Error getting blocked users for user {UserId}", userId);
                 return new List<Guid>();
+            }
+        }
         public async Task<List<Guid>> GetActiveUsers()
         {
             try
