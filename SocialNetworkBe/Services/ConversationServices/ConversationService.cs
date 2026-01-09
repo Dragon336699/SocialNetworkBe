@@ -3,6 +3,7 @@ using Domain.Contracts.Responses.Conversation;
 using Domain.Entities;
 using Domain.Enum.Conversation.Functions;
 using Domain.Enum.Conversation.Types;
+using Domain.Enum.User.Types;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 using Microsoft.Extensions.Logging;
@@ -105,6 +106,30 @@ namespace SocialNetworkBe.Services.ConversationServices
                 var conversationUser = await _unitOfWork.ConversationUserRepository.FindAsync(cu => cu.UserId == userId);
                 if (conversationUser == null) return null;
                 List<ConversationDto>? conversations = await _unitOfWork.ConversationRepository.GetAllConversationByUser(userId);
+
+                if (conversations == null || !conversations.Any()) return null;
+            
+                var blockedUserIds = await GetBlockedUserIdsAsync(userId);
+
+                if (blockedUserIds.Any())
+                {                  
+                    conversations = conversations.Where(conv =>
+                    {                      
+                        if (conv.Type == ConversationType.Group)
+                            return true;
+
+                        if (conv.Type == ConversationType.Personal)
+                        {
+                            var otherUsers = conv.ConversationUsers?
+                                .Where(cu => cu.User != null && cu.User.Id != userId)
+                                .Select(cu => cu.User!.Id)
+                                .ToList() ?? new List<Guid>();
+                          
+                            return !otherUsers.Any(uid => blockedUserIds.Contains(uid));
+                        }
+                        return true;
+                    }).ToList();                                
+                }
                 return conversations;
             }
             catch (Exception ex)
@@ -261,6 +286,39 @@ namespace SocialNetworkBe.Services.ConversationServices
             {
                 _logger.LogError(ex, "Error occurred while changing conversation name");
                 return ChangeConversationNameEnum.Failed;
+            }
+        }
+
+        private async Task<List<Guid>> GetBlockedUserIdsAsync(Guid userId)
+        {
+            try
+            {
+                var blockedByMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.UserId == userId && ur.RelationType == UserRelationType.Blocked
+                );
+
+                var blockedMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.RelatedUserId == userId && ur.RelationType == UserRelationType.Blocked
+                );
+
+                var blockedIds = new List<Guid>();
+
+                if (blockedByMe != null && blockedByMe.Any())
+                {
+                    blockedIds.AddRange(blockedByMe.Select(ur => ur.RelatedUserId));
+                }
+
+                if (blockedMe != null && blockedMe.Any())
+                {
+                    blockedIds.AddRange(blockedMe.Select(ur => ur.UserId));
+                }
+
+                return blockedIds.Distinct().ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting blocked users for user {UserId}", userId);
+                return new List<Guid>();
             }
         }
     }

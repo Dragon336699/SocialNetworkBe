@@ -12,7 +12,7 @@ namespace Domain.Interfaces.ServiceInterfaces
     public interface ICommentService
     {
         Task<(CreateCommentEnum, Guid?)> CreateCommentAsync(CreateCommentRequest request, Guid userId);
-        Task<(GetCommentsEnum, List<CommentDto>?)> GetCommentsByPostIdAsync(Guid postId, int skip = 0, int take = 10);
+        Task<(GetCommentsEnum, List<CommentDto>?)> GetCommentsByPostIdAsync(Guid postId, Guid currentUserId, int skip = 0, int take = 10);
         Task<(GetCommentsEnum, CommentDto?)> GetCommentById(Guid commentId);
         Task<(UpdateCommentEnum, CommentDto?)> UpdateCommentAsync(Guid commentId, UpdateCommentRequest request, Guid userId);
         Task<(DeleteCommentEnum, bool)> DeleteCommentAsync(Guid commentId, Guid userId);

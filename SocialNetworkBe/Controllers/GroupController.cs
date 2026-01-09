@@ -97,7 +97,8 @@ namespace SocialNetworkBe.Controllers
                         Group = groupDto
                     }),
                     GetGroupByIdEnum.GroupNotFound => NotFound(new GetGroupByIdResponse { Message = status.GetMessage() }),
-                    GetGroupByIdEnum.Unauthorized => StatusCode(403, new GetGroupByIdResponse { Message = status.GetMessage() }),              
+                    GetGroupByIdEnum.Unauthorized => StatusCode(403, new GetGroupByIdResponse { Message = status.GetMessage() }),
+                    GetGroupByIdEnum.UserBanned => StatusCode(403, new GetGroupByIdResponse { Message = status.GetMessage() }),
                     GetGroupByIdEnum.Failed => StatusCode(500, new GetGroupByIdResponse { Message = status.GetMessage() }),
                     _ => StatusCode(500, new GetGroupByIdResponse { Message = "Unknown error occurred" })
                 };

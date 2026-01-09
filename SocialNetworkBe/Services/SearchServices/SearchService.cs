@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Contracts.Requests.Search;
+using Domain.Contracts.Requests.UserRelation;
 using Domain.Contracts.Responses.Group;
 using Domain.Contracts.Responses.Post;
 using Domain.Contracts.Responses.Search;
@@ -8,6 +9,7 @@ using Domain.Entities;
 using Domain.Enum.Group.Types;
 using Domain.Enum.Post.Types;
 using Domain.Enum.Search.Types;
+using Domain.Enum.User.Types;
 using Domain.Interfaces.ServiceInterfaces;
 using Domain.Interfaces.UnitOfWorkInterface;
 
@@ -36,7 +38,7 @@ namespace SocialNetworkBe.Services.SearchServices
                 switch (request.Type)
                 {
                     case SearchType.Users:
-                        result.Users = await SearchUsersAsync(keywordNormalized, request.Skip, request.Take);
+                        result.Users = await SearchUsersAsync(keywordNormalized, userId, request.Skip, request.Take);
                         result.TotalUsersCount = result.Users?.Count ?? 0;
                         break;
 
@@ -52,7 +54,7 @@ namespace SocialNetworkBe.Services.SearchServices
 
                     case SearchType.All:
                     default:
-                        result.Users = await SearchUsersAsync(keywordNormalized, 0, 5);
+                        result.Users = await SearchUsersAsync(keywordNormalized, userId, 0, 5);
                         result.Groups = await SearchGroupsAsync(keywordNormalized, userId, 0, 5);
                         result.Posts = await SearchPostsAsync(keywordNormalized, userId, 0, 5);
                         result.TotalUsersCount = result.Users?.Count ?? 0;
@@ -169,12 +171,17 @@ namespace SocialNetworkBe.Services.SearchServices
             }
         }
 
-        private async Task<List<UserDto>?> SearchUsersAsync(string keywordNormalized, int skip, int take)
+        private async Task<List<UserDto>?> SearchUsersAsync(string keywordNormalized, Guid currentUserId, int skip, int take)
         {
             var users = await _unitOfWork.UserRepository.SearchUsers(keywordNormalized);
             if (users == null || !users.Any()) return null;
 
-            var paginatedUsers = users.Skip(skip).Take(take).ToList();
+            var blockedUserIds = await GetBlockedUserIdsAsync(currentUserId);
+       
+            var filteredUsers = users.Where(u => !blockedUserIds.Contains(u.Id)).ToList();
+            if (!filteredUsers.Any()) return null;
+
+            var paginatedUsers = filteredUsers.Skip(skip).Take(take).ToList();
             return _mapper.Map<List<UserDto>>(paginatedUsers);
         }
 
@@ -196,13 +203,15 @@ namespace SocialNetworkBe.Services.SearchServices
         private async Task<List<PostDto>?> SearchPostsAsync(string keywordNormalized, Guid userId, int skip, int take)
         {
             var bannedGroupIds = await GetBannedGroupIdsAsync(userId);
+            var blockedUserIds = await GetBlockedUserIdsAsync(userId);
 
             var postsByContent = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
                 p => p.Content.ToLower().Contains(keywordNormalized) &&
                      p.PostPrivacy != PostPrivacy.PendingApproval &&
                      p.PostPrivacy != PostPrivacy.Private &&
                      (p.GroupId == null || p.Group.IsPublic == 1) &&
-                     (!p.GroupId.HasValue || !bannedGroupIds.Contains(p.GroupId.Value)) ,
+                     (!p.GroupId.HasValue || !bannedGroupIds.Contains(p.GroupId.Value)) &&
+                     !blockedUserIds.Contains(p.UserId),
                 p => p.User,
                 p => p.PostImages,
                 p => p.Group
@@ -221,7 +230,10 @@ namespace SocialNetworkBe.Services.SearchServices
             var matchedUsers = await _unitOfWork.UserRepository.SearchUsers(keywordNormalized);
             if (matchedUsers != null && matchedUsers.Any())
             {
-                var userIds = matchedUsers.Select(u => u.Id).ToList();               
+                var userIds = matchedUsers
+                    .Where(u => !blockedUserIds.Contains(u.Id))
+                    .Select(u => u.Id)
+                    .ToList();
                 var postsByUsers = await _unitOfWork.PostRepository.FindAsyncWithIncludesAndReactionUsers(
                     p => userIds.Contains(p.UserId) && 
                          p.PostPrivacy == PostPrivacy.Public &&
@@ -263,6 +275,39 @@ namespace SocialNetworkBe.Services.SearchServices
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting banned groups for user {UserId}", userId);
+                return new List<Guid>();
+            }
+        }
+
+        private async Task<List<Guid>> GetBlockedUserIdsAsync(Guid userId)
+        {
+            try
+            {
+                var blockedByMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.UserId == userId && ur.RelationType == UserRelationType.Blocked
+                );
+            
+                var blockedMe = await _unitOfWork.UserRelationRepository.FindAsync(
+                    ur => ur.RelatedUserId == userId && ur.RelationType == UserRelationType.Blocked
+                );
+
+                var blockedIds = new List<Guid>();
+
+                if (blockedByMe != null && blockedByMe.Any())
+                {
+                    blockedIds.AddRange(blockedByMe.Select(ur => ur.RelatedUserId));
+                }
+
+                if (blockedMe != null && blockedMe.Any())
+                {
+                    blockedIds.AddRange(blockedMe.Select(ur => ur.UserId));
+                }
+
+                return blockedIds.Distinct().ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting blocked users for user {UserId}", userId);
                 return new List<Guid>();
             }
         }
