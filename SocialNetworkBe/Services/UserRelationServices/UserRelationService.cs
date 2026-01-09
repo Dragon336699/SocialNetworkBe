@@ -199,5 +199,91 @@ namespace SocialNetworkBe.Services.UserRelationServices
                 throw;
             }
         }
+
+        public async Task<BlockUserEnum> BlockUserAsync(Guid currentUserId, Guid targetUserId)
+        {
+            try
+            {
+                if (currentUserId == targetUserId) return BlockUserEnum.CannotBlockSelf;
+
+                var targetUser = await _unitOfWork.UserRepository.GetByIdAsync(targetUserId);
+                if (targetUser == null) return BlockUserEnum.TargetUserNotFound;
+             
+                var existingBlock = await _unitOfWork.UserRelationRepository
+                    .GetRelationAsync(currentUserId, targetUserId, UserRelationType.Blocked);
+
+                if (existingBlock != null) return BlockUserEnum.AlreadyBlocked;
+               
+                var friendRelation1 = await _unitOfWork.UserRelationRepository
+                    .GetRelationAsync(currentUserId, targetUserId, UserRelationType.Friend);
+                var friendRelation2 = await _unitOfWork.UserRelationRepository
+                    .GetRelationAsync(targetUserId, currentUserId, UserRelationType.Friend);
+
+                if (friendRelation1 != null) _unitOfWork.UserRelationRepository.Remove(friendRelation1);
+                if (friendRelation2 != null) _unitOfWork.UserRelationRepository.Remove(friendRelation2);
+            
+                var followRelation1 = await _unitOfWork.UserRelationRepository
+                    .GetRelationAsync(currentUserId, targetUserId, UserRelationType.Following);
+                var followRelation2 = await _unitOfWork.UserRelationRepository
+                    .GetRelationAsync(targetUserId, currentUserId, UserRelationType.Following);
+
+                if (followRelation1 != null) _unitOfWork.UserRelationRepository.Remove(followRelation1);
+                if (followRelation2 != null) _unitOfWork.UserRelationRepository.Remove(followRelation2);
+              
+                var friendRequest1 = await _unitOfWork.FriendRequestRepository
+                    .GetFriendRequestAsync(currentUserId, targetUserId);
+                var friendRequest2 = await _unitOfWork.FriendRequestRepository
+                    .GetFriendRequestAsync(targetUserId, currentUserId);
+
+                if (friendRequest1 != null) _unitOfWork.FriendRequestRepository.Remove(friendRequest1);
+                if (friendRequest2 != null) _unitOfWork.FriendRequestRepository.Remove(friendRequest2);
+               
+                var blockRelation = new UserRelation
+                {
+                    UserId = currentUserId,
+                    RelatedUserId = targetUserId,
+                    RelationType = UserRelationType.Blocked,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _unitOfWork.UserRelationRepository.Add(blockRelation);
+                return await _unitOfWork.CompleteAsync() > 0 ? BlockUserEnum.Success : BlockUserEnum.Failed;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error blocking user {TargetId} by {CurrentId}", targetUserId, currentUserId);
+                return BlockUserEnum.Failed;
+            }
+        }
+
+        public async Task<UnblockUserEnum> UnblockUserAsync(Guid currentUserId, Guid targetUserId)
+        {
+            try
+            {
+                var targetUser = await _unitOfWork.UserRepository.GetByIdAsync(targetUserId);
+                if (targetUser == null) return UnblockUserEnum.TargetUserNotFound;
+
+                var blockRelation = await _unitOfWork.UserRelationRepository
+                    .GetRelationAsync(currentUserId, targetUserId, UserRelationType.Blocked);
+
+                if (blockRelation == null) return UnblockUserEnum.NotBlocked;
+
+                _unitOfWork.UserRelationRepository.Remove(blockRelation);
+                return await _unitOfWork.CompleteAsync() > 0 ? UnblockUserEnum.Success : UnblockUserEnum.Failed;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unblocking user {TargetId} by {CurrentId}", targetUserId, currentUserId);
+                return UnblockUserEnum.Failed;
+            }
+        }
+
+        public async Task<List<UserDto>> GetBlockedUsersAsync(Guid userId, int skip, int take)
+        {
+            var (relations, _) = await _unitOfWork.UserRelationRepository.GetBlockedUsersAsync(userId, skip, take);
+            var users = relations.Select(r => r.RelatedUser).Where(u => u != null).ToList();
+            return MapToUserDtos(users!);
+        }
     }
 }

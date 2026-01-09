@@ -57,7 +57,8 @@ namespace SocialNetworkBe.Controllers
         {
             try
             {
-                var (status, comments) = await _commentService.GetCommentsByPostIdAsync(postId, skip, take);
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var (status, comments) = await _commentService.GetCommentsByPostIdAsync(postId, userId, skip, take);
 
                 return status switch
                 {

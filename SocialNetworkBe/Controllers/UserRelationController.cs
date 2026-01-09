@@ -175,5 +175,70 @@ namespace SocialNetworkBe.Controllers
                 return StatusCode(500, new { Message = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpPost("block")]
+        public async Task<IActionResult> BlockUser([FromBody] UserIdRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var status = await _userRelationService.BlockUserAsync(currentUserId, request.TargetUserId);
+
+                return status switch
+                {
+                    BlockUserEnum.Success => Ok(new { Message = status.GetMessage() }),
+                    BlockUserEnum.TargetUserNotFound => NotFound(new { Message = status.GetMessage() }),
+                    BlockUserEnum.AlreadyBlocked => BadRequest(new { Message = status.GetMessage() }),
+                    BlockUserEnum.CannotBlockSelf => BadRequest(new { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new { Message = status.GetMessage() })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpPost("unblock")]
+        public async Task<IActionResult> UnblockUser([FromBody] UserIdRequest request)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var status = await _userRelationService.UnblockUserAsync(currentUserId, request.TargetUserId);
+
+                return status switch
+                {
+                    UnblockUserEnum.Success => Ok(new { Message = status.GetMessage() }),
+                    UnblockUserEnum.TargetUserNotFound => NotFound(new { Message = status.GetMessage() }),
+                    UnblockUserEnum.NotBlocked => BadRequest(new { Message = status.GetMessage() }),
+                    _ => StatusCode(500, new { Message = status.GetMessage() })
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
+        [Authorize]
+        [HttpGet("blocked-users")]
+        public async Task<IActionResult> GetBlockedUsers(
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = 10)
+        {
+            try
+            {
+                var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                var result = await _userRelationService.GetBlockedUsersAsync(currentUserId, skip, take);
+                return Ok(new { Message = "Get blocked users successfully", Data = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
     }
 }

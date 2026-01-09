@@ -22,7 +22,7 @@ namespace Domain.Interfaces.ServiceInterfaces
         Task<LoginRes> GoogleLogin(string googleToken);
         Task<UserDto?> GetUserInfoByUserId(string userId);
         Task<(bool, UserDto?)> GetUserInfoByUserName(string userName);
-        Task<IEnumerable<UserDto>?> SearchUser(string keyword);
+        Task<IEnumerable<UserDto>?> SearchUser(string keyword, string currentUserId);
         Task<UserDto?> UpdateUserStatus(Guid userId, UserStatus status);
         Task<(UpdateAvatarEnum, string?)> UpdateAvatarAsync(UpdateAvatarRequest request, string userId);
         Task<UpdateUserInfoEnum> UpdateUserInfoAsync(UpdateUserInfoRequest request, string userId);
